@@ -58,6 +58,7 @@ presenca-mobile/.flutter-plugins-dependencies
 *.swo
 *.bak
 .cursor-server/
+.claude/
 
 # =========================================================
 # Sistema operacional
