@@ -1,0 +1,80 @@
+# =========================================================
+# Logs e dados de runtime
+# =========================================================
+logs/
+*.log
+*.log.gz
+logslimpar_facial.log
+tmp/
+
+# =========================================================
+# Uploads e dados gerados em runtime
+# =========================================================
+uploads/
+save/raw/
+save/images/
+save/events*.log
+
+# =========================================================
+# Dependências instaláveis
+# =========================================================
+vendor/
+node_modules/
+whatsapp-bot/node_modules/
+whatsapp-bot/.wwebjs_auth/
+whatsapp-bot/.wwebjs_cache/
+
+# =========================================================
+# Configuração com segredos (NUNCA commitar)
+# =========================================================
+.env
+.env.local
+.env.*.local
+config/credentials.php
+config/secrets.php
+
+# =========================================================
+# Backups gerados pelo próprio sistema
+# =========================================================
+painel/bkp/
+backups/
+*.sql.gz
+*.sql.bak
+
+# =========================================================
+# Build artifacts (presenca-mobile / Flutter)
+# =========================================================
+presenca-mobile/build/
+presenca-mobile/.dart_tool/
+presenca-mobile/.flutter-plugins
+presenca-mobile/.flutter-plugins-dependencies
+
+# =========================================================
+# Editor / IDE
+# =========================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+.cursor-server/
+
+# =========================================================
+# Sistema operacional
+# =========================================================
+.DS_Store
+._.DS_Store
+Thumbs.db
+
+# =========================================================
+# Composer / Composer setup
+# =========================================================
+composer.phar
+composer-setup.php
+
+# =========================================================
+# Arquivos de teste/scratch antigos (descomentar se quiser
+# excluir do versionamento — por ora mantemos pra histórico)
+# =========================================================
+# teste_*.php
+# debug_*.php
