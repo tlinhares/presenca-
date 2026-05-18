@@ -1,0 +1,19 @@
+{
+    "UserList": [
+        {
+            "UserID": "200",
+            "UserName": "Teste",
+            "UserType": 0,
+            "Authority": 2,
+            "Password": "123456",
+            "Doors": [
+                0
+            ],
+            "TimeSections": [
+                255
+            ],
+            "ValidFrom": "2025-04-24 15:51:59",
+            "ValidTo": "2037-01-02 01:00:00"
+        }
+    ]
+}

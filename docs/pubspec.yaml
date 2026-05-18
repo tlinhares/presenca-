@@ -1,0 +1,39 @@
+name: presenca_mobile
+description: Aplicativo mobile do Sistema de Presença AOM
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # HTTP e Networking
+  http: ^1.1.0
+  
+  # Armazenamento
+  shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.2.2
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  
+  # Gerenciamento de Estado
+  provider: ^6.1.1
+  
+  # UI
+  cupertino_icons: ^1.0.6
+  
+  # Utilitários
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

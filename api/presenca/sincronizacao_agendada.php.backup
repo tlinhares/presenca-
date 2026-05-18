@@ -1,0 +1,46 @@
+<?php
+/*
+// Executa o verificar_e_preparar.php
+$verificar = shell_exec("php " . __DIR__ . "/verificar_e_preparar.php");
+
+// Executa o sincronizador
+$executar = shell_exec("php " . __DIR__ . "/executar_sync.php");
+
+// Salva log opcional
+file_put_contents(__DIR__ . "/../../logs/sincronizacao_agendada_" . date('Y-m-d') . ".log", 
+    "[" . date('Y-m-d H:i:s') . "] Execução agendada\n" .
+    "Verificar e preparar:\n$verificar\n\nExecutar:\n$executar\n", FILE_APPEND);
+
+*/
+
+
+?>
+
+<?php
+// Arquivo: sincronizacao_agendada.php
+
+// Caminho para o arquivo de lock
+$lockFile = __DIR__ . '/sincronizacao_agendada.lock';
+$fp = fopen($lockFile, 'c+');
+
+// Se não conseguir bloquear, já está rodando
+if (!$fp || !flock($fp, LOCK_EX | LOCK_NB)) {
+    exit("Já existe uma execução em andamento.\n");
+}
+
+// Executa o verificar_e_preparar.php
+$verificar = shell_exec("php " . __DIR__ . "/verificar_e_preparar.php");
+
+// Executa o sincronizador
+$executar = shell_exec("php " . __DIR__ . "/executar_sync.php");
+
+// Salva log opcional
+file_put_contents(__DIR__ . "/../../logs/sincronizacao_agendada_" . date('Y-m-d') . ".log", 
+    "[" . date('Y-m-d H:i:s') . "] Execução agendada\n" .
+    "Verificar e preparar:\n$verificar\n\nExecutar:\n$executar\n", FILE_APPEND);
+
+// Libera o lock
+flock($fp, LOCK_UN);
+fclose($fp);
+unlink($lockFile);
+?>

@@ -1,0 +1,4 @@
+HTTP: 400
+Response: {"code":268632336,"detail":{"FailCodes":[288686087],"FailCount":1},"message":"Batch Process Error"}
+
+Error: 

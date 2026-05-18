@@ -1,0 +1,1 @@
+ALTER TABLE dependentes ADD COLUMN nascimento DATE AFTER parentesco; 

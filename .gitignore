@@ -78,3 +78,7 @@ composer-setup.php
 # =========================================================
 # teste_*.php
 # debug_*.php
+
+# whatsapp-bot/evolution-api é clone do upstream EvolutionAPI (768 MB)
+# Modificações locais preservadas em /var/backups/presenca-archive/evolution-api-local-changes.patch
+whatsapp-bot/evolution-api/
