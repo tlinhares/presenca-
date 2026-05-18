@@ -2,7 +2,8 @@
 header('Content-Type: text/plain');
 
 // Conexão com o banco
-$conn = new mysqli("localhost", "root", "@Arcs2901", "presenca_aom");
+require_once __DIR__ . '/../../utils/env.php';
+$conn = new mysqli(env('DB_HOST', 'localhost'), env('DB_USER', 'root'), env('DB_PASS', ''), env('DB_NAME', 'presenca_aom'));
 if ($conn->connect_error) {
     die("Erro ao conectar: " . $conn->connect_error);
 }

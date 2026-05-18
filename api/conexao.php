@@ -8,10 +8,12 @@ ini_set('display_errors', 0);
 // Suprimir erros específicos de versão
 mysqli_report(MYSQLI_REPORT_OFF);
 
-$host = 'localhost';
-$usuario = 'root';
-$senha = '@Arcs2901';
-$banco = 'presenca_aom';
+require_once __DIR__ . '/../utils/env.php';
+
+$host    = env('DB_HOST', 'localhost');
+$usuario = env('DB_USER', 'root');
+$senha   = env('DB_PASS', '');
+$banco   = env('DB_NAME', 'presenca_aom');
 
 // Verificar se já existe uma conexão ativa
 if (!isset($conn) || $conn->connect_error || $conn->ping() === false) {

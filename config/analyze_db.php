@@ -1,6 +1,11 @@
 <?php
+require_once __DIR__ . '/../utils/env.php';
 try {
-    $pdo = new PDO("mysql:host=localhost;dbname=presenca_aom", "root", "@Arcs2901");
+    $pdo = new PDO(
+        "mysql:host=" . env('DB_HOST', 'localhost') . ";dbname=" . env('DB_NAME', 'presenca_aom'),
+        env('DB_USER', 'root'),
+        env('DB_PASS', '')
+    );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Listar todas as tabelas

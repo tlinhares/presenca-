@@ -1,7 +1,8 @@
 <?php
-// Configurações para conexão
-$db_user = 'root';
-$db_pass = '@Arcs2901';
+// Configurações para conexão (lê do .env)
+require_once __DIR__ . '/../utils/env.php';
+$db_user = env('DB_USER', 'root');
+$db_pass = env('DB_PASS', '');
 
 try {
     // Conectar ao MySQL

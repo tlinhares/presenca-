@@ -67,11 +67,12 @@ class NotificacaoService {
         // Se ainda não tem conexão, criar nova diretamente
         if (!isset($conn) || !($conn instanceof mysqli)) {
             try {
-                $host = 'localhost';
-                $usuario = 'root';
-                $senha = '@Arcs2901';
-                $banco = 'presenca_aom';
-                
+                require_once __DIR__ . '/../../utils/env.php';
+                $host    = env('DB_HOST', 'localhost');
+                $usuario = env('DB_USER', 'root');
+                $senha   = env('DB_PASS', '');
+                $banco   = env('DB_NAME', 'presenca_aom');
+
                 $conn = new mysqli($host, $usuario, $senha, $banco);
                 if (!$conn->connect_error) {
                     $conn->set_charset("utf8");

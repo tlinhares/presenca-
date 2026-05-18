@@ -4,7 +4,8 @@ ob_implicit_flush(true);
 ob_start();
 
 // Conexão
-$conn = new mysqli("localhost", "root", "@Arcs2901", "presenca_aom");
+require_once __DIR__ . '/../../utils/env.php';
+$conn = new mysqli(env('DB_HOST', 'localhost'), env('DB_USER', 'root'), env('DB_PASS', ''), env('DB_NAME', 'presenca_aom'));
 if ($conn->connect_error) {
     echo "❌ Erro ao conectar no banco: " . $conn->connect_error; exit;
 }

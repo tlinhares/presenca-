@@ -1,9 +1,10 @@
 <?php
-// Configurações do Banco de Dados
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'presenca_aom');
-define('DB_USER', 'root');
-define('DB_PASS', '@Arcs2901');
+// Configurações do Banco de Dados (lê do .env)
+require_once __DIR__ . '/../utils/env.php';
+define('DB_HOST', env('DB_HOST', 'localhost'));
+define('DB_NAME', env('DB_NAME', 'presenca_aom'));
+define('DB_USER', env('DB_USER', 'root'));
+define('DB_PASS', env('DB_PASS', ''));
 
 // Configurações do Sistema
 define('SITE_NAME', 'Sistema de Presença AOM');

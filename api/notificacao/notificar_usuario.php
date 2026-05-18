@@ -93,8 +93,9 @@ function enviarWhatsApp($telefone, $mensagem) {
     error_log("WhatsApp: Primeiro caractere: '" . substr($telefone_com_codigo, 0, 1) . "'");
     error_log("WhatsApp: Tamanho: " . strlen($telefone_com_codigo));
     
-    $url_whatsapp = 'http://10.144.128.34:21465/api/servidor/send-message';
-    
+    require_once __DIR__ . '/../../utils/env.php';
+    $url_whatsapp = env('WHATSAPP_API_URL_MESSAGE', 'http://10.144.128.34:21465/api/servidor/send-message');
+
     // Usar cURL para melhor confiabilidade
     $ch = curl_init($url_whatsapp);
     $json_payload = json_encode($dados, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -107,7 +108,7 @@ function enviarWhatsApp($telefone, $mensagem) {
         CURLOPT_POSTFIELDS => $json_payload,
         CURLOPT_HTTPHEADER => [
             'Content-Type: application/json',
-            'Authorization: Bearer $2b$10$HXuccMTGKs8y7aZuhrrxdOfPBw3DAFheEg6.pdZBBn6_7nPS4XLG2'
+            'Authorization: ' . env('WHATSAPP_API_TOKEN', '')
         ],
         CURLOPT_TIMEOUT => 30,
         CURLOPT_CONNECTTIMEOUT => 10,

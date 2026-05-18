@@ -173,7 +173,7 @@ function enviarArquivoWhatsApp($telefone, $arquivo) {
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json; charset=utf-8',
                 'Accept: application/json',
-                'Authorization: Bearer $2b$10$HXuccMTGKs8y7aZuhrrxdOfPBw3DAFheEg6.pdZBBn6_7nPS4XLG2'
+                'Authorization: <TOKEN_REMOVIDO_VEJA_ENV>'
             ],
             CURLOPT_TIMEOUT => 60,
             CURLOPT_CONNECTTIMEOUT => 10,
@@ -251,7 +251,7 @@ function enviarWhatsApp($telefone, $mensagem) {
                 'method' => 'POST',
                 'header' => [
                     'Content-Type: application/json',
-                    'Authorization: Bearer $2b$10$HXuccMTGKs8y7aZuhrrxdOfPBw3DAFheEg6.pdZBBn6_7nPS4XLG2'
+                    'Authorization: <TOKEN_REMOVIDO_VEJA_ENV>'
                 ],
                 'content' => json_encode($dados)
             ]

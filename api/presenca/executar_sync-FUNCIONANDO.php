@@ -1,8 +1,9 @@
 <?php
 header('Content-Type: application/json');
 include_once(__DIR__ . '/../../utils/config.php');
+require_once __DIR__ . '/../../utils/env.php';
 
-$conn = new mysqli("localhost", "root", "@Arcs2901", "presenca_aom");
+$conn = new mysqli(env('DB_HOST', 'localhost'), env('DB_USER', 'root'), env('DB_PASS', ''), env('DB_NAME', 'presenca_aom'));
 if ($conn->connect_error) {
     echo json_encode(['status' => 'erro', 'mensagem' => 'Erro na conexão com o banco: ' . $conn->connect_error]);
     exit;

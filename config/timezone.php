@@ -1,11 +1,12 @@
 <?php
 // Configuração de fuso horário baseada na configuração do sistema
+require_once __DIR__ . '/../utils/env.php';
 try {
     // Tentar conectar ao banco para ler o fuso horário
-    $host = 'localhost';
-    $usuario = 'root';
-    $senha = '@Arcs2901';
-    $banco = 'presenca_aom';
+    $host    = env('DB_HOST', 'localhost');
+    $usuario = env('DB_USER', 'root');
+    $senha   = env('DB_PASS', '');
+    $banco   = env('DB_NAME', 'presenca_aom');
     
     // Usar uma variável local para não interferir na conexão global
     $conn_timezone = new mysqli($host, $usuario, $senha, $banco);

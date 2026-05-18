@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../utils/env.php';
 
-// Conexão
-$conn = new mysqli("10.144.128.22", "tiago", "@Arcs2901", "racktables_db");
+// Conexão (banco RackTables — credenciais em .env)
+$conn = new mysqli(env('RACK_DB_HOST', '10.144.128.22'), env('RACK_DB_USER', 'tiago'), env('RACK_DB_PASS', ''), env('RACK_DB_NAME', 'racktables_db'));
 if ($conn->connect_error) {
     die("Erro ao conectar ao banco: " . $conn->connect_error);
 }

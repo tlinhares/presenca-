@@ -39,6 +39,7 @@ echo "<pre>" . json_encode($dados, JSON_PRETTY_PRINT) . "</pre>";
 
 echo "<h3>Enviando arquivo...</h3>";
 
+require_once __DIR__ . '/utils/env.php';
 $contexto = stream_context_create([
     'http' => [
         'timeout' => 60,
@@ -46,7 +47,7 @@ $contexto = stream_context_create([
         'header' => [
             'Content-Type: application/json; charset=utf-8',
             'Accept: application/json',
-            'Authorization: Bearer $2b$10$HXuccMTGKs8y7aZuhrrxdOfPBw3DAFheEg6.pdZBBn6_7nPS4XLG2'
+            'Authorization: ' . env('WHATSAPP_API_TOKEN', '')
         ],
         'content' => json_encode($dados)
     ]

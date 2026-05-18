@@ -31,10 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     // Backup do banco de dados
     if ($acao === 'banco' || $acao === 'ambos') {
         try {
-            $db_host = 'localhost';
-            $db_user = 'root';
-            $db_pass = '@Arcs2901';
-            $db_name = 'presenca_aom';
+            require_once __DIR__ . '/../utils/env.php';
+            $db_host = env('DB_HOST', 'localhost');
+            $db_user = env('DB_USER', 'root');
+            $db_pass = env('DB_PASS', '');
+            $db_name = env('DB_NAME', 'presenca_aom');
             
             $sql_file = $backup_dir . "backup_banco_{$timestamp}.sql";
             

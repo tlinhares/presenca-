@@ -3,7 +3,8 @@
 header('Content-Type: image/jpeg');
 
 // Conexão
-$conn = new mysqli("localhost", "root", "@Arcs2901", "presenca_aom");
+require_once __DIR__ . '/../../utils/env.php';
+$conn = new mysqli(env('DB_HOST', 'localhost'), env('DB_USER', 'root'), env('DB_PASS', ''), env('DB_NAME', 'presenca_aom'));
 if ($conn->connect_error) {
     http_response_code(500);
     die("Erro ao conectar: " . $conn->connect_error);

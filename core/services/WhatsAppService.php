@@ -10,11 +10,20 @@
  */
 
 class WhatsAppService {
-    // Configurações da API (fallback se não houver APIs cadastradas)
-    private const API_URL_MESSAGE = 'http://10.144.128.34:21465/api/servidor/send-message';
-    private const API_URL_FILE = 'http://10.144.128.34:21465/api/servidor/send-file';
-    private const API_TOKEN = 'Bearer $2b$10$HXuccMTGKs8y7aZuhrrxdOfPBw3DAFheEg6.pdZBBn6_7nPS4XLG2';
-    
+    // Configurações da API (fallback se não houver APIs cadastradas — lê do .env)
+    private static function apiUrlMessage(): string {
+        require_once __DIR__ . '/../../utils/env.php';
+        return env('WHATSAPP_API_URL_MESSAGE', 'http://10.144.128.34:21465/api/servidor/send-message');
+    }
+    private static function apiUrlFile(): string {
+        require_once __DIR__ . '/../../utils/env.php';
+        return env('WHATSAPP_API_URL_FILE', 'http://10.144.128.34:21465/api/servidor/send-file');
+    }
+    private static function apiToken(): string {
+        require_once __DIR__ . '/../../utils/env.php';
+        return env('WHATSAPP_API_TOKEN', '');
+    }
+
     // Timeouts
     private const TIMEOUT_MESSAGE = 30;
     private const TIMEOUT_FILE = 60;
@@ -112,11 +121,12 @@ class WhatsAppService {
             }
             
             // Se não conseguiu usar conexão existente, criar nova diretamente
-            $host = 'localhost';
-            $usuario = 'root';
-            $senha = '@Arcs2901';
-            $banco = 'presenca_aom';
-            
+            require_once __DIR__ . '/../../utils/env.php';
+            $host    = env('DB_HOST', 'localhost');
+            $usuario = env('DB_USER', 'root');
+            $senha   = env('DB_PASS', '');
+            $banco   = env('DB_NAME', 'presenca_aom');
+
             $conn_nova = new mysqli($host, $usuario, $senha, $banco);
             if (!$conn_nova->connect_error) {
                 $conn_nova->set_charset("utf8");
@@ -732,14 +742,14 @@ class WhatsAppService {
                 'message' => $mensagem
             ];
             
-            $ch = curl_init(self::API_URL_MESSAGE);
+            $ch = curl_init(self::apiUrlMessage());
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => json_encode($dados, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
-                    'Authorization: ' . self::API_TOKEN
+                    'Authorization: ' . self::apiToken()
                 ],
                 CURLOPT_TIMEOUT => self::TIMEOUT_MESSAGE,
                 CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
@@ -957,7 +967,7 @@ class WhatsAppService {
                 'base64' => $data_url
             ];
             
-            $ch = curl_init(self::API_URL_FILE);
+            $ch = curl_init(self::apiUrlFile());
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
@@ -965,7 +975,7 @@ class WhatsAppService {
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json; charset=utf-8',
                     'Accept: application/json',
-                    'Authorization: ' . self::API_TOKEN
+                    'Authorization: ' . self::apiToken()
                 ],
                 CURLOPT_TIMEOUT => self::TIMEOUT_FILE,
                 CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
