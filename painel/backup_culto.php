@@ -20,10 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     $erros = [];
     $sucessos = [];
     
-    // Diretório de backup
-    $backup_dir = __DIR__ . '/bkp/';
+    // Diretório de backup (fora do webroot — vem do .env)
+    require_once __DIR__ . '/../utils/env.php';
+    $backup_dir = rtrim(env('BACKUP_BKP_PATH', __DIR__ . '/bkp'), '/') . '/';
     if (!is_dir($backup_dir)) {
-        mkdir($backup_dir, 0755, true);
+        mkdir($backup_dir, 0770, true);
     }
     
     $timestamp = date('Y-m-d_His');
@@ -177,8 +178,9 @@ function formatarTamanho($bytes) {
     return round($bytes, 2) . ' ' . $units[$pow];
 }
 
-// Listar backups existentes
-$backup_dir = __DIR__ . '/bkp/';
+// Listar backups existentes (mesmo path do bloco de criação)
+require_once __DIR__ . '/../utils/env.php';
+$backup_dir = rtrim(env('BACKUP_BKP_PATH', __DIR__ . '/bkp'), '/') . '/';
 $backups = [];
 if (is_dir($backup_dir)) {
     $files = scandir($backup_dir);

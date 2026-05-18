@@ -17,7 +17,8 @@ if (empty($arquivo)) {
 // Sanitizar nome do arquivo
 $arquivo = basename($arquivo);
 
-$backup_dir = __DIR__ . '/bkp/';
+require_once __DIR__ . '/../utils/env.php';
+$backup_dir = rtrim(env('BACKUP_BKP_PATH', __DIR__ . '/bkp'), '/') . '/';
 $arquivo_path = $backup_dir . $arquivo;
 
 // Verificar se o arquivo existe e está dentro do diretório de backup
