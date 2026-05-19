@@ -138,6 +138,9 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                         <small class="opacity-75">Gerenciamento de APIs e configurações</small>
                     </div>
                 </div>
+                <a href="whatsapp_sessoes.php" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-broadcast me-1"></i>Sessões
+                </a>
             </div>
         </div>
     </div>
@@ -208,30 +211,67 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                 <div class="modal-body">
                     <form id="formAPI">
                         <input type="hidden" id="api_id" name="id">
-                        
+
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Para uma sessão wppconnect nova, preencha apenas <b>Nome</b>, <b>Base URL</b>, <b>Session Name</b> e <b>Secret Key</b>. O sistema gera o token e monta as URLs automaticamente. Para conectar, salve e clique em <b>Sessões</b> no topo.
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">Nome <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="api_nome" name="nome" required maxlength="100" placeholder="Ex: numeroti, numeropresenca">
-                            <small class="text-muted">Nome único para identificar a API</small>
+                            <input type="text" class="form-control" id="api_nome" name="nome" required maxlength="100" placeholder="Ex: atendimento, suporte">
+                            <small class="text-muted">Rótulo interno para identificar a API no sistema</small>
                         </div>
-                        
+
                         <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">URL API Mensagens <span class="text-danger">*</span></label>
-                                <input type="url" class="form-control" id="api_url_mensagem" name="url_mensagem" required placeholder="http://10.144.128.34:21465/api/servidor/send-message">
+                            <div class="col-md-7">
+                                <label class="form-label">Base URL <span class="text-danger">*</span></label>
+                                <input type="url" class="form-control" id="api_base_url" name="base_url" required placeholder="http://10.144.128.34:21465">
+                                <small class="text-muted">Endereço do wppconnect-server (sem /api/...)</small>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">URL API Arquivos <span class="text-danger">*</span></label>
-                                <input type="url" class="form-control" id="api_url_arquivo" name="url_arquivo" required placeholder="http://10.144.128.34:21465/api/servidor/send-file">
+                            <div class="col-md-5">
+                                <label class="form-label">Session Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="api_session_name" name="session_name" required maxlength="100" placeholder="atendimento">
+                                <small class="text-muted">Nome da sessão no wppconnect</small>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label class="form-label">Token <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="api_token" name="token" required placeholder="Token Bearer de autenticação">
-                            <small class="text-muted">Token Bearer de autenticação</small>
+                            <label class="form-label">Secret Key <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="api_secret_key" name="secret_key" required placeholder="wppconnect…">
+                            <small class="text-muted">Chave global do wppconnect (campo <code>secretKey</code> do config.js do servidor)</small>
                         </div>
-                        
+
+                        <div class="accordion mb-3" id="accAvancado">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colAvancado">
+                                        <i class="bi bi-sliders me-2"></i>Avançado — Token e URLs manuais (opcional)
+                                    </button>
+                                </h2>
+                                <div id="colAvancado" class="accordion-collapse collapse" data-bs-parent="#accAvancado">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Token / API Key</label>
+                                            <input type="text" class="form-control" id="api_token" name="token" placeholder="Deixe vazio para gerar automaticamente">
+                                            <small class="text-muted">Se vazio, o sistema chama <code>/{secret_key}/generate-token</code> na primeira utilização</small>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">URL API Mensagens</label>
+                                                <input type="url" class="form-control" id="api_url_mensagem" name="url_mensagem" placeholder="auto: {base}/api/{session}/send-message">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">URL API Arquivos</label>
+                                                <input type="url" class="form-control" id="api_url_arquivo" name="url_arquivo" placeholder="auto: {base}/api/{session}/send-file">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Deixe vazio para o sistema derivar de Base URL + Session Name</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Número WhatsApp</label>
@@ -243,12 +283,12 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                                 <small class="text-muted">Menor número = maior prioridade</small>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Observações</label>
                             <textarea class="form-control" id="api_observacoes" name="observacoes" rows="2"></textarea>
                         </div>
-                        
+
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="api_ativo" name="ativo" value="1" checked>
                             <label class="form-check-label" for="api_ativo">API ativa</label>
@@ -492,8 +532,12 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
             $('#api_id').val('');
             $('#api_ativo').prop('checked', true);
             $('#api_prioridade').val(0);
-            $('#api_token').val(''); // Limpar token
-            
+            $('#api_token').val('');
+            $('#api_base_url').val('');
+            $('#api_session_name').val('');
+            $('#api_secret_key').val('');
+            $('#colAvancado').removeClass('show'); // accordion fechado
+
             $('#modalAPITitulo').html('<i class="bi bi-plus-circle me-2"></i>Nova API');
             
             // Criar nova instância do modal e mostrar
@@ -523,14 +567,17 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                         
                         $('#api_id').val(api.id);
                         $('#api_nome').val(api.nome);
-                        $('#api_url_mensagem').val(api.url_mensagem);
-                        $('#api_url_arquivo').val(api.url_arquivo);
-                        $('#api_token').val(api.token || ''); // Preencher com o token atual
+                        $('#api_url_mensagem').val(api.url_mensagem || '');
+                        $('#api_url_arquivo').val(api.url_arquivo || '');
+                        $('#api_token').val(api.token || '');
+                        $('#api_base_url').val(api.base_url || '');
+                        $('#api_session_name').val(api.session_name || '');
+                        $('#api_secret_key').val(api.secret_key || '');
                         $('#api_numero').val(api.numero_whatsapp || '');
                         $('#api_prioridade').val(api.prioridade || 0);
                         $('#api_observacoes').val(api.observacoes || '');
                         $('#api_ativo').prop('checked', api.ativo == 1 || api.ativo === true);
-                        
+
                         $('#modalAPITitulo').html('<i class="bi bi-pencil me-2"></i>Editar API');
                         
                         // Criar nova instância do modal e mostrar
@@ -548,22 +595,33 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         }
         
         function salvarAPI() {
-            const form = $('#formAPI');
-            const id = $('#api_id').val();
-            const nome = $('#api_nome').val().trim();
+            const id           = $('#api_id').val();
+            const nome         = $('#api_nome').val().trim();
+            const base_url     = $('#api_base_url').val().trim();
+            const session_name = $('#api_session_name').val().trim();
+            const secret_key   = $('#api_secret_key').val().trim();
             const url_mensagem = $('#api_url_mensagem').val().trim();
-            const url_arquivo = $('#api_url_arquivo').val().trim();
-            const token = $('#api_token').val().trim();
-            
-            // Validações básicas
-            if (!nome || !url_mensagem || !url_arquivo || !token) {
-                exibirToast('Preencha todos os campos obrigatórios', 'warning');
+            const url_arquivo  = $('#api_url_arquivo').val().trim();
+            const token        = $('#api_token').val().trim();
+
+            // Validação mínima: precisa Nome + (Base URL + Session Name + Secret Key) ou (URLs explícitas + token)
+            if (!nome) {
+                exibirToast('Informe o Nome', 'warning');
                 return;
             }
-            
+            const temWppConnectInfo = base_url && session_name && secret_key;
+            const temUrlsExplicitas = url_mensagem && url_arquivo && token;
+            if (!temWppConnectInfo && !temUrlsExplicitas) {
+                exibirToast('Preencha Base URL + Session Name + Secret Key (recomendado), ou as URLs + Token manualmente', 'warning');
+                return;
+            }
+
             const dados = {
                 id: id,
                 nome: nome,
+                base_url: base_url,
+                session_name: session_name,
+                secret_key: secret_key,
                 url_mensagem: url_mensagem,
                 url_arquivo: url_arquivo,
                 token: token,

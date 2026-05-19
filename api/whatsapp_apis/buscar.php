@@ -25,12 +25,15 @@ try {
         throw new Exception('ID inválido');
     }
     
-    $sql = "SELECT 
+    $sql = "SELECT
                 id,
                 nome,
                 url_mensagem,
                 url_arquivo,
                 token,
+                base_url,
+                session_name,
+                secret_key,
                 numero_whatsapp,
                 ativo,
                 prioridade,
