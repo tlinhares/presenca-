@@ -175,6 +175,42 @@ class WhatsappSessionService
         return self::httpRequest('POST', $url, null, null);
     }
 
+    /**
+     * Fallback para bug do wppconnect-server v2: o controller
+     * dist/controller/sessionController.js (logout) e
+     * dist/controller/miscController.js (clearSessionData) usam
+     *   __dirname + '../../../tokens/{session}.data.json'
+     * com TRÊS níveis de '../', resolvendo para /opt/tokens/ (fora do
+     * projeto) em vez de /opt/wppconnect-server/tokens/. Resultado: o
+     * arquivo de token NÃO é apagado, e o celular continua mostrando
+     * o aparelho como "Pendente".
+     *
+     * Este método tenta apagar o arquivo localmente como best-effort.
+     * Só funciona quando o wppconnect roda na MESMA máquina do PHP.
+     *
+     * Path pode ser sobrescrito via env WPPCONNECT_TOKENS_DIR.
+     */
+    public static function limparTokenLocal(array $api): array
+    {
+        $session = trim((string)($api['session_name'] ?? ''));
+        if ($session === '') {
+            return ['ok' => true, 'http_code' => 0, 'mensagem' => 'sem session_name — nada a fazer'];
+        }
+
+        require_once __DIR__ . '/../../utils/env.php';
+        $dir  = rtrim(env('WPPCONNECT_TOKENS_DIR', '/opt/wppconnect-server/tokens'), '/');
+        $path = $dir . '/' . $session . '.data.json';
+
+        if (!file_exists($path)) {
+            // Já não existe — sucesso (cenário normal quando wppconnect funciona)
+            return ['ok' => true, 'http_code' => 0, 'mensagem' => 'arquivo já não existia'];
+        }
+        if (!@unlink($path)) {
+            return ['ok' => false, 'http_code' => 0, 'error' => "Sem permissão para apagar $path (verifique que /opt/wppconnect-server/tokens é root:www-data 770)"];
+        }
+        return ['ok' => true, 'http_code' => 0, 'mensagem' => 'token-file apagado'];
+    }
+
     // ============================================================
     // HTTP helpers
     // ============================================================

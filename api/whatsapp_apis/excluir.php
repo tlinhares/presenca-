@@ -104,6 +104,21 @@ try {
                 exit;
             }
         }
+
+        // Passo extra: limpeza local do tokens/{session}.data.json
+        // (fallback para bug do wppconnect que usa path errado: ../../../tokens).
+        // Sem isso, o celular continua mostrando o aparelho como "Pendente".
+        $localClean = WhatsappSessionService::limparTokenLocal($api);
+        $steps[] = [
+            'key'       => 'token_file',
+            'label'     => 'Limpar arquivo token local (fallback bug wppconnect)',
+            'ok'        => (bool)($localClean['ok'] ?? false),
+            'http_code' => 0,
+            'error'     => $localClean['error'] ?? null,
+        ];
+        // Esse passo é best-effort — se falhar, NÃO aborta (a sessão remota
+        // já foi limpa nos passos anteriores; o arquivo órfão pode ser
+        // removido manualmente depois pelo admin).
     } else {
         $steps[] = [
             'key'       => 'skip',
