@@ -341,22 +341,40 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         </div>
     </div>
 
-    <!-- Modal Confirmação Exclusão -->
-    <div class="modal fade" id="modalExcluir" tabindex="-1">
-        <div class="modal-dialog modal-sm">
+    <!-- Modal Exclusão Completa (chain wppconnect) -->
+    <div class="modal fade" id="modalExcluir" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
-                    <h6 class="modal-title"><i class="bi bi-trash me-2"></i>Excluir API</h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h6 class="modal-title">
+                        <i class="bi bi-trash me-2"></i>Excluir API —
+                        <span id="excluir-nome"></span>
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="excluir-btn-close"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <p>Deseja realmente excluir a API <strong id="excluir-nome"></strong>?</p>
-                    <small class="text-danger">Esta ação não pode ser desfeita.</small>
+                <div class="modal-body">
+                    <div id="excluir-fase-confirmar">
+                        <p class="mb-2">Esta operação executa em ordem:</p>
+                        <ol class="small mb-2">
+                            <li>Desconectar o WhatsApp no celular (<code>logout-session</code>)</li>
+                            <li>Fechar a sessão no wppconnect (<code>close-session</code>)</li>
+                            <li>Apagar os dados persistentes (<code>clear-session-data</code>)</li>
+                            <li>Remover o registro do sistema</li>
+                        </ol>
+                        <p class="text-muted small mb-0">
+                            Se houver falha de rede com o wppconnect, a operação é cancelada
+                            e nada é excluído.
+                        </p>
+                    </div>
+                    <div id="excluir-fase-progresso" style="display:none;">
+                        <ul class="list-unstyled mb-0 small" id="excluir-step-list"></ul>
+                    </div>
+                    <div id="excluir-erro" class="alert alert-danger mt-3 mb-0 small" style="display:none;"></div>
                 </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmarExclusao()">
-                        <i class="bi bi-trash me-1"></i>Excluir
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="excluir-btn-cancelar">Cancelar</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="excluir-btn-confirmar" onclick="confirmarExclusao()">
+                        <i class="bi bi-trash me-1"></i>Excluir definitivamente
                     </button>
                 </div>
             </div>
@@ -694,34 +712,88 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         function excluirAPI(id, nome) {
             excluirId = id;
             $('#excluir-nome').text(nome);
+            // Reset visual
+            $('#excluir-fase-confirmar').show();
+            $('#excluir-fase-progresso').hide();
+            $('#excluir-step-list').empty();
+            $('#excluir-erro').hide().text('');
+            $('#excluir-btn-confirmar')
+                .prop('disabled', false)
+                .html('<i class="bi bi-trash me-1"></i>Excluir definitivamente');
+            $('#excluir-btn-cancelar').prop('disabled', false).text('Cancelar');
+            $('#excluir-btn-close').prop('disabled', false);
             new bootstrap.Modal('#modalExcluir').show();
         }
-        
+
+        function renderizarSteps(steps, running) {
+            const ul = $('#excluir-step-list');
+            ul.empty();
+            (steps || []).forEach(function (s) {
+                const icon = s.ok ? '<span class="text-success">✓</span>' : '<span class="text-danger">✗</span>';
+                const http = s.http_code ? ' <span class="text-muted small">(HTTP ' + s.http_code + ')</span>' : '';
+                let html = icon + ' ' + s.label + http;
+                if (!s.ok && s.error) {
+                    html += '<div class="small text-danger ms-3">' + s.error + '</div>';
+                }
+                ul.append('<li class="mb-1">' + html + '</li>');
+            });
+            if (running) {
+                ul.append('<li class="mb-1"><span class="spinner-border spinner-border-sm me-2"></span>Processando...</li>');
+            }
+        }
+
         function confirmarExclusao() {
             if (!excluirId) return;
-            
+
+            const btn        = $('#excluir-btn-confirmar');
+            const btnCancel  = $('#excluir-btn-cancelar');
+            const btnClose   = $('#excluir-btn-close');
+            const errBox     = $('#excluir-erro');
+
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Excluindo...');
+            btnCancel.prop('disabled', true);
+            btnClose.prop('disabled', true);
+            $('#excluir-fase-confirmar').hide();
+            $('#excluir-fase-progresso').show();
+            errBox.hide().text('');
+            renderizarSteps([], true);
+
             $.ajax({
                 url: baseUrl + '/api/whatsapp_apis/excluir.php',
                 method: 'POST',
-                data: { id: excluirId },
-                dataType: 'json',
-                success: function(data) {
-                    bootstrap.Modal.getInstance('#modalExcluir').hide();
-                    if (data.status === 'ok') {
+                contentType: 'application/json',
+                data: JSON.stringify({ id: excluirId }),
+                dataType: 'json'
+            })
+            .done(function (data) {
+                btnCancel.prop('disabled', false);
+                btnClose.prop('disabled', false);
+                renderizarSteps(data.steps || [], false);
+                if (data.ok) {
+                    btn.html('<i class="bi bi-check-lg me-1"></i>Concluído').prop('disabled', true);
+                    setTimeout(function () {
+                        bootstrap.Modal.getInstance('#modalExcluir').hide();
                         carregarAPIs();
-                        carregarConfiguracoes(); // Recarregar configs também
-                        exibirToast(data.mensagem, 'success');
-                    } else {
-                        exibirToast(data.mensagem, 'danger');
-                    }
-                },
-                error: function() {
-                    exibirToast('Erro ao excluir API', 'danger');
+                        carregarConfiguracoes();
+                        exibirToast('API "' + (data.nome || '') + '" excluída com sucesso', 'success');
+                    }, 900);
+                } else {
+                    errBox.text(data.error || 'Operação cancelada.').show();
+                    btn.prop('disabled', false)
+                       .html('<i class="bi bi-arrow-clockwise me-1"></i>Tentar novamente');
                 }
+                return;
+            })
+            .fail(function () {
+                btnCancel.prop('disabled', false);
+                btnClose.prop('disabled', false);
+                errBox.text('Erro de rede ao chamar excluir.php').show();
+                btn.prop('disabled', false)
+                   .html('<i class="bi bi-arrow-clockwise me-1"></i>Tentar novamente');
             });
         }
-        
-        
+
+
         function carregarConfiguracoes() {
             $.ajax({
                 url: baseUrl + '/api/whatsapp_apis/config/listar.php',
