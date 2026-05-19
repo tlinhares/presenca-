@@ -305,6 +305,42 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         </div>
     </div>
 
+    <!-- Modal Teste de Envio -->
+    <div class="modal fade" id="modalTeste" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h6 class="modal-title">
+                        <i class="bi bi-send me-2"></i>Enviar mensagem de teste —
+                        <span id="teste-api-nome"></span>
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="teste_api_id">
+                    <div class="mb-3">
+                        <label class="form-label">Número do destinatário <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="teste_numero"
+                               placeholder="65999999999 ou 5565999999999"
+                               maxlength="20">
+                        <small class="text-muted">Com ou sem DDI 55 — o sistema normaliza automaticamente.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mensagem <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="teste_mensagem" rows="3" maxlength="1000">Teste de envio do Sistema Presença AOM ✅</textarea>
+                    </div>
+                    <div id="teste-resultado" class="alert mt-3" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="teste-btn-fechar">Fechar</button>
+                    <button type="button" class="btn btn-success" id="teste-btn-enviar" onclick="enviarTeste()">
+                        <i class="bi bi-send me-1"></i>Enviar Teste
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Confirmação Exclusão -->
     <div class="modal fade" id="modalExcluir" tabindex="-1">
         <div class="modal-dialog modal-sm">
@@ -503,6 +539,9 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                         <td class="text-center">
                             <button class="btn btn-outline-primary btn-action me-1" onclick="editarAPI(${parseInt(api.id)})" title="Editar">
                                 <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-success btn-action me-1" onclick="abrirModalTeste(${parseInt(api.id)}, '${api.nome.replace(/'/g, "\\'")}')" title="Enviar mensagem de teste">
+                                <i class="bi bi-send"></i>
                             </button>
                             <button class="btn btn-outline-danger btn-action" onclick="excluirAPI(${parseInt(api.id)}, '${api.nome.replace(/'/g, "\\'")}')" title="Excluir">
                                 <i class="bi bi-trash"></i>
@@ -875,6 +914,67 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                 error: function() {
                     exibirToast('Erro ao salvar configurações', 'danger');
                 }
+            });
+        }
+
+        // =========================================================
+        // Modal de teste de envio
+        // =========================================================
+        function abrirModalTeste(id, nome) {
+            $('#teste_api_id').val(id);
+            $('#teste-api-nome').text(nome);
+            $('#teste_numero').val('');
+            $('#teste_mensagem').val('Teste de envio do Sistema Presença AOM ✅');
+            const box = $('#teste-resultado');
+            box.hide().removeClass('alert-success alert-danger').text('');
+            $('#teste-btn-enviar').prop('disabled', false).html('<i class="bi bi-send me-1"></i>Enviar Teste');
+            new bootstrap.Modal(document.getElementById('modalTeste')).show();
+        }
+
+        function enviarTeste() {
+            const id       = $('#teste_api_id').val();
+            const numero   = $('#teste_numero').val().trim();
+            const mensagem = $('#teste_mensagem').val().trim();
+            const box      = $('#teste-resultado');
+            const btn      = $('#teste-btn-enviar');
+
+            if (!numero) {
+                box.removeClass('alert-success').addClass('alert-warning').text('Informe o número do destinatário').show();
+                return;
+            }
+            if (!mensagem) {
+                box.removeClass('alert-success').addClass('alert-warning').text('Informe a mensagem').show();
+                return;
+            }
+
+            box.hide();
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Enviando...');
+
+            $.ajax({
+                url: baseUrl + '/api/whatsapp_apis/testar_envio.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ id: id, numero: numero, mensagem: mensagem }),
+                dataType: 'json'
+            })
+            .done(function (data) {
+                box.removeClass('alert-success alert-danger alert-warning');
+                if (data.sucesso) {
+                    box.addClass('alert-success').html(
+                        '<i class="bi bi-check-circle me-1"></i> Mensagem enviada com sucesso via <b>' +
+                        (data.api_nome || 'API') + '</b>. Confira o WhatsApp do destinatário.'
+                    ).show();
+                } else {
+                    box.addClass('alert-danger').html(
+                        '<i class="bi bi-x-circle me-1"></i> Falha: ' + (data.mensagem || 'erro desconhecido')
+                    ).show();
+                }
+                btn.prop('disabled', false).html('<i class="bi bi-send me-1"></i>Enviar novamente');
+            })
+            .fail(function (xhr) {
+                box.removeClass('alert-success alert-warning').addClass('alert-danger')
+                   .html('<i class="bi bi-x-circle me-1"></i> Erro de rede: ' + xhr.status).show();
+                btn.prop('disabled', false).html('<i class="bi bi-send me-1"></i>Tentar novamente');
             });
         }
     </script>

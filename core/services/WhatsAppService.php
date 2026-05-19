@@ -387,6 +387,25 @@ class WhatsAppService {
      * @param callable|null $log_callback Callback de log
      * @return array Resultado do envio
      */
+    /**
+     * Envia uma mensagem via uma API específica (sem passar pelo sorteio/configuração).
+     * Útil para testes manuais a partir do painel ("Testar API").
+     *
+     * @param array $api Linha completa da tabela whatsapp_apis
+     * @param string $telefone Número (será normalizado)
+     * @param string $mensagem Texto
+     * @return array ['sucesso'=>bool, 'mensagem'=>string, 'api_id'?, 'api_nome'?]
+     */
+    public static function enviarTeste(array $api, string $telefone, string $mensagem): array
+    {
+        $telefone_normalizado = self::normalizarTelefone($telefone);
+        if (empty($telefone_normalizado)) {
+            return ['sucesso' => false, 'mensagem' => 'Telefone inválido'];
+        }
+        $telefone_com_codigo = self::formatarNumeroParaEnvio($telefone_normalizado);
+        return self::enviarMensagemComAPI($telefone_com_codigo, $mensagem, $api);
+    }
+
     private static function enviarMensagemComAPI($telefone_com_codigo, $mensagem, $api, $log_callback = null) {
         $dados = [
             'phone' => $telefone_com_codigo,
