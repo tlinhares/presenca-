@@ -53,6 +53,13 @@ if (isset($_SESSION['usuario_id'])) {
       20%, 60% { transform: translateX(-6px); }
       40%, 80% { transform: translateX(6px); }
     }
+    /* Animação de saída ao logar com sucesso */
+    @keyframes flyOutLeft  { to { transform: translateX(-140%) rotate(-5deg); opacity: 0; } }
+    @keyframes flyOutRight { to { transform: translateX(140%)  rotate(5deg);  opacity: 0; } }
+    @keyframes cardCollapse { to { transform: scale(.85) translateY(-24px); opacity: 0; } }
+    .fly-left  { animation: flyOutLeft  .5s cubic-bezier(.6,-.28,.74,.05) forwards; }
+    .fly-right { animation: flyOutRight .5s cubic-bezier(.6,-.28,.74,.05) forwards; }
+    .card-collapse { animation: cardCollapse .45s ease-in forwards; }
   </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-4">
@@ -194,7 +201,7 @@ $('#formLogin').submit(function(e) {
     dataType: 'json',
     success: function(res) {
       if (res.status === 'ok') {
-        window.location.href = 'resumo.php';
+        animarSaidaERedirecionar();
       } else {
         $('#mensagemLogin')
           .removeClass('hidden bg-green-100 text-green-800')
@@ -222,6 +229,35 @@ function resetBtn() {
   $('#btnLoginText').text('Acessar Sistema');
   $('#btnLoginIcon').removeClass('hidden');
   $('#btnLoginSpinner').addClass('hidden');
+}
+
+function animarSaidaERedirecionar() {
+  // Fallback de segurança: o redirect SEMPRE acontece em <= 800ms,
+  // mesmo que a animação CSS falhe ou não seja suportada.
+  var jaRedirecionou = false;
+  function ir() {
+    if (jaRedirecionou) return;
+    jaRedirecionou = true;
+    window.location.href = 'resumo.php';
+  }
+  setTimeout(ir, 800);
+
+  try {
+    // Campos do form saem alternando esquerda/direita, em sequência
+    var itens = document.querySelectorAll('#formLogin > div, #formLogin > button');
+    itens.forEach(function (el, i) {
+      el.style.animationDelay = (i * 70) + 'ms';
+      el.classList.add(i % 2 === 0 ? 'fly-left' : 'fly-right');
+    });
+    // O card inteiro colapsa logo depois
+    var card = document.querySelector('.w-full.max-w-md > div');
+    if (card) {
+      card.style.animationDelay = '260ms';
+      card.classList.add('card-collapse');
+    }
+  } catch (e) {
+    ir(); // se algo der errado, redireciona na hora
+  }
 }
 </script>
 </body>
