@@ -68,24 +68,13 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
         }
     </script>
     <style>
-        /* Animação de entrada do dashboard */
+        /* Fade-in geral do dashboard ao carregar.
+           Os cards já têm animação própria (.reveal-item, ver abaixo) —
+           NÃO animar os cards aqui para não conflitar/escondê-los. */
         @keyframes dashFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes dashRise {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
         body { animation: dashFadeIn .4s ease-out; }
-        .dash-enter { animation: dashFadeIn .45s ease-out both; }
-        /* Cards aparecem em sequência (stagger) */
-        .dash-enter > div > * { animation: dashRise .5s cubic-bezier(.22,1,.36,1) both; }
-        .dash-enter > div > *:nth-child(1) { animation-delay: .05s; }
-        .dash-enter > div > *:nth-child(2) { animation-delay: .11s; }
-        .dash-enter > div > *:nth-child(3) { animation-delay: .17s; }
-        .dash-enter > div > *:nth-child(4) { animation-delay: .23s; }
-        .dash-enter > div > *:nth-child(5) { animation-delay: .29s; }
-        .dash-enter > div > *:nth-child(6) { animation-delay: .35s; }
         @media (prefers-reduced-motion: reduce) {
-            body, .dash-enter, .dash-enter > div > * { animation: none !important; }
+            body { animation: none !important; }
         }
         ::-webkit-scrollbar {
             width: 6px;
@@ -465,7 +454,7 @@ HTML;
         </header>
 
         <!-- Dashboard Content -->
-        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pt-2 dash-enter">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pt-2">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 pb-8">
                 
                 <!-- Card: Presença | Cultos -->
