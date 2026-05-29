@@ -237,6 +237,68 @@ HTML;
             font-size: 0.75rem;
             font-weight: 600;
         }
+
+        /* Dropdown de alertas do sino */
+        .painel-alertas {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 340px;
+            max-width: 90vw;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            z-index: 1050;
+            overflow: hidden;
+            color: #2d3748;
+        }
+        .painel-alertas-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid #edf2f7;
+            background: #f8f9fa;
+        }
+        .painel-alertas-lista {
+            max-height: 360px;
+            overflow-y: auto;
+        }
+        .painel-alertas-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid #f1f3f5;
+            text-decoration: none;
+            color: #2d3748;
+            transition: background 0.15s;
+        }
+        .painel-alertas-item:hover { background: #f8f9fa; }
+        .painel-alertas-item:last-child { border-bottom: none; }
+        .painel-alertas-item .qtd {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .painel-alertas-item .qtd.critico { background: #fed7d7; color: #c53030; }
+        .painel-alertas-item .qtd.baixo   { background: #feebc8; color: #c05621; }
+        .painel-alertas-foot {
+            display: block;
+            text-align: center;
+            padding: 0.65rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #c05621;
+            background: #fffaf0;
+            text-decoration: none;
+            border-top: 1px solid #edf2f7;
+        }
+        .painel-alertas-foot:hover { background: #feebc8; }
         
         .alert-badge.critico {
             background: #fed7d7;
@@ -402,12 +464,24 @@ HTML;
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-light btn-sm position-relative" id="btn-alertas" title="Alertas">
-                        <i class="bi bi-bell"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="badge-alertas" style="display: none;">
-                            0
-                        </span>
-                    </button>
+                    <div class="position-relative" id="wrap-alertas">
+                        <button class="btn btn-light btn-sm position-relative" id="btn-alertas" title="Alertas de estoque baixo" type="button">
+                            <i class="bi bi-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="badge-alertas" style="display: none;">
+                                0
+                            </span>
+                        </button>
+                        <div id="painel-alertas" class="painel-alertas" style="display: none;">
+                            <div class="painel-alertas-head">
+                                <span><i class="bi bi-exclamation-triangle text-warning me-1"></i>Estoque baixo</span>
+                                <span class="badge bg-danger" id="painel-alertas-total">0</span>
+                            </div>
+                            <div id="painel-alertas-lista" class="painel-alertas-lista">
+                                <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>
+                            </div>
+                            <a href="produtos/?filtro=estoque_baixo" class="painel-alertas-foot">Ver todos os produtos com estoque baixo</a>
+                        </div>
+                    </div>
                     <div class="dropdown">
                         <button class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle me-1"></i>
@@ -808,6 +882,50 @@ HTML;
             });
         }
         
+        let alertasCache = [];
+
+        function renderizarPainelAlertas(alertas) {
+            const lista = $('#painel-alertas-lista');
+            $('#painel-alertas-total').text(alertas.length);
+            if (!alertas.length) {
+                lista.html('<div class="text-center text-success py-4"><i class="bi bi-check-circle fs-3 d-block mb-2"></i>Estoque OK!</div>');
+                $('.painel-alertas-foot').hide();
+                return;
+            }
+            $('.painel-alertas-foot').show();
+            let html = '';
+            alertas.forEach(function(a) {
+                const nivel = a.quantidade_atual <= 0 ? 'critico' : 'baixo';
+                html += `
+                    <a class="painel-alertas-item" href="produtos/?departamento=${a.id_departamento}">
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="fw-semibold text-truncate">${a.nome}</div>
+                            <small class="text-muted">${a.departamento} · mín: ${a.quantidade_minima} ${a.unidade}</small>
+                        </div>
+                        <span class="qtd ${nivel}">${a.quantidade_atual} ${a.unidade}</span>
+                    </a>`;
+            });
+            lista.html(html);
+        }
+
+        // Toggle do painel ao clicar no sino
+        $('#btn-alertas').on('click', function(e) {
+            e.stopPropagation();
+            const painel = $('#painel-alertas');
+            if (painel.is(':visible')) {
+                painel.hide();
+            } else {
+                renderizarPainelAlertas(alertasCache);
+                painel.show();
+            }
+        });
+        // Fechar ao clicar fora
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#wrap-alertas').length) {
+                $('#painel-alertas').hide();
+            }
+        });
+
         function carregarAlertas() {
             $.ajax({
                 url: baseUrl + '/api/estoque/dashboard/alertas.php',
@@ -815,7 +933,9 @@ HTML;
                 dataType: 'json',
                 success: function(data) {
                     const container = $('#lista-alertas');
-                    
+                    alertasCache = (data.status === 'ok' && data.alertas) ? data.alertas : [];
+                    renderizarPainelAlertas(alertasCache);
+
                     if (data.status === 'ok' && data.alertas && data.alertas.length > 0) {
                         let html = '';
                         data.alertas.slice(0, 5).forEach(function(alerta) {
