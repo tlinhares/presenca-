@@ -12,9 +12,18 @@ try {
     $categoria = isset($_GET['categoria']) ? intval($_GET['categoria']) : 0;
     $busca = trim($_GET['busca'] ?? '');
     $filtro = $_GET['filtro'] ?? '';
+    // status: 'ativos' (padrão), 'inativos' ou 'todos'
+    $status = $_GET['status'] ?? 'ativos';
+    if (!in_array($status, ['ativos', 'inativos', 'todos'], true)) {
+        $status = 'ativos';
+    }
     $limite = isset($_GET['limite']) ? intval($_GET['limite']) : 100;
     $pagina = isset($_GET['pagina']) ? intval($_GET['pagina']) : 1;
     $offset = ($pagina - 1) * $limite;
+
+    // Cláusula de status reutilizada na listagem e na contagem
+    $whereStatus = $status === 'ativos'   ? ' AND p.ativo = 1'
+                 : ($status === 'inativos' ? ' AND p.ativo = 0' : '');
     
     $sql = "SELECT 
                 p.id,
@@ -48,8 +57,8 @@ try {
             JOIN estoque_departamentos d ON p.id_departamento = d.id
             LEFT JOIN estoque_categorias c ON p.id_categoria = c.id
             LEFT JOIN estoque_localizacoes l ON p.id_localizacao = l.id
-            WHERE p.ativo = 1";
-    
+            WHERE 1=1" . $whereStatus;
+
     $params = [];
     $types = "";
     
@@ -133,8 +142,8 @@ try {
         ];
     }
     
-    // Contar total
-    $sql_count = "SELECT COUNT(*) as total FROM estoque_produtos WHERE ativo = 1";
+    // Contar total (respeitando o mesmo status). Nota: 'p.' usado p/ casar com $whereStatus
+    $sql_count = "SELECT COUNT(*) as total FROM estoque_produtos p WHERE 1=1" . $whereStatus;
     $result_count = $conn->query($sql_count);
     $total = $result_count->fetch_assoc()['total'];
     

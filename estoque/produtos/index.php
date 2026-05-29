@@ -47,6 +47,38 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
         .estoque-badge.baixo { background: #feebc8; color: #744210; }
         .estoque-badge.critico { background: #fed7d7; color: #822727; }
         .estoque-badge.zerado { background: #e53e3e; color: white; }
+        .estoque-badge.inativo { background: #cbd5e0; color: #2d3748; }
+
+        .produto-card.inativo {
+            opacity: 0.6;
+            background: #f7fafc;
+            border: 1px dashed #cbd5e0;
+        }
+        .produto-card.inativo:hover { opacity: 0.85; }
+        .badge-inativo {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            background: #718096;
+            color: #fff;
+            padding: 1px 7px;
+            border-radius: 10px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .btn-toggle-ativo {
+            border: none;
+            background: transparent;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+        .btn-toggle-ativo.inativar { color: #c53030; }
+        .btn-toggle-ativo.reativar { color: #2f855a; }
+        .btn-toggle-ativo:hover { text-decoration: underline; }
         
         .filter-chip {
             display: inline-flex;
@@ -97,7 +129,7 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
         <!-- Filtros -->
         <div class="card-main p-3 mb-4">
             <div class="row g-2 align-items-center">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
                         <input type="text" class="form-control" id="busca" placeholder="Buscar produto...">
@@ -108,9 +140,16 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
                         <option value="">Todos os departamentos</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="form-select" id="filtro-categoria">
                         <option value="">Todas as categorias</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="filtro-status">
+                        <option value="ativos">Ativos</option>
+                        <option value="inativos">Inativos</option>
+                        <option value="todos">Todos (status)</option>
                     </select>
                 </div>
                 <div class="col-md-2 text-end">
@@ -250,7 +289,7 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
             carregarDados();
             
             $('#busca').on('input', debounce(carregarProdutos, 300));
-            $('#filtro-departamento, #filtro-categoria').change(carregarProdutos);
+            $('#filtro-departamento, #filtro-categoria, #filtro-status').change(carregarProdutos);
             
             $('.filter-chip').click(function() {
                 $('.filter-chip').removeClass('active');
@@ -341,6 +380,7 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
                 busca: $('#busca').val(),
                 departamento: $('#filtro-departamento').val(),
                 categoria: $('#filtro-categoria').val(),
+                status: $('#filtro-status').val(),
                 filtro: filtroAtual
             };
             
@@ -352,7 +392,36 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
                 }
             });
         }
-        
+
+        function toggleAtivo(id, ativo) {
+            const prod = produtos.find(x => x.id === id);
+            const nome = prod ? prod.nome : 'este produto';
+            const acao = ativo ? 'reativar' : 'inativar';
+            const msg = ativo
+                ? `Reativar "${nome}"? Ele voltará a aparecer nas listagens e nos alertas de estoque.`
+                : `Inativar "${nome}"? Ele deixará de gerar alertas de estoque e sairá da listagem padrão.`;
+            if (!confirm(msg)) return;
+
+            $.ajax({
+                url: baseUrl + '/api/estoque/produtos/toggle_ativo.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ id: id, ativo: ativo }),
+                dataType: 'json',
+                success: function(res) {
+                    if (res.status === 'ok') {
+                        exibirToast(res.mensagem, 'success');
+                        carregarProdutos();
+                    } else {
+                        exibirToast(res.mensagem || ('Erro ao ' + acao + ' produto'), 'danger');
+                    }
+                },
+                error: function() {
+                    exibirToast('Erro de comunicação ao ' + acao + ' produto', 'danger');
+                }
+            });
+        }
+
         function renderizarProdutos() {
             const container = $('#lista-produtos');
             
@@ -369,17 +438,21 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
             
             let html = '<div class="row">';
             produtos.forEach(p => {
+                const badgeEstoque = p.ativo
+                    ? `<span class="estoque-badge ${p.nivel_estoque}">${p.quantidade_atual} ${p.unidade}</span>`
+                    : `<span class="estoque-badge inativo">${p.quantidade_atual} ${p.unidade}</span>`;
+                const botaoToggle = p.ativo
+                    ? `<button type="button" class="btn-toggle-ativo inativar" onclick="event.stopPropagation(); toggleAtivo(${p.id}, 0)"><i class="bi bi-archive"></i> Inativar</button>`
+                    : `<button type="button" class="btn-toggle-ativo reativar" onclick="event.stopPropagation(); toggleAtivo(${p.id}, 1)"><i class="bi bi-arrow-counterclockwise"></i> Reativar</button>`;
                 html += `
                     <div class="col-md-6 col-lg-4">
-                        <div class="produto-card" onclick="editarProduto(${p.id})">
+                        <div class="produto-card ${p.ativo ? '' : 'inativo'}" onclick="editarProduto(${p.id})">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
-                                    <h6 class="mb-1">${p.nome}</h6>
+                                    <h6 class="mb-1">${p.nome}${p.ativo ? '' : '<span class="badge-inativo">Inativo</span>'}</h6>
                                     <small class="text-muted">${p.codigo || 'Sem código'} • ${p.departamento}</small>
                                 </div>
-                                <span class="estoque-badge ${p.nivel_estoque}">
-                                    ${p.quantidade_atual} ${p.unidade}
-                                </span>
+                                ${badgeEstoque}
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -389,6 +462,9 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
                                 <small class="text-muted">
                                     Min: ${p.quantidade_minima} | Ideal: ${p.quantidade_ideal}
                                 </small>
+                            </div>
+                            <div class="d-flex justify-content-end mt-2 pt-2 border-top">
+                                ${botaoToggle}
                             </div>
                         </div>
                     </div>
