@@ -453,7 +453,9 @@ if ($requisicaoId <= 0) {
                                     onclick="adicionarItemLancamento(${p.id})" ${jaAdd ? 'disabled' : ''}>
                                 <div>
                                     <strong>${p.nome}</strong>
-                                    <div class="small text-muted">Disponível: ${p.quantidade_atual} ${p.unidade} ${semEstoque ? '— sem estoque' : ''}</div>
+                                    <div class="small text-muted">
+                                        ${p.departamento ? `<i class="bi bi-building me-1"></i>${p.departamento} · ` : ''}Disponível: ${p.quantidade_atual} ${p.unidade} ${semEstoque ? '— sem estoque' : ''}
+                                    </div>
                                 </div>
                                 ${jaAdd
                                     ? '<span class="badge bg-secondary align-self-center">Adicionado</span>'
