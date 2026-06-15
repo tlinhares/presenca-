@@ -50,6 +50,22 @@ if (empty($observacao)) {
     exit;
 }
 
+// Verificar se o refeitório está fechado nesta data — vale também para acesso especial,
+// já que o restaurante simplesmente não abre nesse dia.
+$stmt = $conn->prepare("SELECT motivo FROM dias_fechado WHERE data = ? AND ativo = 1 LIMIT 1");
+$stmt->bind_param("s", $data);
+$stmt->execute();
+$res_fechado = $stmt->get_result();
+if ($res_fechado->num_rows > 0) {
+    $row_fechado = $res_fechado->fetch_assoc();
+    $stmt->close();
+    $motivo = trim($row_fechado['motivo'] ?? '');
+    $msg = 'O refeitório está fechado nesta data' . ($motivo !== '' ? " ($motivo)" : '') . '. Não é possível criar reserva especial.';
+    echo json_encode(['status' => 'erro', 'mensagem' => $msg]);
+    exit;
+}
+$stmt->close();
+
 // Verificar se o usuário existe e está ativo
 $stmt = $conn->prepare("SELECT id, nome FROM usuarios WHERE id = ? AND ativo = 1");
 $stmt->bind_param("i", $usuario_id);
