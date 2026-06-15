@@ -84,9 +84,32 @@ try {
         $current->add(new DateInterval('P1D'));
     }
     
+    // Pré-buscar dias fechados no intervalo (evita N queries dentro do loop)
+    $dias_fechados = [];
+    $stmt_df = $conn->prepare("SELECT data, motivo FROM dias_fechado WHERE data BETWEEN ? AND ? AND ativo = 1");
+    if ($stmt_df) {
+        $di = $dataInicio->format('Y-m-d');
+        $df = $dataFim->format('Y-m-d');
+        $stmt_df->bind_param("ss", $di, $df);
+        $stmt_df->execute();
+        $res_df = $stmt_df->get_result();
+        while ($r = $res_df->fetch_assoc()) {
+            $dias_fechados[$r['data']] = trim($r['motivo'] ?? '');
+        }
+        $stmt_df->close();
+    }
+
     foreach ($datas as $data) {
         $eh_hoje = ($data === $hoje_str);
-        
+
+        // Bloquear se o refeitório está fechado nesta data
+        if (isset($dias_fechados[$data])) {
+            $falhas++;
+            $motivo_df = $dias_fechados[$data];
+            $erros[] = "Refeitório fechado em {$data}" . ($motivo_df !== '' ? " ({$motivo_df})" : '');
+            continue;
+        }
+
         // Para o dia atual: verificar horário limite (só bloqueia se NÃO aceitou fora_do_horario)
         if ($eh_hoje) {
             $horaAtual = (new DateTime())->format('H:i');

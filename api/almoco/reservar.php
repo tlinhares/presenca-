@@ -53,6 +53,21 @@ $fora_do_horario = (
 );
 
 try {
+    // Verificar se o refeitório está fechado nesta data
+    $stmt = $conn->prepare("SELECT motivo FROM dias_fechado WHERE data = ? AND ativo = 1 LIMIT 1");
+    $stmt->bind_param("s", $data);
+    $stmt->execute();
+    $res_fechado = $stmt->get_result();
+    if ($res_fechado->num_rows > 0) {
+        $row_fechado = $res_fechado->fetch_assoc();
+        $stmt->close();
+        $motivo = trim($row_fechado['motivo'] ?? '');
+        $msg = 'O refeitório está fechado nesta data' . ($motivo !== '' ? " ($motivo)" : '') . '. Não é possível fazer reservas.';
+        echo json_encode(['status' => 'erro', 'mensagem' => $msg]);
+        exit;
+    }
+    $stmt->close();
+
     // Verificar se já existe reserva para esta data
     $stmt = $conn->prepare("SELECT COUNT(*) FROM reservas_almoco WHERE id_usuario = ? AND data = ?");
     $stmt->bind_param("is", $_SESSION['usuario_id'], $data);
