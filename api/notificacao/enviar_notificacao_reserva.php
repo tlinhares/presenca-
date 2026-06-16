@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../includes/phpmailer/src/PHPMailer.php';
 require_once __DIR__ . '/../../includes/phpmailer/src/SMTP.php';
 require_once __DIR__ . '/../../core/services/WhatsAppService.php';
 require_once __DIR__ . '/../../core/services/NotificacaoService.php';
+require_once __DIR__ . '/../../core/services/PushNotificationService.php';
 }
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -144,7 +145,18 @@ function enviarNotificacaoReserva($usuario_id, $tipo_reserva, $dados_reserva, $c
     
     // Gerar mensagens
     $mensagens = gerarMensagemNotificacao($tipo_reserva, $dados_reserva, $usuario['nome']);
-    
+
+    // Push (em paralelo ao canal principal — não afeta o resultado retornado).
+    // Se push não estiver configurado ou o usuário não tiver dispositivos
+    // registrados, a chamada sai silenciosamente.
+    PushNotificationService::enviarSilencioso(
+        $conn,
+        (int) $usuario_id,
+        $mensagens['assunto'],
+        PushNotificationService::corpoCurto($mensagens['email_texto'] ?? ''),
+        ['tipo' => 'reserva_' . $tipo_reserva]
+    );
+
     // Verificar se tem telefone válido usando WhatsAppService
     $telefone_normalizado = WhatsAppService::normalizarTelefone($usuario['telefone']);
     $tem_telefone = !empty($telefone_normalizado);

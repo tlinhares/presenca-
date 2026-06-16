@@ -177,6 +177,8 @@ try {
 
     logNotificacoes("Iniciando envio em cascata WhatsApp → email para " . count($usuarios_sem_reserva) . " usuários (config: whatsapp_apis.php / lembrete_reserva)");
 
+    require_once __DIR__ . '/../core/services/PushNotificationService.php';
+
     foreach ($usuarios_sem_reserva as $index => $usuario) {
         $mensagem = str_replace(
             ['{nome}', '{horario_limite}'],
@@ -184,6 +186,15 @@ try {
             $template
         );
         $mensagem = mb_convert_encoding($mensagem, 'UTF-8', 'auto');
+
+        // Push em paralelo (silencioso se não configurado). Curto e direto.
+        PushNotificationService::enviarSilencioso(
+            $conn,
+            (int) $usuario['id'],
+            'Lembrete: faça sua reserva de almoço',
+            'Você ainda não reservou para hoje. Horário limite: ' . $horario_limite_agendamento,
+            ['tipo' => 'lembrete_reserva']
+        );
 
         $telefone_normalizado = WhatsAppService::normalizarTelefone($usuario['telefone'] ?? '');
         $whatsapp_ok = false;

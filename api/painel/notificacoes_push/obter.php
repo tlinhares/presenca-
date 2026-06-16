@@ -14,7 +14,7 @@ MenuPermissaoService::exigirAdmin();
 try {
     $cfg = $conn->query("SELECT ativo, project_id, client_email, service_account_path, titulo_padrao, som_padrao, atualizado_em FROM notificacoes_push_config WHERE id = 1")->fetch_assoc();
     if (!$cfg) {
-        $cfg = ['ativo' => 0, 'project_id' => '', 'client_email' => '', 'service_account_path' => '', 'titulo_padrao' => 'Presença AOM', 'som_padrao' => 'default', 'atualizado_em' => null];
+        $cfg = ['ativo' => 0, 'project_id' => '', 'client_email' => '', 'service_account_path' => '', 'titulo_padrao' => 'Intranet AOM', 'som_padrao' => 'default', 'atualizado_em' => null];
     }
 
     $arquivo_existe = !empty($cfg['service_account_path']) && is_readable($cfg['service_account_path']);
@@ -31,7 +31,7 @@ try {
             'ativo' => (int) $cfg['ativo'],
             'project_id' => $cfg['project_id'] ?? '',
             'client_email' => $cfg['client_email'] ?? '',
-            'titulo_padrao' => $cfg['titulo_padrao'] ?? 'Presença AOM',
+            'titulo_padrao' => $cfg['titulo_padrao'] ?? 'Intranet AOM',
             'som_padrao' => $cfg['som_padrao'] ?? 'default',
             'service_account_configurado' => $arquivo_existe,
             'atualizado_em' => $cfg['atualizado_em'],

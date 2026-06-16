@@ -1,4 +1,4 @@
-# Documentação Completa de APIs — Sistema de Presença AOM (Mobile)
+# Documentação Completa de APIs — Sistema de Intranet AOM (Mobile)
 
 > **Para a IA que vai gerar o app:** Este documento descreve exatamente o contrato de cada endpoint mobile do sistema de presença. Siga as **convenções gerais** abaixo antes de implementar telas — elas valem para todos os endpoints e evitam bugs comuns (status code 200 em erro, dois formatos de resposta diferentes, "ok" vs "sucesso", etc.).
 >
@@ -154,13 +154,16 @@ Para cada campo `id_*` num body, o app precisa popular o dropdown a partir de um
 | `id_departamento` (frota/registrar_saida) | `/api/frota/departamentos.php?apenas_ativos=1` | `departamentos[].id` | **Setor** (TI, RH, Contabilidade, AFAM, Engenharia, etc.). É o time/área do solicitante. §7.7 |
 | `id_utilizacao` (frota/registrar_entrada) | `/api/frota/minha_utilizacao.php` | `utilizacao.id` | É sempre a utilização em andamento do próprio usuário. |
 | `id_dependente` / `dependente` (almoço adicional) | `/api/dependentes/listar.php` | `dados[].id` | |
+| `entidade_id` (almoço/reservar_departamento — admin) | `/api/almoco/listar_entidades.php` | `entidades[].id` | **Mesmas Religiosa/Educação/Loja**. No almoço, o web rotula esse dropdown como "Departamento" mas os dados são da tabela `entidade`. Ver §3.12/§3.13. |
 | `usuario_id` (dependentes/criar — admin) | _Sem endpoint mobile_ | — | Não há listagem de usuários no mobile. Para o app, use o próprio usuário logado (`$session.user.id` retornado no login). |
 
 ⚠️ **Nunca use input de texto para esses IDs.** Eles vêm de listas; se o app está pedindo o número, falta dropdown.
 
-🔴 **Entidade ≠ Departamento — são dois dropdowns separados na retirada de veículo:**
-- **Entidade** (`listar_entidades.php`) responde "para qual unidade de negócio é essa viagem" — `Religiosa`, `Educação`, `Loja`. Esses são os 3 valores reais.
-- **Departamento** (`departamentos.php`) responde "qual setor está retirando" — `TI`, `RH`, `Contabilidade`, `Engenharia`, `AFAM`, `MCA`, `Desbravadores`, `Arquitetura`, `Presidencia`, `Remessa`, `Departamento Pessoal`.
+🔴 **"Departamento" no almoço ≠ "Departamento" na frota.** O sistema usa o mesmo rótulo para coisas diferentes:
+- **Almoço, tela "Reservas de Departamento" (admin)**: o dropdown chamado "Departamento" lista **entidades** (`Religiosa` / `Educação` / `Loja`). Use `/api/almoco/listar_entidades.php`. **NÃO use** `frota/departamentos.php` aqui.
+- **Frota, retirada de veículo**: tela tem **dois dropdowns separados**:
+  - **Entidade** (`listar_entidades.php`) — `Religiosa`, `Educação`, `Loja`.
+  - **Departamento** (`departamentos.php`) — `TI`, `RH`, `Contabilidade`, `Engenharia`, `AFAM`, `MCA`, `Desbravadores`, `Arquitetura`, `Presidencia`, `Remessa`, `Departamento Pessoal`.
 
 Os dois são **obrigatórios** no body de `registrar_saida.php`. Se o app só está mostrando um dropdown, é bug do app — gere **dois**. Sugestão de label: "Entidade" e "Departamento", iguais ao web.
 
@@ -546,6 +549,108 @@ Lista reservas adicionais do usuário **para o dia atual** (não é "tipos de ad
 **Erro:** `{ "status": "erro", "mensagem": "Usuário não autenticado" }`.
 
 **Uso típico:** mostrar o "carrinho" de hoje na home, com botão excluir condicional a `pode_excluir`.
+
+---
+
+### 3.11 `POST /api/almoco/reservar_multiplo.php`
+
+Cria reservas para um intervalo de datas (vários dias úteis). É o que o web mostra como "Reservar para vários dias". **Liberado para uso mobile.**
+
+**Body (JSON ou form-data):**
+```json
+{
+  "data_inicio": "2026-06-17",
+  "data_fim": "2026-06-21",
+  "dependentes": [],
+  "fora_do_horario": false
+}
+```
+
+- `data_inicio` / `data_fim` (string `YYYY-MM-DD`, **obrigatórios**).
+- `dependentes` (array de int, opcional) — IDs de dependentes; se vazio/omitido, faz reservas para o próprio usuário em cada dia.
+- `fora_do_horario` (bool, opcional) — vale só para o dia atual e só se já passou de `hora_limite`.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "sucessos": 4,
+  "falhas": 1,
+  "erros": ["Já existe reserva para 2026-06-18", "Refeitório fechado em 2026-06-20 (Feriado)"]
+}
+```
+
+**Erros gerais:** `Datas não fornecidas`, `Formato de data inválido`, `Data de início deve ser anterior à data de fim`, `Usuário não logado`.
+
+**Comportamento:**
+- Pula automaticamente sábado/domingo.
+- Pula datas marcadas em `dias_fechado` (refeitório fechado) — entram em `erros[]`.
+- Pula datas em que já há reserva para o mesmo usuário — entram em `erros[]`.
+- Para o dia atual, se passou de `hora_limite` E `fora_do_horario != true`, pula com erro.
+- Valor cobrado: respeita o `grupo_valor` do usuário; `fora_do_horario` aplica `valor_fora_horario` só ao dia atual.
+
+---
+
+### 3.12 `GET /api/almoco/listar_entidades.php`
+
+Lista as **entidades** (`Religiosa`, `Educação`, `Loja`) para popular o dropdown da tela admin **"Reservas de Departamento"**. **Apenas admin** (`categoria === "admin"`).
+
+⚠️ Os dados desse endpoint são os MESMOS que `/api/frota/listar_entidades.php` (§7.6) — vêm da tabela `entidade`. A diferença é só o contexto: aqui a tela do almoço rotula como "Departamento" (causando confusão), na frota rotula como "Entidade". Use `almoco/listar_entidades.php` no fluxo de reserva de departamento do almoço; `frota/listar_entidades.php` no fluxo de retirada de veículo.
+
+**Query:** nenhum.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "entidades": [
+    { "id": 1, "nome": "Religiosa" },
+    { "id": 2, "nome": "Educação" },
+    { "id": 3, "nome": "Loja" }
+  ]
+}
+```
+
+**Erros:** `Acesso negado` (não admin), `Usuário não autenticado`.
+
+---
+
+### 3.13 `POST /api/almoco/reservar_departamento.php`
+
+Cria uma reserva avulsa em nome de uma entidade (evento, recepção, etc.). **Apenas admin.**
+
+**Body (JSON ou form-data):**
+```json
+{
+  "entidade_id": 2,
+  "quantidade": 25,
+  "evento_motivo": "Capacitação Educação",
+  "data": "2026-06-20"
+}
+```
+
+Todos os campos obrigatórios. `data` em `YYYY-MM-DD`.
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Reserva de departamento criada com sucesso", "id": 789 }`.
+
+**Erros:** `Todos os campos são obrigatórios`, `Formato de data inválido. Use YYYY-MM-DD`, `Entidade não encontrada`, `Acesso negado - apenas administradores podem fazer reservas de departamento`.
+
+**Observação:** o `entidade_id` vem do dropdown populado por `/api/almoco/listar_entidades.php` (§3.12), **não** de `frota/departamentos.php`.
+
+---
+
+### 3.14 `POST /api/almoco/excluir_reserva_departamento.php`
+
+Exclui uma reserva de departamento. **Apenas admin.**
+
+**Body (JSON ou form-data):**
+```json
+{ "id": 789 }
+```
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Reserva de departamento excluída com sucesso" }`.
+
+**Erros:** `ID da reserva inválido`, `Reserva não encontrada`, `Acesso negado - apenas administradores podem excluir reservas de departamento`.
 
 ---
 
@@ -1144,25 +1249,25 @@ O backend envia push pelo **Firebase Cloud Messaging HTTP v1** usando a Service 
 
 | Item | Valor a usar |
 |---|---|
-| Nome do projeto no Firebase | `Presenca AOM` |
-| Project ID (Firebase) | `presenca-aom` (Firebase pode acrescentar sufixo aleatório se já existir) |
-| **Android applicationId** (`build.gradle`) | `br.org.aom.presenca` |
-| **iOS Bundle Identifier** (Xcode) | `br.org.aom.presenca` |
-| Nome do app exibido | `Presença AOM` |
+| Nome do projeto no Firebase | `Intranet AOM` |
+| Project ID (Firebase) | `intranet-aom` (Firebase pode acrescentar sufixo aleatório se já existir) |
+| **Android applicationId** (`build.gradle`) | `br.org.aom.intranet` |
+| **iOS Bundle Identifier** (Xcode) | `br.org.aom.intranet` |
+| Nome do app exibido | `Intranet AOM` |
 | Categoria (Android) | Productivity |
 
 #### 9.0.1 Criar o projeto no Firebase Console
 
 1. Acesse <https://console.firebase.google.com> com a conta Google da organização.
-2. Clique em **"Adicionar projeto"** → nome **`Presenca AOM`** → continuar.
+2. Clique em **"Adicionar projeto"** → nome **`Intranet AOM`** → continuar.
 3. Desabilite Google Analytics (não é necessário pra push). → **Criar projeto**.
 4. Anote o **Project ID** que o Firebase atribuiu — você vai precisar dele.
 
 #### 9.0.2 Adicionar app Android
 
 1. Na home do projeto Firebase, clique no ícone **Android**.
-2. **Nome do pacote Android**: `br.org.aom.presenca` (exatamente este — tem que casar com o `applicationId` do `build.gradle`).
-3. **Apelido do app**: `Presenca AOM (Android)`.
+2. **Nome do pacote Android**: `br.org.aom.intranet` (exatamente este — tem que casar com o `applicationId` do `build.gradle`).
+3. **Apelido do app**: `Intranet AOM (Android)`.
 4. Ignore o SHA-1 nesta etapa (não é exigido para push; só pra login com Google).
 5. Clique **Registrar app** → baixe o arquivo **`google-services.json`**.
 6. Coloque o arquivo em **`android/app/google-services.json`** do projeto do app (no nível do módulo `app`, NÃO na raiz).
@@ -1187,8 +1292,8 @@ O backend envia push pelo **Firebase Cloud Messaging HTTP v1** usando a Service 
 #### 9.0.3 Adicionar app iOS
 
 1. Na home do projeto Firebase, clique em **"Adicionar app" → iOS**.
-2. **Bundle ID**: `br.org.aom.presenca` (exatamente este — tem que casar com o que está no Xcode).
-3. **Apelido do app**: `Presenca AOM (iOS)`.
+2. **Bundle ID**: `br.org.aom.intranet` (exatamente este — tem que casar com o que está no Xcode).
+3. **Apelido do app**: `Intranet AOM (iOS)`.
 4. Clique **Registrar app** → baixe o arquivo **`GoogleService-Info.plist`**.
 5. Arraste o arquivo para o projeto Xcode na pasta `Runner/` (ou equivalente) — marque "Copy items if needed" e adicione ao target.
 6. No Xcode → **Signing & Capabilities** do target Runner → **+ Capability**:
@@ -1405,6 +1510,10 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 3.8 | `/api/almoco/listar_reservas_adicionais_usuario.php` | GET | Bearer | `{status:"ok", reservas[], resumo}` |
 | 3.9 | `/api/almoco/excluir_reserva_adicional.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | 3.10 | `/api/almoco/listar_adicionais.php` | GET | Bearer | `{reservas[], quantidade_total}` (sem `status`) |
+| 3.11 | `/api/almoco/reservar_multiplo.php` | POST | Bearer | `{status:"ok", sucessos, falhas, erros[]}` |
+| 3.12 | `/api/almoco/listar_entidades.php` | GET | Bearer (admin) | `{status:"ok", entidades[]}` |
+| 3.13 | `/api/almoco/reservar_departamento.php` | POST | Bearer (admin) | `{status:"ok", mensagem, id}` |
+| 3.14 | `/api/almoco/excluir_reserva_departamento.php` | POST | Bearer (admin) | `{status:"ok", mensagem}` |
 | Calendário |
 | 4.1 | `/api/calendario/dados_culto.php` | GET | Bearer | `{status:"ok", dados, resumo}` |
 | Culto |
@@ -1463,13 +1572,20 @@ Aviso só para a IA entender que não são bugs do app — são particularidades
 
 ---
 
-**Endpoints totais documentados: 35** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários + 2 push + 1 utilitário).
+**Endpoints totais documentados: 39** (3 auth + 14 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários + 2 push + 1 utilitário).
+
+**Nome oficial do app mobile:** `Intranet AOM` (não "Presença AOM" — o web continua sendo Presença AOM, só o app foi renomeado em 2026-06-16). Package Android e iOS Bundle ID: `br.org.aom.intranet`. Projeto Firebase: `intranet-aom`.
 
 **Última atualização:** 2026-06-16 (auditoria contra código real + frontend web + push notifications via FCM)
 
 Novidades nesta versão:
+- **Renomeação do app para "Intranet AOM"** (era "Presença AOM"). Project Firebase: `intranet-aom`, package/bundle: `br.org.aom.intranet`. Aplicado em todo o §9.0 e mensagens default.
+- **§3.11 `reservar_multiplo.php`** agora mobile. Resolve a tela "Reservar para vários dias" que aparecia como "em desenvolvimento" no app.
+- **§3.12-3.14 fluxo admin "Reservas de Departamento"** agora mobile: `listar_entidades.php`, `reservar_departamento.php`, `excluir_reserva_departamento.php`. Resolve o bug do dropdown que mostrava TI/RH/Financeiro (dados de `frota_departamentos`) quando devia mostrar Religiosa/Educação/Loja (tabela `entidade`).
+- **§1.11 dropdown table** atualizada com regra clara: "Departamento" no almoço = entidades; "Departamento" na frota = setores. O sistema usa o mesmo rótulo para coisas diferentes — esse é o ponto de confusão histórico.
+- **Push integrado nos fluxos de notificação existentes**: ao confirmar/cancelar reserva, aprovar/rejeitar justificativa e no lembrete diário, o sistema agora dispara push em paralelo ao WhatsApp/email. Silencioso se push não está configurado ou usuário sem dispositivos. Sem mudança de contrato nos endpoints existentes.
 - **§9 Notificações Push (FCM)**: dois novos endpoints mobile — `register.php` (registra token FCM após login) e `unregister.php` (no logout). Painel admin em `/painel/notificacoes_push.php` para configurar a Service Account do Firebase e testar envios.
-- **§9.0 Setup Firebase passo a passo**: nome de pacote canônico (`br.org.aom.presenca`), Bundle ID iOS, instruções de Firebase Console (Android + iOS), upload da chave APNs, geração da Service Account, dependências de Gradle/Podfile, permissões de manifest, snippets Flutter/RN/nativo. A IA do app deve seguir este passo a passo literalmente para criar o projeto Firebase consistente com o backend.
+- **§9.0 Setup Firebase passo a passo**: nome de pacote canônico (`br.org.aom.intranet`), Bundle ID iOS, instruções de Firebase Console (Android + iOS), upload da chave APNs, geração da Service Account, dependências de Gradle/Podfile, permissões de manifest, snippets Flutter/RN/nativo. A IA do app deve seguir este passo a passo literalmente para criar o projeto Firebase consistente com o backend.
 
 Correções nesta versão:
 - §3.5 `listar_reservas_usuario.php`: response shape corrigido — campos reais são `{id, data, valor, status, pode_excluir}` com enum `status: "Atual"|"Futura"|"Finalizada"`. O doc anterior listava campos que não existem (`valor_refeicao`, `horario_confirmacao`, `tipo_confirmacao`, `fora_horario`).

@@ -92,7 +92,16 @@ function enviarNotificacaoJustificativa($usuario_id, $decisao, $dados_justificat
     
     // Gerar mensagens
     $mensagens = gerarMensagemNotificacaoJustificativa($decisao, $dados_justificativa, $usuario['nome']);
-    
+
+    // Push (em paralelo ao canal principal — silencioso se não configurado).
+    PushNotificationService::enviarSilencioso(
+        $conn,
+        (int) $usuario_id,
+        $mensagens['assunto'],
+        PushNotificationService::corpoCurto($mensagens['email_texto'] ?? ''),
+        ['tipo' => 'justificativa_' . $decisao]
+    );
+
     // Verificar se tem telefone válido usando WhatsAppService
     $telefone_normalizado = WhatsAppService::normalizarTelefone($usuario['telefone']);
     $tem_telefone = !empty($telefone_normalizado);

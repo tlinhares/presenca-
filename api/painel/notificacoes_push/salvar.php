@@ -28,8 +28,8 @@ try {
     $input = json_decode(file_get_contents('php://input'), true) ?: [];
 
     $ativo = !empty($input['ativo']) ? 1 : 0;
-    $titulo = trim($input['titulo_padrao'] ?? 'Presença AOM');
-    if ($titulo === '') $titulo = 'Presença AOM';
+    $titulo = trim($input['titulo_padrao'] ?? 'Intranet AOM');
+    if ($titulo === '') $titulo = 'Intranet AOM';
     if (mb_strlen($titulo) > 120) $titulo = mb_substr($titulo, 0, 120);
     $som = trim($input['som_padrao'] ?? 'default');
     if ($som === '') $som = 'default';

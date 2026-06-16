@@ -178,7 +178,7 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
                 }
                 const c = data.config;
                 $('#ativo').prop('checked', c.ativo === 1);
-                $('#titulo_padrao').val(c.titulo_padrao || 'Presença AOM');
+                $('#titulo_padrao').val(c.titulo_padrao || 'Intranet AOM');
                 $('#som_padrao').val(c.som_padrao || 'default');
                 $('#info-project-id').text(c.project_id || '(não configurado)');
                 $('#info-client-email').text(c.client_email || '(não configurado)');

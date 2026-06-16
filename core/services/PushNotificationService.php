@@ -26,6 +26,45 @@ class PushNotificationService {
     private static $access_token_cache = null;
 
     /**
+     * Constrói um corpo curto pra push a partir de um texto longo (email_texto).
+     * Remove saudação "Olá X", linhas em branco e cortes de assinatura, e
+     * trunca em ~180 chars.
+     */
+    public static function corpoCurto(string $texto): string {
+        $linhas = preg_split('/\r?\n/', $texto) ?: [];
+        $relevantes = [];
+        foreach ($linhas as $l) {
+            $l = trim((string)$l);
+            if ($l === '') continue;
+            if (preg_match('/^(Ol[áa]),?\s/i', $l)) continue;
+            if (preg_match('/^Obrigad[oa]/i', $l)) break;
+            if (preg_match('/^Atenciosamente/i', $l)) break;
+            if (preg_match('/^Sistema /i', $l)) break;
+            $relevantes[] = $l;
+            if (count($relevantes) >= 3) break;
+        }
+        $corpo = trim(implode(' • ', $relevantes));
+        if (mb_strlen($corpo) > 180) $corpo = mb_substr($corpo, 0, 177) . '…';
+        if ($corpo === '') $corpo = 'Veja os detalhes no app.';
+        return $corpo;
+    }
+
+    /**
+     * Atalho seguro pra disparar push silenciosamente em fluxos existentes
+     * (reservas, justificativas, lembretes). Não levanta exceção, não bloqueia
+     * o fluxo principal. Use sempre que quiser "mais um canal" sem refazer
+     * preferências/idempotência do canal principal.
+     */
+    public static function enviarSilencioso(mysqli $conn, int $idUsuario, string $titulo, string $corpo, array $dados = []): void {
+        try {
+            if (!self::estaConfigurado($conn)) return;
+            self::enviarParaUsuario($conn, $idUsuario, $titulo, $corpo, $dados);
+        } catch (Throwable $e) {
+            error_log('PushNotificationService::enviarSilencioso: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Limpa caches estáticos (use após salvar nova config).
      */
     public static function limparCache(): void {

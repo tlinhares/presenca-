@@ -1,15 +1,41 @@
 <?php
-header('Content-Type: application/json');
-require_once '../conexao.php';
+header('Content-Type: application/json; charset=UTF-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+require_once __DIR__ . '/../conexao.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['status' => 'erro', 'mensagem' => 'Método não permitido']);
     exit;
 }
 
-session_start();
-$id_usuario = $_SESSION['usuario_id'] ?? '';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
+require_once __DIR__ . '/../../core/middleware/mobile_auth.php';
+
+// Aceita JSON (mobile) ou form-data (web)
+$content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+if (strpos($content_type, 'application/json') !== false) {
+    $_POST = json_decode(file_get_contents('php://input'), true) ?: [];
+}
+
+if (!isset($_SESSION['usuario_id'])) {
+    if (!MobileAuthMiddleware::handle()) {
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não autenticado']);
+        exit;
+    }
+}
+
+$id_usuario = $_SESSION['usuario_id'] ?? '';
 if (empty($id_usuario)) {
     echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não logado']);
     exit;
