@@ -339,18 +339,23 @@ Lista reservas próprias num período.
     {
       "id": 123,
       "data": "2026-06-16",
-      "data_formatada": "16/06/2026",
-      "valor_refeicao": 15.0,
-      "horario_confirmacao": "08:30:00",
-      "tipo_confirmacao": "manual",
-      "fora_horario": false
+      "valor": 15.0,
+      "status": "Futura",
+      "pode_excluir": true
     }
   ],
   "resumo": { "quantidade": 1, "valor_total": 15.0 }
 }
 ```
 
-**Erros:** `Usuário não logado`, `Método não permitido`.
+**Campos por reserva:**
+- `id` (int) — id da reserva.
+- `data` (string `YYYY-MM-DD`) — data da reserva.
+- `valor` (float) — valor cobrado.
+- `status` (enum string) — `"Atual"` (hoje, ainda dentro do horário) | `"Futura"` (data ainda não chegou) | `"Finalizada"` (passou do horário ou data já passou).
+- `pode_excluir` (bool) — se ainda é possível cancelar (true para `Atual` e `Futura`).
+
+**Erros:** `Usuário não logado`, `Método não permitido`, `Erro: <mensagem>`.
 
 ---
 
@@ -377,11 +382,13 @@ Verifica disponibilidade e valor para reserva de **dependente**.
     "valor_fora_horario": 30.0,
     "fora_do_horario": false
   },
-  "horario": { "hora_atual": "08:30", "horario_limite": "09:00", "fora_do_horario": false }
+  "horario": { "hora_atual": "08:30:15", "horario_limite": "09:00", "fora_do_horario": false }
 }
 ```
 
-**Erros:** `ID do dependente não informado`, `Tipo de refeição inválido`, `Reservas para marmitex estão desabilitadas no sistema.`, `Formato de data inválido`, `Não é possível reservar para datas passadas`, `Não é possível reservar com mais de 30 dias de antecedência`, `Dependente não encontrado ou não pertence ao usuário`.
+⚠️ `horario.hora_atual` vem em `HH:MM:SS` (não `HH:MM` como em outros endpoints). Faça `substring(0, 5)` se for exibir.
+
+**Erros:** `ID do dependente não informado`, `Tipo de refeição inválido`, `Reservas para marmitex estão desabilitadas no sistema.`, `Formato de data inválido`, `Não é possível reservar para datas passadas`, `Não é possível reservar com mais de 30 dias de antecedência`, `Dependente não encontrado ou não pertence ao usuário`, `Já existe uma reserva adicional para este dependente nesta data`.
 
 **Regras:**
 - Marmitex pode estar globalmente desabilitado (`marmitex_habilitado` em `configuracoes`).
@@ -420,7 +427,7 @@ Lista reservas adicionais do usuário num período.
 
 **Query:**
 - `data_inicio`, `data_fim` (opcionais, default = mês atual).
-- `dependente` (opcional) — filtrar por id.
+- `dependente` (opcional) — filtrar por id do dependente.
 
 **Sucesso:**
 ```json
@@ -432,17 +439,33 @@ Lista reservas adicionais do usuário num período.
       "data": "2026-06-16",
       "quantidade": 1,
       "tipo": "presencial",
-      "valor_refeicao": 15.0,
-      "valor_marmitex": 0.0,
+      "detalhe": "",
+      "valor_total": 15.0,
+      "data_cadastro": "16/06/2026 08:12",
       "dependente_id": 5,
       "dependente_nome": "João Silva Filho",
-      "status": "ativa",
+      "status": "Atual",
       "pode_excluir": true
     }
   ],
   "resumo": { "quantidade": 1, "valor_total": 15.0 }
 }
 ```
+
+**Campos por reserva:**
+- `id` (int) — id da reserva.
+- `data` (string `YYYY-MM-DD`).
+- `quantidade` (int).
+- `tipo` (string) — `presencial` | `marmitex`.
+- `detalhe` (string) — texto livre.
+- `valor_total` (float) — soma de `valor_refeicao + valor_marmitex` cobrado.
+- `data_cadastro` (string `dd/mm/yyyy HH:MM`) — quando a reserva foi criada.
+- `dependente_id` (int).
+- `dependente_nome` (string).
+- `status` (enum string) — `"Atual"` | `"Futura"` | `"Finalizada"` (mesma semântica de §3.5).
+- `pode_excluir` (bool).
+
+⚠️ Esse endpoint **não retorna** `valor_refeicao` e `valor_marmitex` separados, só o `valor_total`. Se o app precisar discriminar, faça a divisão localmente baseada em `tipo`.
 
 ---
 
@@ -611,7 +634,7 @@ Histórico detalhado por período.
 }
 ```
 
-Status de cada item: `presente`, `atrasado`, `falta`, `justificado`, `sem-presenca`. Quando há justificativa associada, o objeto traz `justificativa: { id, motivo, observacoes, status, data_aprovacao, observacoes_admin }`.
+Status de cada item: `presente`, `atrasado`, `falta`, `justificado`, `sem-presenca`. Quando há justificativa associada, o item traz `justificativa: { id, motivo, observacoes, status, data_aprovacao, observacoes_admin }`. **Quando não há justificativa, o campo `justificativa` é `null`** — o app deve testar antes de acessar `presenca.justificativa.motivo`.
 
 ---
 
@@ -666,11 +689,15 @@ Lista dependentes do usuário logado.
       "parentesco": "Filho",
       "data_nascimento": "2010-05-15",
       "idade": 16,
-      "foto_base64": null
+      "foto_base64": null,
+      "cobrar": 0
     }
   ]
 }
 ```
+
+**Campos:**
+- `cobrar` (int) — `1` significa **não cobra** (dependente ≤ 12 anos); `0` significa **cobra** (> 12 anos). Use esse campo direto, não recalcule pela idade.
 
 **Observação:** lista apenas dependentes ativos. `foto_base64` pode ser `null` ou uma string base64 grande (sem prefixo `data:image/`).
 
@@ -1068,7 +1095,40 @@ Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo b
 
 ---
 
-## 9. Tabela resumo (cola para o app)
+## 9. Módulo: Utilitários
+
+### 9.1 `GET /api/dias_fechado/verificar.php`
+
+Verifica se uma data específica está marcada como "refeitório fechado". **Não exige autenticação** — é um endpoint público para o app conferir antes de oferecer reserva.
+
+**Query:**
+- `data` (opcional, default = hoje) — `YYYY-MM-DD`.
+
+**Sucesso (data fechada):**
+```json
+{
+  "status": "ok",
+  "data": "2026-06-15",
+  "esta_fechado": true,
+  "detalhes": { "motivo": "Dia dos namorados", "observacoes": "" }
+}
+```
+
+**Sucesso (data aberta):**
+```json
+{
+  "status": "ok",
+  "data": "2026-06-16",
+  "esta_fechado": false,
+  "detalhes": null
+}
+```
+
+**Uso recomendado pelo app:** antes de abrir o seletor de data no fluxo de reserva, chame esse endpoint para cada data que vai habilitar. Se `esta_fechado` for `true`, desabilite a opção (a `reservar.php` vai recusar de qualquer forma com mensagem do motivo).
+
+---
+
+## 10. Tabela resumo (cola para o app)
 
 | # | Endpoint | Método | Auth | Formato sucesso |
 |---|----------|--------|------|-----------------|
@@ -1111,10 +1171,12 @@ Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo b
 | 8.1 | `/api/usuarios/buscar_perfil.php` | GET | Bearer | `{status:"ok", usuario}` |
 | 8.2 | `/api/usuarios/atualizar_perfil.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | 8.3 | `/api/usuarios/atualizar_foto.php` | POST | Bearer | `{status:"ok", mensagem, foto_base64}` |
+| Utilitários |
+| 9.1 | `/api/dias_fechado/verificar.php` | GET | — (público) | `{status:"ok", data, esta_fechado, detalhes}` |
 
 ---
 
-## 10. Checklist para o app (lembretes que evitam bugs)
+## 11. Checklist para o app (lembretes que evitam bugs)
 
 1. **Sempre cheque `success`/`status` do JSON, não o HTTP status** — o backend devolve 200 mesmo em erro nos endpoints de negócio.
 2. **Aceite `"ok"` e `"sucesso"` como sucesso** no formato B. Use uma helper centralizada para parsear: `success = body.success === true || body.status === "ok" || body.status === "sucesso"`.
@@ -1129,7 +1191,7 @@ Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo b
 
 ---
 
-## 11. Inconsistências conhecidas (do código atual)
+## 12. Inconsistências conhecidas (do código atual)
 
 Aviso só para a IA entender que não são bugs do app — são particularidades do backend que o app precisa absorver:
 
@@ -1140,9 +1202,16 @@ Aviso só para a IA entender que não são bugs do app — são particularidades
 
 ---
 
-**Endpoints totais documentados: 32** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários).
+**Endpoints totais documentados: 33** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários + 1 utilitário).
 
-**Última atualização:** 2026-06-16
-- Adicionado mobile a `frota/listar_entidades.php` e `frota/departamentos.php` (GET) para o app conseguir popular dropdowns sem pedir IDs em texto.
-- Adicionada seção §1.9 (escopo do app — estoque é web-only) e §1.10 (tabela de dropdowns).
+**Última atualização:** 2026-06-16 (auditoria contra código real + frontend web)
+
+Correções nesta versão:
+- §3.5 `listar_reservas_usuario.php`: response shape corrigido — campos reais são `{id, data, valor, status, pode_excluir}` com enum `status: "Atual"|"Futura"|"Finalizada"`. O doc anterior listava campos que não existem (`valor_refeicao`, `horario_confirmacao`, `tipo_confirmacao`, `fora_horario`).
+- §3.8 `listar_reservas_adicionais_usuario.php`: response shape corrigido — `valor_total` único (não `valor_refeicao`/`valor_marmitex` separados), `status` enum (não `"ativa"`), e backend agora também devolve `dependente_id`.
+- §3.6: `horario.hora_atual` documentado corretamente como `HH:MM:SS`; adicionado erro `Já existe uma reserva adicional para este dependente nesta data`.
+- §6.1 `dependentes/listar.php`: backend agora devolve `cobrar` (era usado pelo web mas faltava no response).
+- §5.3 `historico_usuario.php`: deixado explícito que `justificativa` pode ser `null`.
+- Nova §9 `dias_fechado/verificar.php` documentada (utilitário público).
+- §1.9 (escopo — estoque é web-only) e §1.10 (dropdowns).
 - Refletido `dias_fechado` em `reservar.php`/`reservar_multiplo.php`/`acesso_especial/criar_reserva.php` (commits `8852ef3`, `b96d437`).

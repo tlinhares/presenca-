@@ -43,10 +43,10 @@ if (!$id_usuario) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, nome, parentesco, nascimento, foto_base64 FROM dependentes WHERE id_usuario = ? AND ativo = 1 ORDER BY nome");
+$stmt = $conn->prepare("SELECT id, nome, parentesco, nascimento, foto_base64, cobrar FROM dependentes WHERE id_usuario = ? AND ativo = 1 ORDER BY nome");
 $stmt->bind_param("i", $id_usuario);
 $stmt->execute();
-$stmt->bind_result($id, $nome, $parentesco, $nascimento, $foto_base64);
+$stmt->bind_result($id, $nome, $parentesco, $nascimento, $foto_base64, $cobrar);
 
 $dependentes = [];
 while ($stmt->fetch()) {
@@ -57,14 +57,15 @@ while ($stmt->fetch()) {
         $hoje = new DateTime();
         $idade = $nascimento_date->diff($hoje)->y;
     }
-    
+
     $dependentes[] = [
         'id' => $id,
         'nome' => $nome,
         'parentesco' => $parentesco,
         'data_nascimento' => $nascimento,
         'idade' => $idade,
-        'foto_base64' => $foto_base64
+        'foto_base64' => $foto_base64,
+        'cobrar' => (int)$cobrar
     ];
 }
 

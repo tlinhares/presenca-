@@ -122,6 +122,7 @@ try {
             'detalhe' => $row['detalhe'],
             'valor_total' => floatval($row['valor_total']),
             'data_cadastro' => $data_cadastro_formatada,
+            'dependente_id' => intval($row['dependente_id']),
             'dependente_nome' => $row['dependente_nome'],
             'status' => $status,
             'pode_excluir' => $pode_excluir
