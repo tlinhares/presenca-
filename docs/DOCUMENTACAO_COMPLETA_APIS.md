@@ -1400,6 +1400,50 @@ Para conferir que tudo está funcionando:
 
 ---
 
+### 9.0.8 Payload do push e roteamento por `data.tipo`
+
+Toda push enviada pelo backend tem essa forma (formato FCM v1, recebido no SDK do app):
+
+```json
+{
+  "notification": { "title": "...", "body": "..." },
+  "data": { "tipo": "<um dos valores abaixo>", "...outros campos opcionais...": "..." }
+}
+```
+
+⚠️ **`data` é string-only no FCM**. Números viram strings (`"123"`), objetos viram JSON-string. O app deve fazer parse de qualquer campo que precise como número/objeto.
+
+**Tipos enviados automaticamente pelo backend (use para roteamento):**
+
+| Evento | `data.tipo` | Quando dispara |
+|---|---|---|
+| Reserva própria confirmada | `reserva_propria` | usuário fez sua reserva pelo app/web |
+| Reserva adicional (dependente) confirmada | `reserva_adicional` | usuário reservou para um dependente |
+| Reserva em lote (vários dias) confirmada | `reserva_multipla` | reservar_multiplo.php (§3.11) |
+| Reserva cancelada | `reserva_cancelada` | cancelar_reserva_propria ou admin |
+| Justificativa de culto aprovada | `justificativa_aprovada` | admin aprovou no painel |
+| Justificativa de culto rejeitada | `justificativa_rejeitada` | admin rejeitou no painel |
+| Lembrete diário ("você ainda não reservou") | `lembrete_reserva` | cron diário às 8h, dias úteis |
+| Disparo manual pelo painel admin | qualquer (default `teste_painel`) | botão "Enviar teste" do painel |
+
+**Roteamento sugerido no app (pseudo-código):**
+
+```javascript
+function onPushReceived(message) {
+  const tipo = message.data?.tipo ?? '';
+  if (tipo.startsWith('reserva_'))      return router.go('/almoco/historico');
+  if (tipo === 'lembrete_reserva')      return router.go('/almoco/reservar');
+  if (tipo.startsWith('justificativa_'))return router.go('/culto/justificativas');
+  return router.go('/');  // default home
+}
+```
+
+**`data` customizado pelo painel admin:** a tela `/painel/notificacoes_push.php` tem um textarea **"Dados customizados (JSON)"** que aceita qualquer objeto plano (chaves e valores em string). Útil para o admin testar deep-links — ex.: `{"tipo":"reserva_propria","reserva_id":"123"}`. O app deve tolerar campos desconhecidos sem quebrar.
+
+**Pedir mais campos pro backend:** hoje os disparos automáticos mandam só `tipo`. Se o app precisar de deep-link mais preciso (ex.: `reserva_id` na confirmação de reserva, `data_falta` na justificativa), o backend pode adicionar — só pedir.
+
+---
+
 ### Endpoints mobile
 
 O fluxo do app é simples:
