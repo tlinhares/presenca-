@@ -152,6 +152,14 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
                 <label class="form-label" for="teste_corpo">Mensagem</label>
                 <textarea class="form-control" id="teste_corpo" rows="2">Esta é uma notificação de teste enviada do painel.</textarea>
             </div>
+            <div class="mb-3">
+                <label class="form-label" for="teste_dados">Dados customizados (JSON, opcional)</label>
+                <textarea class="form-control sa-json" id="teste_dados" rows="3" placeholder='{"rota":"culto","tela":"frequencia"}'>{"tipo":"teste_painel"}</textarea>
+                <div class="help mt-1">
+                    Vai como payload <code>data</code> do FCM (string-only). Use para testar navegação/rota no app (ex.: <code>{"rota":"culto"}</code>, <code>{"tipo":"reserva_propria","reserva_id":"123"}</code>).
+                    O backend padroniza os tipos automáticos como <code>reserva_propria</code>, <code>reserva_adicional</code>, <code>reserva_cancelada</code>, <code>justificativa_aprovada</code>, <code>justificativa_rejeitada</code>, <code>lembrete_reserva</code>.
+                </div>
+            </div>
             <button type="button" class="btn btn-primary" id="btnTeste" style="background: #3182ce; border: none;">
                 <i class="bi bi-send me-1"></i>Enviar teste
             </button>
@@ -229,12 +237,27 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
             const id = parseInt($('#teste_id').val(), 10);
             const email = $('#teste_email').val().trim();
             if (!id && !email) { exibirToast('Informe ID ou e-mail do destinatário', 'warning'); return; }
+            // Parse dos dados customizados (textarea JSON) — falha amigável se inválido
+            let dados = {};
+            const dadosRaw = $('#teste_dados').val().trim();
+            if (dadosRaw !== '') {
+                try {
+                    dados = JSON.parse(dadosRaw);
+                    if (typeof dados !== 'object' || Array.isArray(dados) || dados === null) {
+                        exibirToast('Dados customizados precisam ser um objeto JSON ({...})', 'warning');
+                        return;
+                    }
+                } catch (e) {
+                    exibirToast('JSON inválido em "Dados customizados": ' + e.message, 'warning');
+                    return;
+                }
+            }
             const payload = {
                 id_usuario: id || 0,
                 email: email,
                 titulo: $('#teste_titulo').val().trim(),
                 corpo: $('#teste_corpo').val().trim(),
-                dados: { tipo: 'teste_painel' }
+                dados: dados
             };
             $('#btnTeste').prop('disabled', true);
             $('#teste-resultado').html('<div class="text-muted">Enviando...</div>');
