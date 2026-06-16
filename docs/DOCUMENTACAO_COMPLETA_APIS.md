@@ -1,667 +1,1069 @@
-# 📚 Documentação Completa de APIs - Sistema de Presença AOM
+# Documentação Completa de APIs — Sistema de Presença AOM (Mobile)
 
-## 📋 Resumo para Outra Sessão do Cursor
-
-Este documento contém a documentação **COMPLETA** de todas as APIs do sistema, incluindo:
-- Endpoint completo
-- Método HTTP
-- Parâmetros (query string, body, headers)
-- Formato de resposta
-- Onde é usado no sistema
-- Comportamento detalhado
-- Status de suporte mobile
+> **Para a IA que vai gerar o app:** Este documento descreve exatamente o contrato de cada endpoint mobile do sistema de presença. Siga as **convenções gerais** abaixo antes de implementar telas — elas valem para todos os endpoints e evitam bugs comuns (status code 200 em erro, dois formatos de resposta diferentes, "ok" vs "sucesso", etc.).
+>
+> Última revisão: 2026-06-16. Servidor de referência: `https://presenca.aom.org.br`.
 
 ---
 
-## 🔐 Autenticação
+## 1. Convenções gerais
 
-Todas as APIs que requerem autenticação aceitam:
-- **Web:** Sessão PHP (`$_SESSION['usuario_id']`)
-- **Mobile:** Bearer Token (`Authorization: Bearer <token>`)
+### 1.1 Base URL
+
+```
+https://presenca.aom.org.br
+```
+
+Todos os caminhos abaixo são relativos a essa base. Ex.: `/api/almoco/reservar.php` → `https://presenca.aom.org.br/api/almoco/reservar.php`.
+
+### 1.2 Autenticação
+
+O backend usa **JWT (HS256)** stateless, fornecido no header `Authorization`:
+
+```
+Authorization: Bearer <access_token>
+```
+
+- **Access token**: 24h de validade (`exp` no payload JWT).
+- **Refresh token**: 7 dias.
+- O JWT é assinado com `JWT_SECRET_KEY` do `.env`; o app não precisa decodificar — só armazenar e reenviar.
+- Não há tabela de tokens no banco; logout do servidor é "best-effort" (o app deve descartar localmente).
+- Os endpoints leem o usuário autenticado de `$_SESSION` populado pelo middleware. Para o app isso é transparente.
+
+**Fluxo recomendado:** `POST /api/mobile/auth/login.php` → guardar `token` e `refresh_token` → em todos os requests enviar `Authorization: Bearer <token>` → se a resposta indicar token expirado, chamar `POST /api/mobile/auth/refresh.php`.
+
+### 1.3 Dois formatos de resposta
+
+O backend tem **dois formatos diferentes** convivendo. O app precisa tratar os dois:
+
+**Formato A — MobileResponse (usado APENAS pelos 3 endpoints de auth):**
+
+```json
+{
+  "success": true,
+  "message": "Login realizado com sucesso",
+  "timestamp": "2026-06-16T10:00:00-04:00",
+  "data": { ... }
+}
+```
+
+Em erro:
+
+```json
+{
+  "success": false,
+  "message": "Credenciais inválidas",
+  "timestamp": "2026-06-16T10:00:00-04:00"
+}
+```
+
+HTTP status pode ser 401, 400, 500 nesses casos.
+
+**Formato B — LEGADO (usado por TODOS os 27 endpoints de negócio):**
+
+```json
+{ "status": "ok",     "mensagem": "..." , ... }   // sucesso
+{ "status": "sucesso","mensagem": "..." , ... }   // sucesso (alguns endpoints)
+{ "status": "erro",   "mensagem": "..."  }        // erro
+```
+
+⚠️ **HTTP status SEMPRE 200**, mesmo em erro. O app **precisa olhar o campo `status` do JSON**, não o código HTTP. E precisa aceitar tanto `"ok"` quanto `"sucesso"` como sucesso (a tabela em §3 indica qual cada endpoint usa).
+
+Alguns endpoints retornam só os dados crus, sem `status` (ex.: `status_reserva.php`, `listar_adicionais.php`). Estão explicitamente marcados.
+
+### 1.4 Content-Type aceitos
+
+Endpoints que recebem dados aceitam **JSON ou form-data**, exceto onde indicado:
+
+- **JSON** (recomendado para o app): `Content-Type: application/json` + body JSON.
+- **form-data** (compatibilidade com web): `application/x-www-form-urlencoded` ou `multipart/form-data`.
+
+Endpoints **só JSON** (rejeitam form-data): `frota/registrar_saida.php`, `frota/registrar_entrada.php`.
+
+### 1.5 CORS
+
+Todos os endpoints respondem CORS:
+
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+Requests `OPTIONS` recebem HTTP 200 vazio (preflight tratado).
+
+### 1.6 Formatos de data
+
+- **Data**: `YYYY-MM-DD` em todas as APIs (ex.: `2026-06-16`).
+- **Data com hora** (resposta): `YYYY-MM-DD HH:MM:SS` (cru do MySQL) ou `dd/mm/yyyy HH:MM` (formatadas para exibição — algumas APIs já entregam as duas, com sufixo `_formatada`).
+- **Hora**: `HH:MM` (24h).
+
+### 1.7 Fotos / base64
+
+Endpoints que aceitam imagem usam **base64**:
+
+- Prefixo `data:image/...;base64,` é opcional — o backend remove se presente.
+- Em algumas respostas (perfil, dependentes), a foto vem como base64 **sem prefixo**. O app deve adicionar `data:image/jpeg;base64,` ao renderizar.
+- `dependentes/editar.php` redimensiona automaticamente fotos > 1 MB para 800×600 JPEG q=80.
+
+### 1.8 Categorias de usuário
+
+Algumas APIs verificam `$_SESSION['usuario_categoria']`:
+- `admin` — acesso total.
+- `funcionario`, `funcionario_culto`, etc. — restrições caso a caso (anotadas por endpoint).
 
 ---
 
-## 📦 MÓDULO: ALMOÇO
+## 2. Módulo: Autenticação Mobile
 
-### 1. Verificar Horário Disponível
+Endpoints sob `/api/mobile/auth/`. **Estes 3 usam o formato A (MobileResponse).**
 
-**Endpoint:** `GET /api/almoco/verificar_horario.php`
+### 2.1 `POST /api/mobile/auth/login.php`
 
-**Descrição:** Verifica se está no horário permitido para fazer reserva e retorna valores.
+Realiza login e devolve par access/refresh.
 
-**Parâmetros Query:**
-- `data` (opcional): Data da reserva no formato `YYYY-MM-DD` (padrão: hoje)
-- `tipo` (opcional): Tipo de refeição - `presencial` ou `marmitex` (padrão: `presencial`)
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta Sucesso:**
+**Body (JSON):**
 ```json
-{
-    "status": "sucesso",
-    "mensagem": "Horário disponível para reserva",
-    "data": "2026-01-20",
-    "tipo": "presencial",
-    "fora_do_horario": false,
-    "hora_atual": "08:30",
-    "horario_limite": "09:00",
-    "valor_normal": 15.00,
-    "valor_fora_horario": 30.00
-}
+{ "email": "fulano@aom.org.br", "senha": "minhasenha" }
 ```
 
-**Resposta Erro:**
+**Sucesso (HTTP 200):**
 ```json
 {
-    "status": "erro",
-    "mensagem": "Você já possui uma reserva para esta data"
-}
-```
-
-**Onde Usado:**
-- Web: `reservas/almoco.php` - Antes de criar reserva
-- Mobile: Tela de reserva - Verificar horário e valores
-
-**Comportamento:**
-- Valida formato de data
-- Não permite datas passadas (exceto hoje)
-- Limite de 30 dias no futuro
-- Verifica se já existe reserva para a data
-- Se for hoje, verifica se passou do horário limite
-- Retorna valores baseados no grupo do usuário
-
-**Status Mobile:** ✅ SIM
-
----
-
-### 2. Status da Reserva
-
-**Endpoint:** `GET /api/almoco/status_reserva.php`
-
-**Descrição:** Retorna o status da reserva do dia atual (se já reservou e se está fora do horário).
-
-**Parâmetros:** Nenhum
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta:**
-```json
-{
-    "reservou_hoje": false,
-    "hora_excedida": false,
-    "hora_atual": "08:30",
-    "hora_limite": "09:00"
-}
-```
-
-**Onde Usado:**
-- Web: `reservas/almoco.php` - Atualizar texto do botão
-- Mobile: Tela inicial - Mostrar status da reserva
-
-**Comportamento:**
-- Verifica se usuário já reservou para hoje
-- Compara hora atual com horário limite configurado
-- Não bloqueia reserva, apenas informa
-
-**Status Mobile:** ✅ SIM
-
----
-
-### 3. Criar Reserva
-
-**Endpoint:** `POST /api/almoco/reservar.php`
-
-**Descrição:** Cria uma reserva de almoço para o usuário logado.
-
-**Body (JSON ou form-data):**
-```json
-{
-    "data": "2026-01-20",
-    "fora_do_horario": false
-}
-```
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-- `Content-Type: application/json` (mobile) ou `application/x-www-form-urlencoded` (web)
-
-**Resposta Sucesso:**
-```json
-{
-    "status": "sucesso",
-    "mensagem": "Reserva criada com sucesso",
-    "reserva": {
-        "id": 123,
-        "data": "2026-01-20",
-        "valor": 15.00
+  "success": true,
+  "message": "Login realizado com sucesso",
+  "timestamp": "2026-06-16T10:00:00-04:00",
+  "data": {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "expires_in": 86400,
+    "token_type": "Bearer",
+    "user": {
+      "id": 123,
+      "nome": "Fulano de Tal",
+      "email": "fulano@aom.org.br",
+      "categoria": "funcionario"
     }
+  }
 }
 ```
 
-**Resposta Erro:**
-```json
-{
-    "status": "erro",
-    "mensagem": "Você já possui uma reserva para esta data"
-}
-```
+**Erros possíveis (HTTP 401/400):** `Credenciais inválidas`, `Usuário inativo`, `Email e senha são obrigatórios`.
 
-**Onde Usado:**
-- Web: `reservas/almoco.php` - Botão "Reservar meu almoço"
-- Mobile: Tela de reserva - Criar reserva
-
-**Comportamento:**
-- Valida se já existe reserva para a data
-- Verifica horário limite se for hoje
-- Calcula valor baseado em `fora_do_horario`
-- Cria registro na tabela `reservas_almoco`
-- Envia notificação WhatsApp se configurado
-
-**Status Mobile:** ✅ SIM
+**Observações:** o app deve armazenar `token` e `refresh_token` com segurança (Keychain/Keystore). `expires_in` é em segundos.
 
 ---
 
-### 4. Cancelar Reserva Própria
+### 2.2 `POST /api/mobile/auth/refresh.php`
 
-**Endpoint:** `POST /api/almoco/cancelar_reserva_propria.php`
+Renova o access token usando o refresh.
 
-**Descrição:** Cancela a reserva do usuário logado para o dia atual.
+**Header:** `Authorization: Bearer <refresh_token>` (mande o refresh aqui, não o access).
+
+**Sucesso:**
+```json
+{
+  "success": true,
+  "message": "Token renovado",
+  "timestamp": "...",
+  "data": {
+    "token": "<novo_access>",
+    "refresh_token": "<novo_refresh>",
+    "expires_in": 86400,
+    "token_type": "Bearer"
+  }
+}
+```
+
+**Erros (HTTP 401):** refresh inválido/expirado, usuário desativado.
+
+---
+
+### 2.3 `POST /api/mobile/auth/logout.php`
+
+**Header:** `Authorization: Bearer <access_token>`.
+
+**Sucesso:** `{ "success": true, "message": "Logout realizado com sucesso", "timestamp": "..." }`.
+
+**Observação:** como JWT é stateless, o backend não invalida realmente o token; o app **deve descartar tokens localmente** após chamar este endpoint.
+
+---
+
+## 3. Módulo: Almoço
+
+Endpoints sob `/api/almoco/`. **Todos usam o formato B (legado).**
+
+### 3.1 `GET /api/almoco/verificar_horario.php`
+
+Verifica se a data/hora permite reserva e retorna valores aplicáveis.
+
+**Query:**
+- `data` (opcional, default = hoje) — `YYYY-MM-DD`.
+- `tipo` (opcional, default `presencial`) — `presencial` | `marmitex`.
+
+**Sucesso:**
+```json
+{
+  "status": "sucesso",
+  "mensagem": "Horário disponível para reserva",
+  "data": "2026-06-16",
+  "tipo": "presencial",
+  "fora_do_horario": false,
+  "hora_atual": "08:30",
+  "horario_limite": "09:00",
+  "valor_normal": 15.0,
+  "valor_fora_horario": 30.0
+}
+```
+
+⚠️ Esse endpoint usa `status: "sucesso"`.
+
+**Erros possíveis (`status: "erro"`):** `Não é possível agendar para datas passadas`, `Não é possível agendar com mais de 30 dias de antecedência`, `Você já possui uma reserva para esta data`, `Data inválida`, `Usuário não logado`.
+
+**Regras:** não aceita datas passadas (exceto hoje); limite +30 dias no futuro; já verifica reserva duplicada.
+
+---
+
+### 3.2 `GET /api/almoco/status_reserva.php`
+
+Status rápido da reserva de hoje. **Sem campo `status`** (resposta crua).
+
+**Query:** nenhum.
+
+**Sucesso:**
+```json
+{
+  "reservou_hoje": false,
+  "hora_excedida": true,
+  "hora_atual": "10:42",
+  "hora_limite": "09:00"
+}
+```
+
+**Erro (`status: "erro"`):** `Usuário não logado`.
+
+**Uso típico:** atualizar texto/CTA do botão "Reservar" na home.
+
+---
+
+### 3.3 `POST /api/almoco/reservar.php`
+
+Cria reserva de almoço para o próprio usuário.
 
 **Body (JSON ou form-data):**
 ```json
-{
-    "data": "2026-01-20"
-}
+{ "data": "2026-06-16", "fora_do_horario": false }
 ```
 
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta Sucesso:**
+**Sucesso:**
 ```json
 {
-    "status": "sucesso",
-    "mensagem": "Reserva cancelada com sucesso"
+  "status": "ok",
+  "mensagem": "Reserva realizada com sucesso",
+  "valor_aplicado": 15.0
 }
 ```
 
-**Onde Usado:**
-- Web: `reservas/almoco.php` - Botão "Cancelar Reserva"
-- Mobile: Tela de reserva - Cancelar reserva
+⚠️ Esse endpoint usa `status: "ok"` (não "sucesso").
 
-**Comportamento:**
-- Verifica se reserva existe e pertence ao usuário
-- Remove registro da tabela `reservas_almoco`
-- Envia notificação de cancelamento se configurado
+**Erros possíveis:**
+- `Você já possui uma reserva para esta data`
+- `O refeitório está fechado nesta data (Dia dos namorados). Não é possível fazer reservas.` ← **nova validação `dias_fechado` (2026-06-15)**
+- `Usuário não logado`
+- `Erro ao registrar reserva`
 
-**Status Mobile:** ✅ SIM
+**Regras:**
+- Bloqueia se a data está em `dias_fechado.ativo = 1`.
+- Bloqueia duplicidade (mesmo usuário/data).
+- Calcula valor pelo grupo do usuário (`grupo_valor`) ou config global; se `fora_do_horario=true`, usa `valor_fora_horario`.
+- **Side-effect:** dispara `enviarNotificacaoReserva()` (WhatsApp + email) se habilitado.
 
 ---
 
-### 5. Listar Reservas do Usuário
+### 3.4 `POST /api/almoco/cancelar_reserva_propria.php`
 
-**Endpoint:** `GET /api/almoco/listar_reservas_usuario.php`
+Cancela a reserva do próprio usuário.
 
-**Descrição:** Lista todas as reservas do usuário logado em um período.
-
-**Parâmetros Query:**
-- `data_inicio` (opcional): Data inicial no formato `YYYY-MM-DD` (padrão: primeiro dia do mês)
-- `data_fim` (opcional): Data final no formato `YYYY-MM-DD` (padrão: último dia do mês)
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta:**
+**Body (JSON ou form-data):**
 ```json
-{
-    "status": "ok",
-    "reservas": [
-        {
-            "id": 123,
-            "data": "2026-01-20",
-            "valor": 15.00,
-            "fora_do_horario": false
-        }
-    ]
-}
+{ "data": "2026-06-16" }
 ```
 
-**Onde Usado:**
-- Web: Histórico de reservas
-- Mobile: Tela de histórico
+**Sucesso:**
+```json
+{ "status": "ok", "mensagem": "Reserva cancelada com sucesso" }
+```
 
-**Comportamento:**
-- Busca apenas reservas do usuário principal (não dependentes)
-- Filtra por período especificado
-- Ordena por data decrescente
+**Erros:** `Data não informada`, `Formato de data inválido`, `Reserva não encontrada`, `Não é mais possível cancelar esta reserva` (passou do horário limite no dia atual), `Usuário não autenticado`.
 
-**Status Mobile:** ✅ SIM
+**Regras:** só cancela reserva do próprio usuário. Para hoje, bloqueia se já passou de `hora_limite` (config).
 
 ---
 
-### 6. Verificar Horário para Reserva Adicional
+### 3.5 `GET /api/almoco/listar_reservas_usuario.php`
 
-**Endpoint:** `GET /api/almoco/verificar_horario_adicional.php`
+Lista reservas próprias num período.
 
-**Descrição:** Verifica horário e valores para reserva adicional (dependente).
+**Query:**
+- `data_inicio` (opcional, default = primeiro dia do mês atual) — `YYYY-MM-DD`.
+- `data_fim` (opcional, default = último dia do mês atual) — `YYYY-MM-DD`.
 
-**Parâmetros Query:**
-- `id_dependente` (obrigatório): ID do dependente
-- `data` (opcional): Data da reserva (padrão: hoje)
-- `tipo` (opcional): `presencial` ou `marmitex` (padrão: `presencial`)
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta Sucesso:**
+**Sucesso:**
 ```json
 {
-    "status": "ok",
-    "mensagem": "Reserva pode ser feita",
-    "dependente": {
-        "id": 5,
-        "nome": "João Silva Filho",
-        "cobrar": 0
-    },
-    "valores": {
-        "valor_refeicao": 15.00,
-        "valor_marmitex": 0.00,
-        "fora_do_horario": false
-    },
-    "horario": {
-        "hora_atual": "08:30",
-        "horario_limite": "09:00",
-        "fora_do_horario": false
+  "status": "ok",
+  "reservas": [
+    {
+      "id": 123,
+      "data": "2026-06-16",
+      "data_formatada": "16/06/2026",
+      "valor_refeicao": 15.0,
+      "horario_confirmacao": "08:30:00",
+      "tipo_confirmacao": "manual",
+      "fora_horario": false
     }
+  ],
+  "resumo": { "quantidade": 1, "valor_total": 15.0 }
 }
 ```
 
-**Onde Usado:**
-- Web: Modal de reserva adicional
-- Mobile: Tela de reserva para dependente
-
-**Comportamento:**
-- Valida se dependente pertence ao usuário
-- Verifica se já existe reserva para o dependente na data
-- Calcula valores baseado em idade do dependente (cobrar = 0 se maior de 12 anos)
-- Verifica horário limite se for hoje
-
-**Status Mobile:** ✅ SIM
+**Erros:** `Usuário não logado`, `Método não permitido`.
 
 ---
 
-### 7. Criar Reserva Adicional
+### 3.6 `GET /api/almoco/verificar_horario_adicional.php`
 
-**Endpoint:** `POST /api/almoco/reservar_adicional.php`
+Verifica disponibilidade e valor para reserva de **dependente**.
 
-**Descrição:** Cria reserva adicional para um dependente.
+**Query:**
+- `id_dependente` (**obrigatório**) — int.
+- `data` (opcional, default = hoje) — `YYYY-MM-DD`.
+- `tipo` (opcional, default `presencial`) — `presencial` | `marmitex`.
 
-**Body (JSON ou form-data):**
+**Sucesso:**
 ```json
 {
-    "data": "2026-01-20",
-    "quantidade": 1,
-    "detalhe": "",
-    "tipo": "presencial",
-    "dependente": 5,
+  "status": "ok",
+  "mensagem": "Reserva pode ser feita",
+  "dependente": { "id": 5, "nome": "João Silva Filho", "cobrar": 0 },
+  "valores": {
+    "valor_refeicao": 15.0,
+    "valor_marmitex": 0.0,
+    "valor_normal_refeicao": 15.0,
+    "valor_normal_marmitex": 0.0,
+    "valor_fora_horario": 30.0,
     "fora_do_horario": false
+  },
+  "horario": { "hora_atual": "08:30", "horario_limite": "09:00", "fora_do_horario": false }
 }
 ```
 
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
+**Erros:** `ID do dependente não informado`, `Tipo de refeição inválido`, `Reservas para marmitex estão desabilitadas no sistema.`, `Formato de data inválido`, `Não é possível reservar para datas passadas`, `Não é possível reservar com mais de 30 dias de antecedência`, `Dependente não encontrado ou não pertence ao usuário`.
 
-**Resposta Sucesso:**
-```json
-{
-    "status": "sucesso",
-    "mensagem": "Reserva adicional criada com sucesso"
-}
-```
-
-**Onde Usado:**
-- Web: Modal de reserva adicional
-- Mobile: Tela de reserva para dependente
-
-**Comportamento:**
-- Valida dependente pertence ao usuário
-- Verifica se marmitex está habilitado (se tipo = marmitex)
-- Valida se já existe reserva para o dependente na data
-- Cria registro na tabela `reservas_adicionais`
-- Calcula valor baseado em idade e tipo
-
-**Status Mobile:** ✅ SIM
+**Regras:**
+- Marmitex pode estar globalmente desabilitado (`marmitex_habilitado` em `configuracoes`).
+- Dependente com `cobrar = 1` (≤ 12 anos) → valores 0.0.
+- Mesmas regras de janela temporal de `verificar_horario`.
 
 ---
 
-### 8. Listar Reservas Adicionais do Usuário
+### 3.7 `POST /api/almoco/reservar_adicional.php`
 
-**Endpoint:** `GET /api/almoco/listar_reservas_adicionais_usuario.php`
-
-**Descrição:** Lista reservas adicionais do usuário em um período.
-
-**Parâmetros Query:**
-- `data_inicio` (opcional): Data inicial (padrão: primeiro dia do mês)
-- `data_fim` (opcional): Data final (padrão: último dia do mês)
-- `dependente` (opcional): Filtrar por dependente específico
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta:**
-```json
-{
-    "status": "ok",
-    "reservas": [
-        {
-            "id": 456,
-            "data": "2026-01-20",
-            "dependente_id": 5,
-            "dependente_nome": "João Silva Filho",
-            "tipo": "presencial",
-            "valor": 15.00
-        }
-    ]
-}
-```
-
-**Onde Usado:**
-- Web: Histórico de reservas adicionais
-- Mobile: Tela de histórico
-
-**Status Mobile:** ✅ SIM
-
----
-
-### 9. Excluir Reserva Adicional
-
-**Endpoint:** `POST /api/almoco/excluir_reserva_adicional.php`
-
-**Descrição:** Exclui uma reserva adicional.
+Cria reserva adicional para um dependente.
 
 **Body (JSON ou form-data):**
 ```json
 {
-    "id": 456
+  "data": "2026-06-16",
+  "quantidade": 1,
+  "detalhe": "",
+  "tipo": "presencial",
+  "dependente": 5,
+  "fora_do_horario": false
 }
 ```
 
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
+**Sucesso:** `{ "status": "ok" }`.
 
-**Resposta:**
-```json
-{
-    "status": "sucesso",
-    "mensagem": "Reserva adicional excluída com sucesso"
-}
-```
+**Erros:** `Usuário não autenticado.`, `Dados inválidos.`, `Reservas para marmitex estão desabilitadas no sistema.`, `Dependente inválido.`, `Usuário sem grupo de valor associado.`, `Erro ao salvar reserva adicional.`.
 
-**Onde Usado:**
-- Web: Lista de reservas adicionais
-- Mobile: Tela de histórico
-
-**Comportamento:**
-- Valida se reserva pertence ao usuário
-- Remove registro da tabela `reservas_adicionais`
-
-**Status Mobile:** ✅ SIM
+**Observação:** o backend re-valida tudo (dependente do usuário, marmitex, valor por idade).
 
 ---
 
-### 10. Editar Reserva Adicional
+### 3.8 `GET /api/almoco/listar_reservas_adicionais_usuario.php`
 
-**Endpoint:** `POST /api/almoco/editar_reserva_adicional.php`
+Lista reservas adicionais do usuário num período.
 
-**Descrição:** Edita uma reserva adicional existente.
+**Query:**
+- `data_inicio`, `data_fim` (opcionais, default = mês atual).
+- `dependente` (opcional) — filtrar por id.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "reservas": [
+    {
+      "id": 456,
+      "data": "2026-06-16",
+      "quantidade": 1,
+      "tipo": "presencial",
+      "valor_refeicao": 15.0,
+      "valor_marmitex": 0.0,
+      "dependente_id": 5,
+      "dependente_nome": "João Silva Filho",
+      "status": "ativa",
+      "pode_excluir": true
+    }
+  ],
+  "resumo": { "quantidade": 1, "valor_total": 15.0 }
+}
+```
+
+---
+
+### 3.9 `POST /api/almoco/excluir_reserva_adicional.php`
+
+Exclui uma reserva adicional do próprio usuário.
+
+**Body (JSON ou form-data):** `{ "id": 456 }`.
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Reserva adicional excluída com sucesso" }`.
+
+**Erros:** `ID da reserva inválido`, `Reserva não encontrada`, `Usuário não logado`, `Método não permitido`, `Erro ao excluir reserva adicional`.
+
+---
+
+### 3.10 `GET /api/almoco/listar_adicionais.php`
+
+Lista reservas adicionais do usuário **para o dia atual** (não é "tipos de adicional"). **Resposta crua, sem campo `status`** em sucesso.
+
+**Query:** nenhum.
+
+**Sucesso:**
+```json
+{
+  "reservas": [
+    {
+      "id": 456,
+      "data": "16/06/2026",
+      "quantidade": 1,
+      "tipo": "presencial",
+      "detalhe": "",
+      "data_cadastro": "16/06/2026 08:12:00",
+      "valor_refeicao": 15.0,
+      "valor_marmitex": 0.0,
+      "pode_excluir": true,
+      "nome_dependente": "João Silva Filho"
+    }
+  ],
+  "quantidade_total": 1
+}
+```
+
+**Erro:** `{ "status": "erro", "mensagem": "Usuário não autenticado" }`.
+
+**Uso típico:** mostrar o "carrinho" de hoje na home, com botão excluir condicional a `pode_excluir`.
+
+---
+
+## 4. Módulo: Calendário
+
+### 4.1 `GET /api/calendario/dados_culto.php`
+
+Dados de presença em culto, dia a dia, para um mês.
+
+**Query:**
+- `mes` (opcional, default = mês atual) — int 1–12.
+- `ano` (opcional, default = ano atual) — int.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "dados": {
+    "2026-06-04": { "status": "presente", "justificativa": null, "houve_culto": true },
+    "2026-06-05": { "status": "sem_dados", "justificativa": null, "houve_culto": false }
+  },
+  "resumo": { "total_presencas": 12, "total_faltas": 3, "total_justificativas": 1 }
+}
+```
+
+**Valores possíveis de `status` por dia:** `sem_dados`, `falta`, `presente`, `atrasado`, `justificativa_aceita`, `justificativa_pendente`, `justificativa_rejeitada`, `sem_culto`, `nao_culto`.
+
+**Erros:** `Erro ao buscar dados: ...`, `Usuário não autenticado`.
+
+**Observações:**
+- "Tem culto" só se a data é dia programado (`configuracoes_culto.dias_semana`, default `1,2,3,4,5`) **E** houve pelo menos uma presença real registrada de qualquer usuário naquela data.
+- Justificativa tem prioridade sobre presença.
+- Data futura sem registro vira `sem_dados`, nunca `falta`.
+
+---
+
+## 5. Módulo: Culto
+
+### 5.1 `POST /api/culto/enviar_justificativa.php`
+
+Envia uma justificativa de falta.
 
 **Body (JSON ou form-data):**
 ```json
 {
-    "id": 456,
-    "data": "2026-01-21",
-    "tipo": "marmitex",
-    "quantidade": 2
+  "data_falta": "2026-06-04",
+  "motivo": "Consulta médica",
+  "observacoes": "Atestado anexo"
 }
 ```
 
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
+**Sucesso:** `{ "status": "ok", "mensagem": "Justificativa enviada com sucesso! Aguarde a análise do administrador." }`.
 
-**Resposta:**
-```json
-{
-    "status": "sucesso",
-    "mensagem": "Reserva adicional atualizada com sucesso"
-}
-```
+**Erros:** `Data da falta é obrigatória`, `Motivo da falta é obrigatório`, `Não é possível justificar faltas de datas futuras`, `Já existe uma justificativa para esta data`, `Não há registro de presença para esta data`, `Só é possível justificar faltas`.
 
-**Onde Usado:**
-- Web: Edição de reserva adicional
-- Mobile: Tela de edição
-
-**Comportamento:**
-- Valida se reserva pertence ao usuário
-- Verifica se marmitex está habilitado (se tipo = marmitex)
-- Atualiza registro na tabela `reservas_adicionais`
-
-**Status Mobile:** ✅ SIM
+**Comportamento:** se não há `presencas_culto` para o usuário+data, mas há para outros, cria um registro automático com `status='falta'` antes de inserir a justificativa.
 
 ---
 
-### 11. Listar Tipos de Adicionais
+### 5.2 `GET /api/culto/frequencia.php`
 
-**Endpoint:** `GET /api/almoco/listar_adicionais.php`
+Frequência percentual do mês.
 
-**Descrição:** Lista os tipos de adicionais disponíveis (entidades).
+**Query:**
+- `mes` (opcional, default = mês atual) — `YYYY-MM`.
 
-**Parâmetros:** Nenhum
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta:**
+**Sucesso:**
 ```json
 {
-    "status": "ok",
-    "adicionais": [
-        {
-            "id": 1,
-            "nome": "Entidade 1",
-            "ativo": true
-        }
-    ]
+  "status": "ok",
+  "mes": "2026-06",
+  "frequencia": {
+    "percentual": 85.7,
+    "presentes": 18,
+    "atrasados": 2,
+    "faltas": 1,
+    "justificadas": 1,
+    "total": 22
+  },
+  "dados": { "PRE": 18, "ATR": 2, "FAL": 1, "JUS": 1 }
 }
 ```
 
-**Onde Usado:**
-- Web: Seleção de entidade na reserva adicional
-- Mobile: Tela de reserva adicional
+**Erros:** `Formato de mês inválido. Use YYYY-MM`.
 
-**Status Mobile:** ✅ SIM
+**Regra:** `percentual = (presentes + atrasados + justificadas) / total_dias_culto * 100`. Apenas justificativas **aprovadas** entram em `justificadas`; pendentes/rejeitadas contam como falta.
 
 ---
 
-## 👥 MÓDULO: DEPENDENTES
+### 5.3 `GET /api/culto/historico_usuario.php`
 
-### 1. Listar Dependentes
+Histórico detalhado por período.
 
-**Endpoint:** `GET /api/dependentes/listar.php`
+**Query:**
+- `mes` (opcional, default = mês atual) — `YYYY-MM`.
+- `periodo` (opcional, default `mes`) — `mes` | `3meses` | `6meses` | `ano` | `todos`.
 
-**Descrição:** Lista todos os dependentes do usuário logado.
-
-**Parâmetros Query:**
-- `usuario_id` (opcional): ID do usuário (padrão: usuário logado)
-
-**Headers:**
-- `Authorization: Bearer <token>` (mobile) ou Cookie com sessão (web)
-
-**Resposta:**
+**Sucesso:**
 ```json
 {
-    "status": "ok",
-    "dados": [
-        {
-            "id": 5,
-            "nome": "João Silva Filho",
-            "parentesco": "Filho",
-            "data_nascimento": "2010-05-15",
-            "idade": 15,
-            "foto_base64": null
-        }
-    ]
+  "status": "ok",
+  "presencas": [
+    {
+      "data": "2026-06-04",
+      "horario_confirmacao": "07:42:13",
+      "status": "presente",
+      "tipo_confirmacao": "facial",
+      "tem_culto": true,
+      "tem_culto_programado": true,
+      "justificativa": null
+    }
+  ],
+  "estatisticas": {
+    "total_presentes": 18,
+    "total_atrasados": 2,
+    "total_faltas": 1,
+    "total_justificativas": 1
+  },
+  "periodo": { "inicio": "2026-06-01", "fim": "2026-06-30" },
+  "dias_culto": ["2026-06-04", "2026-06-05", "..."]
 }
 ```
 
-**Onde Usado:**
-- Web: Lista de dependentes
-- Mobile: Tela de dependentes
-
-**Comportamento:**
-- Busca apenas dependentes ativos do usuário
-- Calcula idade automaticamente
-- Ordena por nome
-
-**Status Mobile:** ✅ SIM
+Status de cada item: `presente`, `atrasado`, `falta`, `justificado`, `sem-presenca`. Quando há justificativa associada, o objeto traz `justificativa: { id, motivo, observacoes, status, data_aprovacao, observacoes_admin }`.
 
 ---
 
-## 🔐 MÓDULO: AUTENTICAÇÃO MOBILE
+### 5.4 `GET /api/culto/listar_faltas_usuario.php`
 
-### 1. Login
+Lista de faltas (com filtro de status).
 
-**Endpoint:** `POST /api/mobile/auth/login.php`
+**Query:**
+- `data_inicio` (opcional, default `2020-01-01`).
+- `data_fim` (opcional, default = hoje).
+- `filtro_status` (opcional) — `falta` | `pendente` | `aprovada` | `rejeitada`.
 
-**Descrição:** Realiza login e retorna tokens de autenticação.
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "faltas": [
+    {
+      "data": "2026-04-22",
+      "status": "falta",
+      "motivo": "Doente",
+      "observacoes": "Atestado anexo",
+      "status_justificativa": "pendente",
+      "tipo_falta": "implícita"
+    }
+  ],
+  "estatisticas": { "faltas": 3, "pendentes": 1, "aprovadas": 1, "rejeitadas": 0, "total": 5 }
+}
+```
+
+`tipo_falta`: `implícita` (sem registro de presença), `explícita` (registro com `status='falta'`), `justificada` (com justificativa).
+
+---
+
+## 6. Módulo: Dependentes
+
+### 6.1 `GET /api/dependentes/listar.php`
+
+Lista dependentes do usuário logado.
+
+**Query:**
+- `usuario_id` (opcional, default = usuário logado) — só admin usa.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "dados": [
+    {
+      "id": 5,
+      "nome": "João Silva Filho",
+      "parentesco": "Filho",
+      "data_nascimento": "2010-05-15",
+      "idade": 16,
+      "foto_base64": null
+    }
+  ]
+}
+```
+
+**Observação:** lista apenas dependentes ativos. `foto_base64` pode ser `null` ou uma string base64 grande (sem prefixo `data:image/`).
+
+---
+
+### 6.2 `POST /api/dependentes/criar.php`
+
+Cria dependente. **Exige categoria `admin`.**
+
+**Body (JSON ou form-data):**
+```json
+{
+  "usuario_id": 123,
+  "nome": "João Silva Filho",
+  "parentesco": "Filho",
+  "nascimento_dependente": "2010-05-15",
+  "foto_base64": "<opcional, base64 com ou sem prefixo>"
+}
+```
+
+Aceita também `nascimento` no lugar de `nascimento_dependente`, e `$_FILES['foto']` em form-data.
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Dependente criado com sucesso", "id": 42 }`.
+
+**Erros:** `Acesso negado`, `Dados obrigatórios não fornecidos`, `Erro ao criar dependente: ...`.
+
+**Regra de idade:** ≤ 12 anos → `cobrar = 1` (não cobra); > 12 → `cobrar = 0`.
+
+---
+
+### 6.3 `POST /api/dependentes/editar.php`
+
+Edita dependente. **Admin pode editar qualquer; usuário só edita os próprios.**
+
+**Body (JSON ou form-data):**
+```json
+{
+  "id": 5,
+  "nome": "João Silva Filho",
+  "parentesco": "Filho",
+  "nascimento_dependente": "2010-05-15",
+  "foto_base64": "<opcional>"
+}
+```
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Dependente atualizado com sucesso" }`.
+
+**Erros:** `ID do dependente inválido`, `Nome e parentesco são obrigatórios`, `Dependente não encontrado`, `Acesso negado - você só pode editar seus próprios dependentes`.
+
+**Observação:** se a foto base64 for > 1 MB, o backend redimensiona para 800×600 JPEG q=80 antes de salvar (via GD). Use isso a favor — o app não precisa redimensionar antes.
+
+---
+
+### 6.4 `POST /api/dependentes/excluir.php`
+
+Exclui dependente (soft delete: `UPDATE ativo=0`). Mesma regra de admin/dono de `editar`.
+
+**Body (JSON ou form-data):** `{ "id": 5 }`.
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Dependente excluído com sucesso" }`.
+
+**Erros:** `ID do dependente inválido`, `Dependente não encontrado`, `Acesso negado - você só pode excluir seus próprios dependentes`.
+
+---
+
+## 7. Módulo: Frota
+
+### 7.1 `GET /api/frota/listar_veiculos.php`
+
+Lista veículos da frota.
+
+**Query:**
+- `status` (opcional) — `disponivel` | `em_uso` | `manutencao` | `inativo`.
+- `incluir_inativos` (opcional) — `"1"` para incluir `ativo=0`.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "veiculos": [
+    {
+      "id": 1,
+      "placa": "ABC1234",
+      "modelo": "Strada",
+      "marca": "Fiat",
+      "ano": 2023,
+      "cor": "Branca",
+      "km_atual": 15230,
+      "status": "disponivel",
+      "ativo": 1,
+      "foto_veiculo": "uploads/frota/veiculo_1.jpg",
+      "observacoes": null,
+      "usuario_atual": null
+    }
+  ],
+  "total": 1
+}
+```
+
+`usuario_atual` é o nome de quem está usando agora (quando `status: "em_uso"`).
+
+---
+
+### 7.2 `GET /api/frota/minha_utilizacao.php`
+
+Retorna a utilização **em andamento** do usuário, se houver.
+
+**Sucesso (com veículo em uso):**
+```json
+{
+  "status": "ok",
+  "tem_veiculo": true,
+  "utilizacao": {
+    "id": 12,
+    "id_veiculo": 3,
+    "placa": "ABC1234",
+    "modelo": "Strada",
+    "marca": "Fiat",
+    "cor": "Branca",
+    "entidade": "AOM Matriz",
+    "data_saida": "2026-06-16 08:30:00",
+    "data_saida_formatada": "16/06/2026 08:30",
+    "km_saida": 15000,
+    "destino": "Cuiabá Centro",
+    "motivo": "Reunião",
+    "tempo_uso": "2h 15min"
+  }
+}
+```
+
+**Sucesso (sem veículo):** `{ "status": "ok", "tem_veiculo": false, "utilizacao": null }`.
+
+**Uso típico:** decidir se mostra tela de "retirar" ou "devolver" na home da frota.
+
+---
+
+### 7.3 `GET /api/frota/meu_historico.php`
+
+Histórico de utilizações do usuário.
+
+**Query:**
+- `estatisticas=1` (opcional) — se enviado, retorna apenas o bloco `estatisticas` e encerra (não lista as utilizações).
+- `dias` (opcional, int) — últimas N dias.
+- `status` (opcional) — `em_andamento` | `finalizado`.
+
+**Sucesso (modo estatísticas):**
+```json
+{
+  "status": "ok",
+  "estatisticas": {
+    "total_viagens": 15,
+    "km_total": 1240,
+    "tempo_total": "38h 12min",
+    "mes_atual": 3,
+    "valor_km": 2.5,
+    "valor_total_locacao": 3100
+  }
+}
+```
+
+**Sucesso (modo lista, default):**
+```json
+{
+  "status": "ok",
+  "utilizacoes": [
+    {
+      "id": 12,
+      "placa": "ABC1234",
+      "modelo": "Strada",
+      "marca": "Fiat",
+      "entidade": "AOM Matriz",
+      "departamento": "TI",
+      "data_saida": "2026-05-10 08:30:00",
+      "data_saida_formatada": "10/05/2026 08:30",
+      "data_entrada": "2026-05-10 14:15:00",
+      "data_entrada_formatada": "10/05/2026 14:15",
+      "km_saida": 15000,
+      "km_entrada": 15080,
+      "km_percorrido": 80,
+      "tempo_formatado": "5h 45min",
+      "destino": "Cuiabá Centro",
+      "motivo": "Reunião",
+      "status": "finalizado",
+      "valor_km": 2.5,
+      "valor_locacao": 200
+    }
+  ],
+  "total": 1
+}
+```
+
+LIMIT 100 nas utilizações.
+
+---
+
+### 7.4 `POST /api/frota/registrar_saida.php`
+
+Registra a retirada de um veículo. **Aceita apenas JSON.**
 
 **Body (JSON):**
 ```json
 {
-    "email": "usuario@exemplo.com",
-    "senha": "senha123"
+  "id_veiculo": 3,
+  "id_entidade": 1,
+  "id_departamento": 2,
+  "km_saida": 15000,
+  "destino": "Cuiabá Centro",
+  "motivo": "Reunião",
+  "observacoes_saida": "",
+  "foto_selfie": "data:image/jpeg;base64,...",
+  "foto_km": "data:image/jpeg;base64,...",
+  "foto_veiculo1": "data:image/jpeg;base64,...",
+  "foto_veiculo2": null,
+  "foto_veiculo3": null,
+  "checklist": {
+    "pneus_ok": 1,
+    "farois_ok": 1,
+    "documentos_ok": 1,
+    "limpeza_ok": 1,
+    "nivel_combustivel": "3/4",
+    "avarias_encontradas": ""
+  }
 }
 ```
 
-**Headers:**
-- `Content-Type: application/json`
+`foto_selfie` e `foto_km` são **obrigatórias**. `foto_veiculoX` e `checklist` opcionais.
 
-**Resposta Sucesso:**
-```json
-{
-    "success": true,
-    "data": {
-        "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "expires_in": 86400,
-        "token_type": "Bearer",
-        "user": {
-            "id": 1,
-            "nome": "João Silva",
-            "email": "usuario@exemplo.com",
-            "categoria": "admin"
-        }
-    },
-    "message": "Login realizado com sucesso"
-}
-```
+**Sucesso:** `{ "status": "ok", "mensagem": "Veículo retirado com sucesso", "utilizacao_id": 42 }`.
 
-**Resposta Erro:**
-```json
-{
-    "success": false,
-    "message": "Credenciais inválidas"
-}
-```
+**Erros:** `Dados inválidos`, `Veículo/Entidade/Departamento/KM/Destino/Motivo não informado(a)`, `Fotos obrigatórias não enviadas`, `Veículo não encontrado`, `Veículo não está disponível`, `Você já possui um veículo em uso`.
 
-**Onde Usado:**
-- Mobile: Tela de login
-
-**Comportamento:**
-- Valida email e senha
-- Verifica se usuário está ativo
-- Gera tokens JWT (access + refresh)
-- Atualiza último login
-
-**Status Mobile:** ✅ SIM
+**Observação:** o backend usa `post_max_size=50M` para acomodar as fotos.
 
 ---
 
-### 2. Renovar Token
+### 7.5 `POST /api/frota/registrar_entrada.php`
 
-**Endpoint:** `POST /api/mobile/auth/refresh.php`
+Registra a devolução do veículo. **Aceita apenas JSON.**
 
-**Descrição:** Renova o access token usando o refresh token.
-
-**Headers:**
-- `Authorization: Bearer <refresh_token>`
-
-**Resposta:**
+**Body (JSON):**
 ```json
 {
-    "success": true,
-    "data": {
-        "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "expires_in": 86400
-    }
+  "id_utilizacao": 42,
+  "km_entrada": 15080,
+  "observacoes_entrada": "",
+  "foto_selfie": "data:image/jpeg;base64,...",
+  "foto_km": "data:image/jpeg;base64,...",
+  "foto_veiculo1": "data:image/jpeg;base64,...",
+  "checklist": {
+    "limpeza_ok": 1,
+    "nivel_combustivel": "1/2",
+    "avarias_encontradas": ""
+  }
 }
 ```
 
-**Onde Usado:**
-- Mobile: Quando access token expira
+`foto_selfie` e `foto_km` obrigatórias. `km_entrada >= km_saida`.
 
-**Status Mobile:** ✅ SIM
-
----
-
-### 3. Logout
-
-**Endpoint:** `POST /api/mobile/auth/logout.php`
-
-**Descrição:** Invalida o token atual.
-
-**Headers:**
-- `Authorization: Bearer <token>`
-
-**Resposta:**
+**Sucesso:**
 ```json
 {
-    "success": true,
-    "message": "Logout realizado com sucesso"
+  "status": "ok",
+  "mensagem": "Veículo devolvido com sucesso",
+  "km_percorrido": 80,
+  "tempo_uso": "5h 45min",
+  "whatsapp_enviado": true
 }
 ```
 
-**Onde Usado:**
-- Mobile: Botão de logout
+**Erros:** `Dados inválidos`, `Utilização não informada`, `KM de entrada não informado`, `Fotos obrigatórias não enviadas`, `Utilização não encontrada ou não pertence a você`, `KM de entrada não pode ser menor que o KM de saída`.
 
-**Status Mobile:** ✅ SIM
-
----
-
-## 📊 Resumo de Status
-
-### APIs com Suporte Mobile Completo: 11
-- ✅ `verificar_horario.php`
-- ✅ `status_reserva.php`
-- ✅ `reservar.php`
-- ✅ `cancelar_reserva_propria.php`
-- ✅ `listar_reservas_usuario.php`
-- ✅ `verificar_horario_adicional.php`
-- ✅ `reservar_adicional.php`
-- ✅ `listar_reservas_adicionais_usuario.php`
-- ✅ `excluir_reserva_adicional.php`
-- ✅ `editar_reserva_adicional.php`
-- ✅ `listar_adicionais.php`
-- ✅ `listar.php` (dependentes)
-- ✅ `login.php`, `refresh.php`, `logout.php` (auth)
-
-### APIs que Precisam Middleware: ~190+
-
-Consulte `docs/MAPEAMENTO_COMPLETO_APIS.md` para lista completa.
+**Side-effect:** gera PDF de comprovante (mPDF) e envia ao telefone do usuário via WhatsApp. Falha de envio **não** quebra a devolução (`whatsapp_enviado` indica o resultado).
 
 ---
 
-**Data:** 2026-01-XX  
-**Versão:** 1.0
+## 8. Módulo: Usuários
+
+### 8.1 `GET /api/usuarios/buscar_perfil.php`
+
+Retorna o perfil do usuário autenticado.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "usuario": {
+    "id": 123,
+    "nome": "Fulano de Tal",
+    "email": "fulano@aom.org.br",
+    "telefone": "65999990000",
+    "foto_base64": "<base64 sem prefixo>",
+    "id_valor": 2,
+    "entidade_id": 1,
+    "grupo_nome": "Funcionário",
+    "entidade_nome": "AOM Matriz"
+  }
+}
+```
+
+**Observação:** `foto_base64` pode ser muito grande. O app deve renderizar com prefixo `data:image/jpeg;base64,` na frente.
+
+---
+
+### 8.2 `POST /api/usuarios/atualizar_perfil.php`
+
+Atualiza dados do perfil próprio.
+
+**Body (JSON ou form-data):**
+```json
+{
+  "nome": "Fulano de Tal",
+  "email": "fulano@aom.org.br",
+  "telefone": "65999990000",
+  "senha": "novasenha123",
+  "senha_confirma": "novasenha123",
+  "foto_base64": "<opcional>"
+}
+```
+
+`senha` e `foto_base64` opcionais (só atualiza se vier).
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Perfil atualizado com sucesso" }`.
+
+**Erros:** `Nome e email são obrigatórios`, `Email inválido`, `Email já está sendo usado por outro usuário`, `As senhas não coincidem`, `A senha deve ter pelo menos 6 caracteres`.
+
+**Regras:** senha armazenada com `password_hash(PASSWORD_DEFAULT)`. Email único.
+
+---
+
+### 8.3 `POST /api/usuarios/atualizar_foto.php`
+
+Atualiza só a foto.
+
+**Body (JSON ou form-data):**
+```json
+{ "foto_base64": "data:image/jpeg;base64,..." }
+```
+
+Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo backend.
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Foto atualizada com sucesso", "foto_base64": "<base64 sem prefixo>" }`.
+
+**Erros:** `Foto não fornecida`, `Erro ao atualizar foto`.
+
+---
+
+## 9. Tabela resumo (cola para o app)
+
+| # | Endpoint | Método | Auth | Formato sucesso |
+|---|----------|--------|------|-----------------|
+| Auth |
+| 2.1 | `/api/mobile/auth/login.php` | POST | — | `{success, data:{token,refresh_token,user}}` |
+| 2.2 | `/api/mobile/auth/refresh.php` | POST | Bearer (refresh) | `{success, data:{token,refresh_token}}` |
+| 2.3 | `/api/mobile/auth/logout.php` | POST | Bearer | `{success, message}` |
+| Almoço |
+| 3.1 | `/api/almoco/verificar_horario.php` | GET | Bearer | `{status:"sucesso", ...valores}` |
+| 3.2 | `/api/almoco/status_reserva.php` | GET | Bearer | `{reservou_hoje, hora_excedida, ...}` (sem `status`) |
+| 3.3 | `/api/almoco/reservar.php` | POST | Bearer | `{status:"ok", mensagem, valor_aplicado}` |
+| 3.4 | `/api/almoco/cancelar_reserva_propria.php` | POST | Bearer | `{status:"ok", mensagem}` |
+| 3.5 | `/api/almoco/listar_reservas_usuario.php` | GET | Bearer | `{status:"ok", reservas[], resumo}` |
+| 3.6 | `/api/almoco/verificar_horario_adicional.php` | GET | Bearer | `{status:"ok", dependente, valores, horario}` |
+| 3.7 | `/api/almoco/reservar_adicional.php` | POST | Bearer | `{status:"ok"}` |
+| 3.8 | `/api/almoco/listar_reservas_adicionais_usuario.php` | GET | Bearer | `{status:"ok", reservas[], resumo}` |
+| 3.9 | `/api/almoco/excluir_reserva_adicional.php` | POST | Bearer | `{status:"ok", mensagem}` |
+| 3.10 | `/api/almoco/listar_adicionais.php` | GET | Bearer | `{reservas[], quantidade_total}` (sem `status`) |
+| Calendário |
+| 4.1 | `/api/calendario/dados_culto.php` | GET | Bearer | `{status:"ok", dados, resumo}` |
+| Culto |
+| 5.1 | `/api/culto/enviar_justificativa.php` | POST | Bearer | `{status:"ok", mensagem}` |
+| 5.2 | `/api/culto/frequencia.php` | GET | Bearer | `{status:"ok", frequencia, dados}` |
+| 5.3 | `/api/culto/historico_usuario.php` | GET | Bearer | `{status:"ok", presencas[], estatisticas, ...}` |
+| 5.4 | `/api/culto/listar_faltas_usuario.php` | GET | Bearer | `{status:"ok", faltas[], estatisticas}` |
+| Dependentes |
+| 6.1 | `/api/dependentes/listar.php` | GET | Bearer | `{status:"ok", dados[]}` |
+| 6.2 | `/api/dependentes/criar.php` | POST | Bearer (admin) | `{status:"ok", mensagem, id}` |
+| 6.3 | `/api/dependentes/editar.php` | POST | Bearer (admin/dono) | `{status:"ok", mensagem}` |
+| 6.4 | `/api/dependentes/excluir.php` | POST | Bearer (admin/dono) | `{status:"ok", mensagem}` (soft delete) |
+| Frota |
+| 7.1 | `/api/frota/listar_veiculos.php` | GET | Bearer | `{status:"ok", veiculos[], total}` |
+| 7.2 | `/api/frota/minha_utilizacao.php` | GET | Bearer | `{status:"ok", tem_veiculo, utilizacao}` |
+| 7.3 | `/api/frota/meu_historico.php` | GET | Bearer | `{status:"ok", utilizacoes[], total}` OU `{status:"ok", estatisticas}` |
+| 7.4 | `/api/frota/registrar_saida.php` | POST (JSON) | Bearer | `{status:"ok", mensagem, utilizacao_id}` |
+| 7.5 | `/api/frota/registrar_entrada.php` | POST (JSON) | Bearer | `{status:"ok", mensagem, km_percorrido, tempo_uso, whatsapp_enviado}` |
+| Usuários |
+| 8.1 | `/api/usuarios/buscar_perfil.php` | GET | Bearer | `{status:"ok", usuario}` |
+| 8.2 | `/api/usuarios/atualizar_perfil.php` | POST | Bearer | `{status:"ok", mensagem}` |
+| 8.3 | `/api/usuarios/atualizar_foto.php` | POST | Bearer | `{status:"ok", mensagem, foto_base64}` |
+
+---
+
+## 10. Checklist para o app (lembretes que evitam bugs)
+
+1. **Sempre cheque `success`/`status` do JSON, não o HTTP status** — o backend devolve 200 mesmo em erro nos endpoints de negócio.
+2. **Aceite `"ok"` e `"sucesso"` como sucesso** no formato B. Use uma helper centralizada para parsear: `success = body.success === true || body.status === "ok" || body.status === "sucesso"`.
+3. **Trate respostas sem `status`** (`status_reserva.php`, `listar_adicionais.php`) como sucesso quando o HTTP é 200 e os campos esperados existem.
+4. **Renove o token automaticamente** quando receber mensagem indicando token inválido/expirado (ou proativamente perto dos 24h).
+5. **Não pré-redimensione fotos** para `dependentes/editar.php` — o backend faz se passar de 1 MB. Mas pré-redimensione para `frota/registrar_*.php` se quiser evitar timeout (post_max 50M é o teto).
+6. **`fora_do_horario` é um booleano que altera o valor cobrado.** Mostre o aviso ao usuário antes de mandar `true`.
+7. **`dias_fechado`**: o backend recusa reservas para datas marcadas como fechado (ex.: feriado). Antes de mostrar o calendário, considere usar `/api/dias_fechado/verificar.php?data=YYYY-MM-DD` (público) para já desabilitar a data na UI.
+8. **Marmitex pode estar desabilitado globalmente** — `verificar_horario_adicional` devolve o erro específico. Esconda o botão Marmitex se a primeira chamada retornar isso.
+9. **Categoria do usuário** vem no `data.user.categoria` do login — use para decidir telas (admin vê tudo; demais respeitam regras de dependentes etc.).
+10. **Timestamps em UTC-4 (`America/Cuiaba`)** no backend. Use `timestamp` ISO 8601 retornado pelo MobileResponse como referência.
+
+---
+
+## 11. Inconsistências conhecidas (do código atual)
+
+Aviso só para a IA entender que não são bugs do app — são particularidades do backend que o app precisa absorver:
+
+- `verificar_horario.php` usa `status: "sucesso"`; todos os outros endpoints de almoço usam `status: "ok"`. **Sucesso é qualquer um dos dois.**
+- `status_reserva.php` e `listar_adicionais.php` retornam **sem** o campo `status` no caminho de sucesso.
+- `dependentes/criar.php` usa `idade <= 12` para definir `cobrar=1`; `dependentes/editar.php` usa `idade < 12`. A regra "real" segundo `verificar_horario_adicional` é `<= 12`.
+- O campo `observacoes_admin` em `listar_faltas_usuario.php` traz `observacoes` da justificativa, não realmente um campo de admin. Documente como "observação adicional".
+
+---
+
+**Endpoints totais documentados: 30** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 5 frota + 3 usuários).
+
+**Última atualização:** 2026-06-16 — refletido `dias_fechado` em `reservar.php`/`reservar_multiplo.php`/`acesso_especial/criar_reserva.php` (commits `8852ef3`, `b96d437`).
