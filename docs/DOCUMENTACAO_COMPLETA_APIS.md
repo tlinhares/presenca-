@@ -1453,7 +1453,14 @@ O fluxo do app é simples:
 3. Pronto — o usuário começa a receber push (se o admin tiver ativado).
 4. No logout, chame `POST /api/mobile/notifications/unregister.php` para parar de receber.
 
-Tokens FCM mudam ocasionalmente (reinstalação do app, limpeza de dados). O SDK do Firebase tem um listener `onTokenRefresh` — sempre que disparar, chame `register.php` de novo. O endpoint é idempotente (faz UPSERT por `fcm_token` único).
+Tokens FCM mudam ocasionalmente (reinstalação do app, limpeza de dados, rotação automática do Firebase). O SDK tem um listener `onTokenRefresh` — sempre que disparar, chame `register.php` de novo. O endpoint é idempotente (faz UPSERT por `fcm_token` único).
+
+🔴 **REGRA CRÍTICA pra IA do app — chame `register.php` em DOIS momentos, sempre:**
+
+1. **Imediatamente após o login** (não só uma vez na vida — TODA vez que o app abre logado): chame `getToken()` e POST pra `register.php`. Idempotente, sem custo.
+2. **No callback `onTokenRefresh`**: chame `register.php` com o token novo.
+
+Se o app só registrar "uma vez quando o usuário aceita push pela primeira vez", o seguinte cenário quebra: o token rotaciona → o backend recebe `UNREGISTERED` do FCM no próximo envio → marca o dispositivo como `ativo=0` automaticamente → push para de chegar e nunca mais volta (o app não sabe que precisa re-registrar). O usuário tem que desinstalar e reinstalar pra arrumar. Evite isso registrando sempre no login.
 
 ### 9.1 `POST /api/mobile/notifications/register.php`
 
