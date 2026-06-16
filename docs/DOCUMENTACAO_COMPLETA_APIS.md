@@ -112,6 +112,29 @@ Algumas APIs verificam `$_SESSION['usuario_categoria']`:
 - `admin` — acesso total.
 - `funcionario`, `funcionario_culto`, etc. — restrições caso a caso (anotadas por endpoint).
 
+### 1.9 Escopo do app — o que mostrar e o que NÃO mostrar
+
+O app **só deve expor as funcionalidades que têm endpoint mobile listado abaixo**. Não é "admin vê tudo" — admin no app só vê o que existe como API mobile. Em particular:
+
+- ✅ **Mobile**: almoço (incl. dependentes), culto/justificativas, calendário, frota, perfil.
+- ❌ **Web-only (NÃO criar tela no app)**: módulo de **estoque** completo (produtos, requisições, alertas, inventário), painéis administrativos (`/painel/*`), gestão de usuários/grupos, gestão de reservas de outros usuários, configurações do sistema, WhatsApp/notificações, frota — partes administrativas (cadastro de veículos/entidades/departamentos, manutenção).
+- Se o app precisar de uma tela administrativa nova, ela exige que um endpoint mobile correspondente seja criado primeiro (não invente request).
+
+### 1.10 Dropdowns / lookups (origem dos IDs)
+
+Para cada campo `id_*` num body, o app precisa popular o dropdown a partir de um endpoint de listagem. Use esta tabela como referência:
+
+| Campo no body | Origem (GET) | Resposta tem | Observação |
+|---|---|---|---|
+| `id_veiculo` (frota/registrar_saida) | `/api/frota/listar_veiculos.php?status=disponivel` | `veiculos[].id` | Filtre por `status: "disponivel"` para mostrar só os que dá pra retirar. |
+| `id_entidade` (frota/registrar_saida) | `/api/frota/listar_entidades.php` | `entidades[].id` | §7.6 |
+| `id_departamento` (frota/registrar_saida) | `/api/frota/departamentos.php?apenas_ativos=1` | `departamentos[].id` | §7.7 |
+| `id_utilizacao` (frota/registrar_entrada) | `/api/frota/minha_utilizacao.php` | `utilizacao.id` | É sempre a utilização em andamento do próprio usuário. |
+| `id_dependente` / `dependente` (almoço adicional) | `/api/dependentes/listar.php` | `dados[].id` | |
+| `usuario_id` (dependentes/criar — admin) | _Sem endpoint mobile_ | — | Não há listagem de usuários no mobile. Para o app, use o próprio usuário logado (`$session.user.id` retornado no login). |
+
+⚠️ **Nunca use input de texto para esses IDs.** Eles vêm de listas; se o app está pedindo o número, falta dropdown.
+
 ---
 
 ## 2. Módulo: Autenticação Mobile
@@ -923,6 +946,57 @@ Registra a devolução do veículo. **Aceita apenas JSON.**
 
 ---
 
+### 7.6 `GET /api/frota/listar_entidades.php`
+
+Lista as entidades (matriz, filiais) para popular o dropdown `id_entidade` no `registrar_saida`.
+
+**Query:** nenhum.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "entidades": [
+    { "id": 1, "nome": "AOM Matriz" },
+    { "id": 2, "nome": "AOM Filial Norte" }
+  ]
+}
+```
+
+**Erro:** `{ "status": "erro", "mensagem": "Usuário não autenticado" }` ou `Erro ao listar entidades: ...`.
+
+---
+
+### 7.7 `GET /api/frota/departamentos.php`
+
+Lista os departamentos da frota para popular o dropdown `id_departamento` no `registrar_saida`.
+
+**Query:**
+- `apenas_ativos` (opcional) — `1` para retornar só `ativo = 1` (recomendado para o dropdown). Default: traz todos.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "departamentos": [
+    {
+      "id": 2,
+      "nome": "TI",
+      "descricao": "Tecnologia da Informação",
+      "ativo": 1,
+      "criado_em_fmt": "10/01/2026 09:00",
+      "atualizado_em_fmt": "10/01/2026 09:00"
+    }
+  ]
+}
+```
+
+**Erro:** `{ "status": "erro", "mensagem": "Usuário não autenticado" }`.
+
+**Observação:** o mesmo arquivo aceita POST/DELETE para CRUD de departamentos, mas esses caminhos exigem permissão `frota_departamentos` (admin) — **não use no app**, mantenha somente o GET.
+
+---
+
 ## 8. Módulo: Usuários
 
 ### 8.1 `GET /api/usuarios/buscar_perfil.php`
@@ -1031,6 +1105,8 @@ Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo b
 | 7.3 | `/api/frota/meu_historico.php` | GET | Bearer | `{status:"ok", utilizacoes[], total}` OU `{status:"ok", estatisticas}` |
 | 7.4 | `/api/frota/registrar_saida.php` | POST (JSON) | Bearer | `{status:"ok", mensagem, utilizacao_id}` |
 | 7.5 | `/api/frota/registrar_entrada.php` | POST (JSON) | Bearer | `{status:"ok", mensagem, km_percorrido, tempo_uso, whatsapp_enviado}` |
+| 7.6 | `/api/frota/listar_entidades.php` | GET | Bearer | `{status:"ok", entidades[]}` |
+| 7.7 | `/api/frota/departamentos.php` | GET | Bearer | `{status:"ok", departamentos[]}` |
 | Usuários |
 | 8.1 | `/api/usuarios/buscar_perfil.php` | GET | Bearer | `{status:"ok", usuario}` |
 | 8.2 | `/api/usuarios/atualizar_perfil.php` | POST | Bearer | `{status:"ok", mensagem}` |
@@ -1064,6 +1140,9 @@ Aviso só para a IA entender que não são bugs do app — são particularidades
 
 ---
 
-**Endpoints totais documentados: 30** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 5 frota + 3 usuários).
+**Endpoints totais documentados: 32** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários).
 
-**Última atualização:** 2026-06-16 — refletido `dias_fechado` em `reservar.php`/`reservar_multiplo.php`/`acesso_especial/criar_reserva.php` (commits `8852ef3`, `b96d437`).
+**Última atualização:** 2026-06-16
+- Adicionado mobile a `frota/listar_entidades.php` e `frota/departamentos.php` (GET) para o app conseguir popular dropdowns sem pedir IDs em texto.
+- Adicionada seção §1.9 (escopo do app — estoque é web-only) e §1.10 (tabela de dropdowns).
+- Refletido `dias_fechado` em `reservar.php`/`reservar_multiplo.php`/`acesso_especial/criar_reserva.php` (commits `8852ef3`, `b96d437`).
