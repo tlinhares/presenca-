@@ -154,7 +154,7 @@ Para cada campo `id_*` num body, o app precisa popular o dropdown a partir de um
 | `id_departamento` (frota/registrar_saida) | `/api/frota/departamentos.php?apenas_ativos=1` | `departamentos[].id` | **Setor** (TI, RH, Contabilidade, AFAM, Engenharia, etc.). É o time/área do solicitante. §7.7 |
 | `id_utilizacao` (frota/registrar_entrada) | `/api/frota/minha_utilizacao.php` | `utilizacao.id` | É sempre a utilização em andamento do próprio usuário. |
 | `id_dependente` / `dependente` (almoço adicional) | `/api/dependentes/listar.php` | `dados[].id` | |
-| `entidade_id` (almoço/reservar_departamento — admin) | `/api/almoco/listar_entidades.php` | `entidades[].id` | **Mesmas Religiosa/Educação/Loja**. No almoço, o web rotula esse dropdown como "Departamento" mas os dados são da tabela `entidade`. Ver §3.12/§3.13. |
+| `entidade_id` (almoço/reservar_departamento — admin) | `/api/entidade/listar_entidade.php` | array direto de `{entidade_id, entidade_nome}` | **Mesmas Religiosa/Educação/Loja**. Endpoint canônico do web; resposta é array direto (sem wrapper `status`/`entidades`). Ver §3.12. |
 | `usuario_id` (dependentes/criar — admin) | _Sem endpoint mobile_ | — | Não há listagem de usuários no mobile. Para o app, use o próprio usuário logado (`$session.user.id` retornado no login). |
 
 ⚠️ **Nunca use input de texto para esses IDs.** Eles vêm de listas; se o app está pedindo o número, falta dropdown.
@@ -591,27 +591,30 @@ Cria reservas para um intervalo de datas (vários dias úteis). É o que o web m
 
 ---
 
-### 3.12 `GET /api/almoco/listar_entidades.php`
+### 3.12 `GET /api/entidade/listar_entidade.php` ← **endpoint canônico**
 
-Lista as **entidades** (`Religiosa`, `Educação`, `Loja`) para popular o dropdown da tela admin **"Reservas de Departamento"**. **Apenas admin** (`categoria === "admin"`).
+Lista as **entidades** (`Religiosa`, `Educação`, `Loja`) para popular o dropdown da tela **"Reservas de Departamento"** do almoço. É o **mesmo endpoint que o site web usa há tempo** (`/api/entidade/listar_entidade.php`).
 
-⚠️ Os dados desse endpoint são os MESMOS que `/api/frota/listar_entidades.php` (§7.6) — vêm da tabela `entidade`. A diferença é só o contexto: aqui a tela do almoço rotula como "Departamento" (causando confusão), na frota rotula como "Entidade". Use `almoco/listar_entidades.php` no fluxo de reserva de departamento do almoço; `frota/listar_entidades.php` no fluxo de retirada de veículo.
+⚠️ **Use este, não invente outro.** Existe um `/api/almoco/listar_entidades.php` no projeto, mas o web não usa esse — ele usa `/api/entidade/listar_entidade.php`. Eu apontei para o errado em revisões anteriores e isso causou o bug "coluna ativo desconhecida" — a tabela `entidade` só tem `entidade_id`, `entidade_nome`, `entidade_numero`. Não existe coluna `ativo`.
 
 **Query:** nenhum.
 
-**Sucesso:**
+**Sucesso (resposta é um ARRAY DIRETO, sem wrapper `status`):**
 ```json
-{
-  "status": "ok",
-  "entidades": [
-    { "id": 1, "nome": "Religiosa" },
-    { "id": 2, "nome": "Educação" },
-    { "id": 3, "nome": "Loja" }
-  ]
-}
+[
+  { "entidade_id": 1, "entidade_nome": "Educação" },
+  { "entidade_id": 2, "entidade_nome": "Loja" },
+  { "entidade_id": 3, "entidade_nome": "Religiosa" }
+]
 ```
 
-**Erros:** `Acesso negado` (não admin), `Usuário não autenticado`.
+⚠️ Campos são **`entidade_id`** e **`entidade_nome`** (não `id`/`nome`). Resposta sem `status` — se vier um array, deu certo; se vier `{status:"erro",...}`, falhou.
+
+**Erro:** `{ "status": "erro", "mensagem": "Usuário não autenticado" }`.
+
+**Observações:**
+- Não exige `categoria === "admin"` (mesma autorização que o web — qualquer usuário logado pode listar).
+- Para o body de `reservar_departamento.php` (§3.13), mande `entidade_id` selecionado.
 
 ---
 
@@ -1562,7 +1565,7 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 3.9 | `/api/almoco/excluir_reserva_adicional.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | 3.10 | `/api/almoco/listar_adicionais.php` | GET | Bearer | `{reservas[], quantidade_total}` (sem `status`) |
 | 3.11 | `/api/almoco/reservar_multiplo.php` | POST | Bearer | `{status:"ok", sucessos, falhas, erros[]}` |
-| 3.12 | `/api/almoco/listar_entidades.php` | GET | Bearer (admin) | `{status:"ok", entidades[]}` |
+| 3.12 | `/api/entidade/listar_entidade.php` | GET | Bearer | **array direto** `[{entidade_id, entidade_nome}]` |
 | 3.13 | `/api/almoco/reservar_departamento.php` | POST | Bearer (admin) | `{status:"ok", mensagem, id}` |
 | 3.14 | `/api/almoco/excluir_reserva_departamento.php` | POST | Bearer (admin) | `{status:"ok", mensagem}` |
 | Calendário |

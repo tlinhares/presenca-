@@ -33,7 +33,8 @@ if (!$isAdmin) {
 
 try {
     // Buscar entidades (departamentos)
-    $sql = "SELECT entidade_id, entidade_nome FROM entidade WHERE ativo = 1 ORDER BY entidade_nome";
+    // A tabela `entidade` tem apenas entidade_id, entidade_nome, entidade_numero — sem coluna `ativo`.
+    $sql = "SELECT entidade_id, entidade_nome FROM entidade ORDER BY entidade_nome";
     $result = $conn->query($sql);
     
     if (!$result) {
