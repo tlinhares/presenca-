@@ -1132,9 +1132,67 @@ Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo b
 
 ---
 
-## 9. Módulo: Utilitários
+## 9. Módulo: Notificações Push (FCM)
 
-### 9.1 `GET /api/dias_fechado/verificar.php`
+O backend envia push pelo **Firebase Cloud Messaging HTTP v1** usando a Service Account configurada pelo admin (tela `/painel/notificacoes_push.php`). O fluxo do app é simples:
+
+1. Após o login bem-sucedido (uma vez), pegue o **FCM token** do dispositivo (via SDK do Firebase).
+2. Chame `POST /api/mobile/notifications/register.php` enviando o token.
+3. Pronto — o usuário começa a receber push (se o admin tiver ativado).
+4. No logout, chame `POST /api/mobile/notifications/unregister.php` para parar de receber.
+
+Tokens FCM mudam ocasionalmente (reinstalação do app, limpeza de dados). O SDK do Firebase tem um listener `onTokenRefresh` — sempre que disparar, chame `register.php` de novo. O endpoint é idempotente (faz UPSERT por `fcm_token` único).
+
+### 9.1 `POST /api/mobile/notifications/register.php`
+
+Registra ou atualiza o token FCM do dispositivo associado ao usuário autenticado.
+
+**Body (JSON):**
+```json
+{
+  "fcm_token": "fhT8a3K...string longa do Firebase...",
+  "plataforma": "android",
+  "modelo_dispositivo": "Pixel 7",
+  "versao_app": "1.0.0"
+}
+```
+
+**Campos:**
+- `fcm_token` (string, **obrigatório**) — pelo menos 20 caracteres. Vem do SDK Firebase (`getToken()` no Android/iOS).
+- `plataforma` (string, opcional, default `"android"`) — `android` | `ios` | `web`.
+- `modelo_dispositivo` (string, opcional) — ex.: `"Pixel 7"`, `"iPhone 15"`.
+- `versao_app` (string, opcional) — versão do app (ex.: `"1.2.3"`).
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Dispositivo registrado" }`.
+
+**Erros:** `fcm_token inválido`, `Usuário não autenticado`, `Erro ao registrar token: ...`.
+
+**Observações:**
+- Idempotente: se o token já existe, atualiza usuário/plataforma/modelo/versão e reativa.
+- Chame uma vez após o login E sempre que o `onTokenRefresh` disparar.
+
+---
+
+### 9.2 `POST /api/mobile/notifications/unregister.php`
+
+Desativa um token FCM (chame no logout).
+
+**Body (JSON):**
+```json
+{ "fcm_token": "fhT8a3K..." }
+```
+
+**Sucesso:** `{ "status": "ok", "mensagem": "Dispositivo desregistrado" }`.
+
+**Erros:** `fcm_token é obrigatório`, `Usuário não autenticado`.
+
+**Observação:** só desativa se o token pertence ao usuário autenticado (proteção contra desregistrar dispositivos alheios). Faz soft-disable (`ativo=0`), não deleta.
+
+---
+
+## 10. Módulo: Utilitários
+
+### 10.1 `GET /api/dias_fechado/verificar.php`
 
 Verifica se uma data específica está marcada como "refeitório fechado". **Não exige autenticação** — é um endpoint público para o app conferir antes de oferecer reserva.
 
@@ -1165,7 +1223,7 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 
 ---
 
-## 10. Tabela resumo (cola para o app)
+## 11. Tabela resumo (cola para o app)
 
 | # | Endpoint | Método | Auth | Formato sucesso |
 |---|----------|--------|------|-----------------|
@@ -1208,12 +1266,15 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 8.1 | `/api/usuarios/buscar_perfil.php` | GET | Bearer | `{status:"ok", usuario}` |
 | 8.2 | `/api/usuarios/atualizar_perfil.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | 8.3 | `/api/usuarios/atualizar_foto.php` | POST | Bearer | `{status:"ok", mensagem, foto_base64}` |
+| Notificações Push |
+| 9.1 | `/api/mobile/notifications/register.php` | POST | Bearer | `{status:"ok", mensagem}` |
+| 9.2 | `/api/mobile/notifications/unregister.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | Utilitários |
-| 9.1 | `/api/dias_fechado/verificar.php` | GET | — (público) | `{status:"ok", data, esta_fechado, detalhes}` |
+| 10.1 | `/api/dias_fechado/verificar.php` | GET | — (público) | `{status:"ok", data, esta_fechado, detalhes}` |
 
 ---
 
-## 11. Checklist para o app (lembretes que evitam bugs)
+## 12. Checklist para o app (lembretes que evitam bugs)
 
 1. **Sempre cheque `success`/`status` do JSON, não o HTTP status** — o backend devolve 200 mesmo em erro nos endpoints de negócio.
 2. **Aceite `"ok"` e `"sucesso"` como sucesso** no formato B. Use uma helper centralizada para parsear: `success = body.success === true || body.status === "ok" || body.status === "sucesso"`.
@@ -1228,7 +1289,7 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 
 ---
 
-## 12. Inconsistências conhecidas (do código atual)
+## 13. Inconsistências conhecidas (do código atual)
 
 Aviso só para a IA entender que não são bugs do app — são particularidades do backend que o app precisa absorver:
 
@@ -1239,9 +1300,12 @@ Aviso só para a IA entender que não são bugs do app — são particularidades
 
 ---
 
-**Endpoints totais documentados: 33** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários + 1 utilitário).
+**Endpoints totais documentados: 35** (3 auth + 10 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários + 2 push + 1 utilitário).
 
-**Última atualização:** 2026-06-16 (auditoria contra código real + frontend web)
+**Última atualização:** 2026-06-16 (auditoria contra código real + frontend web + push notifications via FCM)
+
+Novidades nesta versão:
+- **§9 Notificações Push (FCM)**: dois novos endpoints mobile — `register.php` (registra token FCM após login) e `unregister.php` (no logout). Painel admin em `/painel/notificacoes_push.php` para configurar a Service Account do Firebase e testar envios.
 
 Correções nesta versão:
 - §3.5 `listar_reservas_usuario.php`: response shape corrigido — campos reais são `{id, data, valor, status, pode_excluir}` com enum `status: "Atual"|"Futura"|"Finalizada"`. O doc anterior listava campos que não existem (`valor_refeicao`, `horario_confirmacao`, `tipo_confirmacao`, `fora_horario`).
