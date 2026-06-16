@@ -71,18 +71,18 @@ try {
     }
     
     // Busca usuário no banco
-    $stmt = $conn->prepare("SELECT id, nome, categoria, senha, email FROM usuarios WHERE email = ? AND ativo = 1");
+    $stmt = $conn->prepare("SELECT id, nome, categoria, senha, email, culto FROM usuarios WHERE email = ? AND ativo = 1");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $stmt->store_result();
-    
+
     if ($stmt->num_rows === 0) {
         $stmt->close();
         echo json_encode(MobileResponse::error('Credenciais inválidas', 401));
         exit;
     }
-    
-    $stmt->bind_result($id, $nome, $categoria, $senha_hash, $email_db);
+
+    $stmt->bind_result($id, $nome, $categoria, $senha_hash, $email_db, $culto);
     $stmt->fetch();
     $stmt->close();
     
@@ -108,7 +108,8 @@ try {
             'id' => (int)$id,
             'nome' => $nome,
             'email' => $email_db,
-            'categoria' => $categoria
+            'categoria' => $categoria,
+            'culto' => (int)$culto
         ]
     ];
     

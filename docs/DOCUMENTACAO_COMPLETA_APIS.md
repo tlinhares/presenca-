@@ -120,7 +120,30 @@ O app **só deve expor as funcionalidades que têm endpoint mobile listado abaix
 - ❌ **Web-only (NÃO criar tela no app)**: módulo de **estoque** completo (produtos, requisições, alertas, inventário), painéis administrativos (`/painel/*`), gestão de usuários/grupos, gestão de reservas de outros usuários, configurações do sistema, WhatsApp/notificações, frota — partes administrativas (cadastro de veículos/entidades/departamentos, manutenção).
 - Se o app precisar de uma tela administrativa nova, ela exige que um endpoint mobile correspondente seja criado primeiro (não invente request).
 
-### 1.10 Dropdowns / lookups (origem dos IDs)
+### 1.10 Gating de módulos no app (qual menu mostrar)
+
+O backend **não tem endpoint** que devolve "lista de módulos liberados". Para evitar que o app esconda módulos para quem deveria ver, use estas regras simples baseadas no objeto `user` que o login devolve:
+
+| Módulo no app | Mostra quando | Não mostra quando |
+|---|---|---|
+| **Almoço** (próprio + dependentes) | sempre | nunca |
+| **Frota** | sempre (qualquer usuário ativo pode retirar veículo) | nunca |
+| **Perfil** | sempre | nunca |
+| **Culto** (calendário, justificativas, histórico, frequência) | `user.culto === 1` **OU** `user.categoria === "admin"` | `user.culto === 0` E `user.categoria !== "admin"` |
+| **Estoque** | nunca (é web-only — ver §1.9) | sempre |
+| **Configurações administrativas** (gestão de usuários, painel, etc.) | nunca (web-only) | sempre |
+
+⚠️ **Não invente checagens** como `categoria === "culto"` ou `categoria === "funcionario_culto"` — essas categorias **não existem**. As únicas categorias do sistema são `"admin"` e `"funcionario"`. Quem participa do culto é definido pelo flag `user.culto`, não pela categoria.
+
+**Regras-resumo em pseudo-código:**
+```javascript
+const podeVerCulto   = user.culto === 1 || user.categoria === "admin";
+const podeVerAlmoco  = true;
+const podeVerFrota   = true;
+const podeVerPerfil  = true;
+```
+
+### 1.11 Dropdowns / lookups (origem dos IDs)
 
 Para cada campo `id_*` num body, o app precisa popular o dropdown a partir de um endpoint de listagem. Use esta tabela como referência:
 
@@ -165,15 +188,21 @@ Realiza login e devolve par access/refresh.
       "id": 123,
       "nome": "Fulano de Tal",
       "email": "fulano@aom.org.br",
-      "categoria": "funcionario"
+      "categoria": "funcionario",
+      "culto": 1
     }
   }
 }
 ```
 
+**Campos do `user`:**
+- `id` (int), `nome`, `email` — identificação.
+- `categoria` (enum string) — `"admin"` ou `"funcionario"`. **Não há `"culto"`/`"funcionario_culto"`** — não tente gatear por isso.
+- `culto` (int) — `1` se o usuário participa do culto, `0` se não. **Use esse campo para decidir se mostra o módulo culto no menu** (ver §1.10).
+
 **Erros possíveis (HTTP 401/400):** `Credenciais inválidas`, `Usuário inativo`, `Email e senha são obrigatórios`.
 
-**Observações:** o app deve armazenar `token` e `refresh_token` com segurança (Keychain/Keystore). `expires_in` é em segundos.
+**Observações:** o app deve armazenar `token`, `refresh_token` E o objeto `user` com segurança (Keychain/Keystore). `expires_in` é em segundos.
 
 ---
 
@@ -1213,5 +1242,6 @@ Correções nesta versão:
 - §6.1 `dependentes/listar.php`: backend agora devolve `cobrar` (era usado pelo web mas faltava no response).
 - §5.3 `historico_usuario.php`: deixado explícito que `justificativa` pode ser `null`.
 - Nova §9 `dias_fechado/verificar.php` documentada (utilitário público).
-- §1.9 (escopo — estoque é web-only) e §1.10 (dropdowns).
+- §1.9 (escopo — estoque é web-only), §1.10 (gating de módulos, com regra para culto) e §1.11 (dropdowns).
+- §2.1 `login.php`: response agora inclui `user.culto` (flag de participação no culto) — sem isso o app não tinha como gatear corretamente o menu de culto.
 - Refletido `dias_fechado` em `reservar.php`/`reservar_multiplo.php`/`acesso_especial/criar_reserva.php` (commits `8852ef3`, `b96d437`).
