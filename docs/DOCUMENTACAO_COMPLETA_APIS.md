@@ -150,13 +150,19 @@ Para cada campo `id_*` num body, o app precisa popular o dropdown a partir de um
 | Campo no body | Origem (GET) | Resposta tem | Observação |
 |---|---|---|---|
 | `id_veiculo` (frota/registrar_saida) | `/api/frota/listar_veiculos.php?status=disponivel` | `veiculos[].id` | Filtre por `status: "disponivel"` para mostrar só os que dá pra retirar. |
-| `id_entidade` (frota/registrar_saida) | `/api/frota/listar_entidades.php` | `entidades[].id` | §7.6 |
-| `id_departamento` (frota/registrar_saida) | `/api/frota/departamentos.php?apenas_ativos=1` | `departamentos[].id` | §7.7 |
+| `id_entidade` (frota/registrar_saida) | `/api/frota/listar_entidades.php` | `entidades[].id` | **Unidade de negócio** (Religiosa, Educação, Loja). É a "casa" que vai assumir o trajeto. §7.6 |
+| `id_departamento` (frota/registrar_saida) | `/api/frota/departamentos.php?apenas_ativos=1` | `departamentos[].id` | **Setor** (TI, RH, Contabilidade, AFAM, Engenharia, etc.). É o time/área do solicitante. §7.7 |
 | `id_utilizacao` (frota/registrar_entrada) | `/api/frota/minha_utilizacao.php` | `utilizacao.id` | É sempre a utilização em andamento do próprio usuário. |
 | `id_dependente` / `dependente` (almoço adicional) | `/api/dependentes/listar.php` | `dados[].id` | |
 | `usuario_id` (dependentes/criar — admin) | _Sem endpoint mobile_ | — | Não há listagem de usuários no mobile. Para o app, use o próprio usuário logado (`$session.user.id` retornado no login). |
 
 ⚠️ **Nunca use input de texto para esses IDs.** Eles vêm de listas; se o app está pedindo o número, falta dropdown.
+
+🔴 **Entidade ≠ Departamento — são dois dropdowns separados na retirada de veículo:**
+- **Entidade** (`listar_entidades.php`) responde "para qual unidade de negócio é essa viagem" — `Religiosa`, `Educação`, `Loja`. Esses são os 3 valores reais.
+- **Departamento** (`departamentos.php`) responde "qual setor está retirando" — `TI`, `RH`, `Contabilidade`, `Engenharia`, `AFAM`, `MCA`, `Desbravadores`, `Arquitetura`, `Presidencia`, `Remessa`, `Departamento Pessoal`.
+
+Os dois são **obrigatórios** no body de `registrar_saida.php`. Se o app só está mostrando um dropdown, é bug do app — gere **dois**. Sugestão de label: "Entidade" e "Departamento", iguais ao web.
 
 ---
 
@@ -925,6 +931,8 @@ LIMIT 100 nas utilizações.
 ### 7.4 `POST /api/frota/registrar_saida.php`
 
 Registra a retirada de um veículo. **Aceita apenas JSON.**
+
+⚠️ `id_entidade` e `id_departamento` são **campos diferentes** (ver §1.11). Entidade = unidade de negócio (`Religiosa`/`Educação`/`Loja`), Departamento = setor (`TI`/`RH`/etc). A tela do app **precisa de dois dropdowns separados**.
 
 **Body (JSON):**
 ```json
