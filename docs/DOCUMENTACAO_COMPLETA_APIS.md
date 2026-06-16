@@ -1134,7 +1134,170 @@ Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo b
 
 ## 9. Módulo: Notificações Push (FCM)
 
-O backend envia push pelo **Firebase Cloud Messaging HTTP v1** usando a Service Account configurada pelo admin (tela `/painel/notificacoes_push.php`). O fluxo do app é simples:
+O backend envia push pelo **Firebase Cloud Messaging HTTP v1** usando a Service Account configurada pelo admin (tela `/painel/notificacoes_push.php`). Esta seção tem duas partes: (9.0) o passo a passo do Firebase + setup do projeto, e (9.1/9.2) os endpoints mobile.
+
+---
+
+### 9.0 Setup do Firebase — passo a passo
+
+**Convenções de nomes do projeto desta organização** (use exatamente estes nomes; se mudar, ajuste em todos os pontos):
+
+| Item | Valor a usar |
+|---|---|
+| Nome do projeto no Firebase | `Presenca AOM` |
+| Project ID (Firebase) | `presenca-aom` (Firebase pode acrescentar sufixo aleatório se já existir) |
+| **Android applicationId** (`build.gradle`) | `br.org.aom.presenca` |
+| **iOS Bundle Identifier** (Xcode) | `br.org.aom.presenca` |
+| Nome do app exibido | `Presença AOM` |
+| Categoria (Android) | Productivity |
+
+#### 9.0.1 Criar o projeto no Firebase Console
+
+1. Acesse <https://console.firebase.google.com> com a conta Google da organização.
+2. Clique em **"Adicionar projeto"** → nome **`Presenca AOM`** → continuar.
+3. Desabilite Google Analytics (não é necessário pra push). → **Criar projeto**.
+4. Anote o **Project ID** que o Firebase atribuiu — você vai precisar dele.
+
+#### 9.0.2 Adicionar app Android
+
+1. Na home do projeto Firebase, clique no ícone **Android**.
+2. **Nome do pacote Android**: `br.org.aom.presenca` (exatamente este — tem que casar com o `applicationId` do `build.gradle`).
+3. **Apelido do app**: `Presenca AOM (Android)`.
+4. Ignore o SHA-1 nesta etapa (não é exigido para push; só pra login com Google).
+5. Clique **Registrar app** → baixe o arquivo **`google-services.json`**.
+6. Coloque o arquivo em **`android/app/google-services.json`** do projeto do app (no nível do módulo `app`, NÃO na raiz).
+7. No `android/build.gradle` (project-level), adicione o classpath:
+   ```gradle
+   classpath 'com.google.gms:google-services:4.4.2'
+   ```
+8. No `android/app/build.gradle` (módulo), no final do arquivo:
+   ```gradle
+   apply plugin: 'com.google.gms.google-services'
+   ```
+9. Adicione a dependência do Firebase Messaging:
+   ```gradle
+   implementation platform('com.google.firebase:firebase-bom:33.5.1')
+   implementation 'com.google.firebase:firebase-messaging'
+   ```
+10. No `AndroidManifest.xml`, garanta a permissão (Android 13+):
+    ```xml
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    ```
+
+#### 9.0.3 Adicionar app iOS
+
+1. Na home do projeto Firebase, clique em **"Adicionar app" → iOS**.
+2. **Bundle ID**: `br.org.aom.presenca` (exatamente este — tem que casar com o que está no Xcode).
+3. **Apelido do app**: `Presenca AOM (iOS)`.
+4. Clique **Registrar app** → baixe o arquivo **`GoogleService-Info.plist`**.
+5. Arraste o arquivo para o projeto Xcode na pasta `Runner/` (ou equivalente) — marque "Copy items if needed" e adicione ao target.
+6. No Xcode → **Signing & Capabilities** do target Runner → **+ Capability**:
+   - Adicione **Push Notifications**.
+   - Adicione **Background Modes** e marque "Remote notifications".
+7. Adicione no `Podfile`:
+   ```ruby
+   pod 'Firebase/Messaging'
+   ```
+   Rode `pod install`.
+
+#### 9.0.4 Subir a chave APNs para o Firebase (obrigatório pra iOS funcionar)
+
+iOS NÃO recebe push direto via FCM — o Firebase precisa repassar pro APNs (servidor de push da Apple). Para isso você precisa:
+
+1. Acesse <https://developer.apple.com/account/resources/authkeys/list> e crie uma **APNs Authentication Key** (formato `.p8`).
+2. Anote o **Key ID** (mostrado ao criar) e o **Team ID** (em Membership).
+3. Baixe o arquivo `.p8`.
+4. No Firebase Console → ⚙️ Configurações do projeto → aba **Cloud Messaging** → seção **APNs** → **Upload**:
+   - Cole o conteúdo do `.p8`.
+   - Preencha **Key ID** e **Team ID**.
+5. Pronto — push pra iOS começa a funcionar.
+
+#### 9.0.5 Baixar a Service Account (chave do servidor) e colar no painel admin
+
+A **Service Account JSON** é o que o **backend deste sistema** usa para enviar push. Diferente do `google-services.json` (que é credencial do app), a Service Account é credencial do **servidor**.
+
+1. Firebase Console → ⚙️ **Configurações do projeto** → aba **Contas de serviço**.
+2. Clique em **"Gerar nova chave privada"** → confirme → vai baixar um `.json`.
+3. Abra esse `.json` num editor → copie o conteúdo **inteiro** (de `{` a `}`).
+4. No site, vá em **Painel Administrativo → Notificações Push** (URL: `/painel/notificacoes_push.php`).
+5. Cole no campo **"Service Account JSON"** → marque **"Notificações push ativas"** → **Salvar**.
+6. O painel deve mostrar **Project ID** e **Client e-mail** como confirmação visual. O arquivo é gravado em `/var/backups/presenca/firebase/service_account.json` (fora do webroot, chmod 640 root:www-data) e nunca mais é exibido.
+
+> ⚠️ A Service Account JSON contém uma **chave privada RSA**. Trate como senha — não cole em chat, e-mail, repositório git. O painel admin é o único lugar autorizado a recebê-la.
+
+#### 9.0.6 Fluxo no app (resumo do que a IA precisa gerar)
+
+```
+[App inicia] → solicita permissão de notificação ao usuário.
+[Login OK]   → SDK Firebase.getToken() devolve o FCM token.
+             → POST /api/mobile/notifications/register.php
+                Body: {fcm_token, plataforma:"android"|"ios", modelo_dispositivo, versao_app}
+                Header: Authorization: Bearer <access_token do login>
+
+[onTokenRefresh dispara] → repete o register.php com o token novo.
+
+[Logout] → POST /api/mobile/notifications/unregister.php
+           Body: {fcm_token}
+           Header: Authorization: Bearer <access_token>
+         → APAGAR token local e access_token / refresh_token guardados.
+```
+
+**Snippets sugeridos por stack** (a IA do app escolhe conforme a linguagem):
+
+Flutter (`firebase_messaging` 15.x):
+```dart
+await FirebaseMessaging.instance.requestPermission();
+final fcmToken = await FirebaseMessaging.instance.getToken();
+await api.post('/api/mobile/notifications/register.php', {
+  'fcm_token': fcmToken,
+  'plataforma': Platform.isIOS ? 'ios' : 'android',
+  'modelo_dispositivo': '<modelo>',
+  'versao_app': '1.0.0',
+});
+FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+  await api.post('/api/mobile/notifications/register.php', { 'fcm_token': newToken, /* ... */ });
+});
+```
+
+React Native (`@react-native-firebase/messaging`):
+```ts
+await messaging().requestPermission();
+const fcmToken = await messaging().getToken();
+await api.post('/api/mobile/notifications/register.php', {
+  fcm_token: fcmToken, plataforma: Platform.OS, /* ... */
+});
+messaging().onTokenRefresh(async (newToken) => { /* repete */ });
+```
+
+Android nativo (Kotlin):
+```kotlin
+FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+    api.post("/api/mobile/notifications/register.php",
+        mapOf("fcm_token" to token, "plataforma" to "android", "modelo_dispositivo" to Build.MODEL, "versao_app" to BuildConfig.VERSION_NAME))
+}
+```
+
+iOS nativo (Swift):
+```swift
+Messaging.messaging().token { token, error in
+  guard let token = token else { return }
+  // POST /api/mobile/notifications/register.php
+}
+```
+
+#### 9.0.7 Validação ponta-a-ponta
+
+Para conferir que tudo está funcionando:
+1. App instalado, logado, registrou o token (cheque `notificacoes_push_dispositivos` no banco — deve ter 1 linha do usuário com `ativo=1`).
+2. No painel admin → seção **Enviar teste** → e-mail do usuário + título + mensagem → **Enviar teste**.
+3. Resultado esperado: alerta verde "Enviado para 1/1 dispositivo(s)" + a notificação chega no celular em alguns segundos.
+4. Se aparecer **"UNREGISTERED"** ou **"INVALID_ARGUMENT"**: o backend já desativou o token automaticamente — o app precisa reabrir e re-registrar (o `onTokenRefresh` resolve sozinho na próxima sessão).
+
+---
+
+### Endpoints mobile
+
+O fluxo do app é simples:
 
 1. Após o login bem-sucedido (uma vez), pegue o **FCM token** do dispositivo (via SDK do Firebase).
 2. Chame `POST /api/mobile/notifications/register.php` enviando o token.
@@ -1306,6 +1469,7 @@ Aviso só para a IA entender que não são bugs do app — são particularidades
 
 Novidades nesta versão:
 - **§9 Notificações Push (FCM)**: dois novos endpoints mobile — `register.php` (registra token FCM após login) e `unregister.php` (no logout). Painel admin em `/painel/notificacoes_push.php` para configurar a Service Account do Firebase e testar envios.
+- **§9.0 Setup Firebase passo a passo**: nome de pacote canônico (`br.org.aom.presenca`), Bundle ID iOS, instruções de Firebase Console (Android + iOS), upload da chave APNs, geração da Service Account, dependências de Gradle/Podfile, permissões de manifest, snippets Flutter/RN/nativo. A IA do app deve seguir este passo a passo literalmente para criar o projeto Firebase consistente com o backend.
 
 Correções nesta versão:
 - §3.5 `listar_reservas_usuario.php`: response shape corrigido — campos reais são `{id, data, valor, status, pode_excluir}` com enum `status: "Atual"|"Futura"|"Finalizada"`. O doc anterior listava campos que não existem (`valor_refeicao`, `horario_confirmacao`, `tipo_confirmacao`, `fora_horario`).
