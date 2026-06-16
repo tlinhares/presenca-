@@ -60,15 +60,17 @@ try {
         }
 
         if (!is_dir(PUSH_SA_DIR)) {
-            if (!@mkdir(PUSH_SA_DIR, 0750, true)) {
-                throw new RuntimeException('Não foi possível criar diretório: ' . PUSH_SA_DIR);
+            if (!@mkdir(PUSH_SA_DIR, 0770, true)) {
+                throw new RuntimeException('Não foi possível criar diretório ' . PUSH_SA_DIR . '. Crie manualmente: mkdir -p ' . PUSH_SA_DIR . ' && chown root:www-data ' . PUSH_SA_DIR . ' && chmod 770 ' . PUSH_SA_DIR);
             }
+        }
+        if (!is_writable(PUSH_SA_DIR)) {
+            throw new RuntimeException('Sem permissão de escrita em ' . PUSH_SA_DIR . '. Ajuste: chmod 770 ' . PUSH_SA_DIR . ' && chown root:www-data ' . PUSH_SA_DIR);
         }
         if (file_put_contents(PUSH_SA_FILE, json_encode($sa, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) === false) {
             throw new RuntimeException('Falha ao gravar arquivo da Service Account em ' . PUSH_SA_FILE);
         }
         @chmod(PUSH_SA_FILE, 0640);
-        @chown(PUSH_SA_FILE, 'root');
         @chgrp(PUSH_SA_FILE, 'www-data');
 
         $project_id   = $sa['project_id'];
