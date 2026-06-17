@@ -745,8 +745,33 @@ HTML;
                             <br><small class="text-muted">Receba notificação quando cancelar uma reserva</small>
                         </label>
                     </div>
-                    <div class="alert alert-info mt-4">
-                        <strong>Como funciona:</strong> Se você tiver telefone cadastrado, receberá por WhatsApp. Caso contrário, receberá por email.
+
+                    <hr class="my-4">
+                    <p class="mb-3"><strong>Como você quer receber</strong> <small class="text-muted">(pode marcar quantos quiser)</small></p>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="canal_whatsapp_inicial" checked>
+                        <label class="form-check-label" for="canal_whatsapp_inicial">
+                            <strong>💬 WhatsApp</strong>
+                            <br><small class="text-muted">Mensagem no número cadastrado (precisa ter telefone)</small>
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="canal_email_inicial" checked>
+                        <label class="form-check-label" for="canal_email_inicial">
+                            <strong>📧 E-mail</strong>
+                            <br><small class="text-muted">No endereço cadastrado no seu perfil</small>
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="canal_push_inicial" checked>
+                        <label class="form-check-label" for="canal_push_inicial">
+                            <strong>🔔 Push (aplicativo Intranet AOM)</strong>
+                            <br><small class="text-muted">Só funciona com o app instalado e autenticado</small>
+                        </label>
+                    </div>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <small><strong>Dica:</strong> deixe os 3 ligados se quiser garantir que a notificação chegue. Se desligar todos, você não receberá nada.</small>
                     </div>
                 </div>
                 <div class="modal-footer bg-slate-50 dark:bg-[#1e293b]">
@@ -1494,10 +1519,13 @@ HTML;
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    notificar_reserva_propria: $('#notif_propria_inicial').is(':checked') ? 1 : 0,
+                    notificar_reserva_propria:   $('#notif_propria_inicial').is(':checked')   ? 1 : 0,
                     notificar_reserva_adicional: $('#notif_adicional_inicial').is(':checked') ? 1 : 0,
-                    notificar_reserva_multipla: $('#notif_multipla_inicial').is(':checked') ? 1 : 0,
-                    notificar_reserva_cancelada: $('#notif_cancelada_inicial').is(':checked') ? 1 : 0
+                    notificar_reserva_multipla:  $('#notif_multipla_inicial').is(':checked')  ? 1 : 0,
+                    notificar_reserva_cancelada: $('#notif_cancelada_inicial').is(':checked') ? 1 : 0,
+                    canal_email:    $('#canal_email_inicial').is(':checked')    ? 1 : 0,
+                    canal_whatsapp: $('#canal_whatsapp_inicial').is(':checked') ? 1 : 0,
+                    canal_push:     $('#canal_push_inicial').is(':checked')     ? 1 : 0
                 }),
                 dataType: 'json',
                 success: function(response) {

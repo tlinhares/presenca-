@@ -2637,6 +2637,10 @@ function carregarConfiguracaoNotificacoes() {
                 $('#notif_multipla').prop('checked', dados.notificar_reserva_multipla);
                 $('#notif_cancelada').prop('checked', dados.notificar_reserva_cancelada || false);
                 $('#notif_lembrete_diario').prop('checked', dados.notificar_lembrete_diario !== undefined ? dados.notificar_lembrete_diario : true);
+                // Canais (default true se ausente para compat).
+                $('#canal_email').prop('checked',    dados.canal_email    !== undefined ? dados.canal_email    : true);
+                $('#canal_whatsapp').prop('checked', dados.canal_whatsapp !== undefined ? dados.canal_whatsapp : true);
+                $('#canal_push').prop('checked',     dados.canal_push     !== undefined ? dados.canal_push     : true);
             }
         },
         error: function() {
@@ -2652,7 +2656,10 @@ window.salvarConfiguracaoNotificacoes = function() {
     const notificarMultipla = $('#notif_multipla').is(':checked') ? 1 : 0;
     const notificarCancelada = $('#notif_cancelada').is(':checked') ? 1 : 0;
     const notificarLembreteDiario = $('#notif_lembrete_diario').is(':checked') ? 1 : 0;
-    
+    const canalEmail    = $('#canal_email').is(':checked')    ? 1 : 0;
+    const canalWhatsApp = $('#canal_whatsapp').is(':checked') ? 1 : 0;
+    const canalPush     = $('#canal_push').is(':checked')     ? 1 : 0;
+
     $.ajax({
         url: '../api/notificacao/salvar_configuracao.php',
         method: 'POST',
@@ -2662,7 +2669,10 @@ window.salvarConfiguracaoNotificacoes = function() {
             notificar_reserva_adicional: notificarAdicional,
             notificar_reserva_multipla: notificarMultipla,
             notificar_reserva_cancelada: notificarCancelada,
-            notificar_lembrete_diario: notificarLembreteDiario
+            notificar_lembrete_diario: notificarLembreteDiario,
+            canal_email: canalEmail,
+            canal_whatsapp: canalWhatsApp,
+            canal_push: canalPush
         }),
         dataType: 'json',
         success: function(response) {

@@ -95,7 +95,10 @@ try {
     // E que ainda NÃO receberam notificação de lembrete_reserva hoje
     // E que têm notificar_lembrete_diario habilitado (ou NULL, que significa habilitado por padrão)
     $sql_usuarios = "
-        SELECT u.id, u.nome, u.email, u.telefone, u.ativo
+        SELECT u.id, u.nome, u.email, u.telefone, u.ativo,
+               COALESCE(nu.canal_email, 1)    AS canal_email,
+               COALESCE(nu.canal_whatsapp, 1) AS canal_whatsapp,
+               COALESCE(nu.canal_push, 1)     AS canal_push
         FROM usuarios u
         LEFT JOIN notificacoes_usuario nu ON u.id = nu.id_usuario
         WHERE u.ativo = 1
@@ -187,21 +190,27 @@ try {
         );
         $mensagem = mb_convert_encoding($mensagem, 'UTF-8', 'auto');
 
-        // Push em paralelo (silencioso se não configurado). Curto e direto.
-        PushNotificationService::enviarSilencioso(
-            $conn,
-            (int) $usuario['id'],
-            'Lembrete: faça sua reserva de almoço',
-            'Você ainda não reservou para hoje. Horário limite: ' . $horario_limite_agendamento,
-            ['tipo' => 'lembrete_reserva']
-        );
+        // Canais escolhidos pelo usuário (vindos da query, default 1).
+        $canal_email_on    = (int) ($usuario['canal_email']    ?? 1) === 1;
+        $canal_whatsapp_on = (int) ($usuario['canal_whatsapp'] ?? 1) === 1;
+        $canal_push_on     = (int) ($usuario['canal_push']     ?? 1) === 1;
+
+        // Push em paralelo (silencioso se desligado pelo usuário, não configurado ou sem dispositivo).
+        if ($canal_push_on) {
+            PushNotificationService::enviarSilencioso(
+                $conn,
+                (int) $usuario['id'],
+                'Lembrete: faça sua reserva de almoço',
+                'Você ainda não reservou para hoje. Horário limite: ' . $horario_limite_agendamento,
+                ['tipo' => 'lembrete_reserva']
+            );
+        }
 
         $telefone_normalizado = WhatsAppService::normalizarTelefone($usuario['telefone'] ?? '');
         $whatsapp_ok = false;
 
-        // 1) Tentar WhatsApp se houver telefone válido — o WhatsAppService respeita a config de
-        // 'lembrete_reserva' (modo sorteio/específica/desabilitado) e tenta cada API até esgotar.
-        if (!empty($telefone_normalizado)) {
+        // 1) Tentar WhatsApp se houver telefone válido E canal_whatsapp ligado.
+        if (!empty($telefone_normalizado) && $canal_whatsapp_on) {
             if ($index > 0) {
                 $delay = WhatsAppService::calcularDelayAleatorio(5, 15);
                 logNotificacoes("Aguardando $delay segundos antes do próximo envio... (" . ($index + 1) . "/" . count($usuarios_sem_reserva) . ")");
@@ -229,8 +238,9 @@ try {
             logNotificacoes("✗ WhatsApp falhou para {$usuario['nome']}: " . ($resultado_wpp['mensagem'] ?? 'Erro desconhecido') . " — caindo para email");
         }
 
-        // 2) Fallback: email (se canal WhatsApp foi desabilitado, falhou em todas as APIs, ou usuário sem telefone)
-        $tem_email = !empty($usuario['email']) && filter_var($usuario['email'], FILTER_VALIDATE_EMAIL);
+        // 2) Fallback: email (se canal WhatsApp foi desabilitado, falhou ou usuário sem telefone)
+        //    Respeita canal_email do usuário.
+        $tem_email = !empty($usuario['email']) && filter_var($usuario['email'], FILTER_VALIDATE_EMAIL) && $canal_email_on;
         if (!$tem_email) {
             $total_falhas++;
             logNotificacoes("✗ Usuário {$usuario['nome']} sem telefone válido nem email — lembrete não enviado");

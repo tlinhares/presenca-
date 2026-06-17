@@ -844,13 +844,67 @@ $mensagem_inicio = get_config('mensagem_inicio', '');
                   </div>
                 </div>
               </div>
-              
+
+              <hr class="my-4">
+              <h6 class="mb-3"><i class="bi bi-send me-2"></i>Por onde você quer receber</h6>
+              <p class="text-muted small mb-3">Você pode escolher um ou mais canais. Se desligar todos, nenhuma notificação chega.</p>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <div class="card h-100 notif-card" style="border-radius: 12px; border: 2px solid #e9ecef;">
+                    <div class="card-body">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="canal_whatsapp" style="width: 3em; height: 1.5em;">
+                        <label class="form-check-label ms-2" for="canal_whatsapp">
+                          <div class="d-flex align-items-center mb-1">
+                            <span style="font-size: 1.5rem; margin-right: 8px;">💬</span>
+                            <strong>WhatsApp</strong>
+                          </div>
+                          <small class="text-muted">Precisa ter telefone no perfil</small>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 notif-card" style="border-radius: 12px; border: 2px solid #e9ecef;">
+                    <div class="card-body">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="canal_email" style="width: 3em; height: 1.5em;">
+                        <label class="form-check-label ms-2" for="canal_email">
+                          <div class="d-flex align-items-center mb-1">
+                            <span style="font-size: 1.5rem; margin-right: 8px;">📧</span>
+                            <strong>E-mail</strong>
+                          </div>
+                          <small class="text-muted">No endereço do seu perfil</small>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 notif-card" style="border-radius: 12px; border: 2px solid #e9ecef;">
+                    <div class="card-body">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="canal_push" style="width: 3em; height: 1.5em;">
+                        <label class="form-check-label ms-2" for="canal_push">
+                          <div class="d-flex align-items-center mb-1">
+                            <span style="font-size: 1.5rem; margin-right: 8px;">🔔</span>
+                            <strong>Push (app)</strong>
+                          </div>
+                          <small class="text-muted">No app Intranet AOM logado</small>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="alert alert-success mt-4" style="border-radius: 12px; border-left: 4px solid #28a745;">
                 <div class="d-flex align-items-start">
-                  <i class="bi bi-whatsapp me-3" style="font-size: 1.5rem; color: #25D366;"></i>
+                  <i class="bi bi-info-circle me-3" style="font-size: 1.5rem; color: #28a745;"></i>
                   <div>
-                    <strong>Como funciona:</strong><br>
-                    <small>Se você tiver telefone cadastrado, receberá por WhatsApp. Caso contrário (ou se o envio por WhatsApp falhar), receberá por email.</small>
+                    <strong>Dica:</strong><br>
+                    <small>Marque os 3 canais para garantir a entrega. O WhatsApp continua sendo o canal principal quando você tem telefone cadastrado; e-mail entra como apoio; o push só funciona com o app instalado e autenticado.</small>
                   </div>
                 </div>
               </div>

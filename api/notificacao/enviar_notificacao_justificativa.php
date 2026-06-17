@@ -93,19 +93,24 @@ function enviarNotificacaoJustificativa($usuario_id, $decisao, $dados_justificat
     // Gerar mensagens
     $mensagens = gerarMensagemNotificacaoJustificativa($decisao, $dados_justificativa, $usuario['nome']);
 
-    // Push (em paralelo ao canal principal — silencioso se não configurado).
-    PushNotificationService::enviarSilencioso(
-        $conn,
-        (int) $usuario_id,
-        $mensagens['assunto'],
-        PushNotificationService::corpoCurto($mensagens['email_texto'] ?? ''),
-        ['tipo' => 'justificativa_' . $decisao]
-    );
+    // Canais escolhidos pelo usuário (default tudo on).
+    $canais = obterCanaisNotificacao((int) $usuario_id, $conn);
+
+    // Push (em paralelo — silencioso se desligado/não configurado/sem dispositivo).
+    if ($canais['canal_push']) {
+        PushNotificationService::enviarSilencioso(
+            $conn,
+            (int) $usuario_id,
+            $mensagens['assunto'],
+            PushNotificationService::corpoCurto($mensagens['email_texto'] ?? ''),
+            ['tipo' => 'justificativa_' . $decisao]
+        );
+    }
 
     // Verificar se tem telefone válido usando WhatsAppService
     $telefone_normalizado = WhatsAppService::normalizarTelefone($usuario['telefone']);
-    $tem_telefone = !empty($telefone_normalizado);
-    $tem_email = !empty($usuario['email']) && filter_var($usuario['email'], FILTER_VALIDATE_EMAIL);
+    $tem_telefone = !empty($telefone_normalizado) && $canais['canal_whatsapp'];
+    $tem_email = !empty($usuario['email']) && filter_var($usuario['email'], FILTER_VALIDATE_EMAIL) && $canais['canal_email'];
     
     // LÓGICA: Se tem telefone, envia APENAS por WhatsApp
     // Se não tem telefone mas tem email, envia APENAS por email

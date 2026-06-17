@@ -100,10 +100,36 @@ function usuarioQuerNotificacao($usuario_id, $tipo_notificacao, $conn) {
         // Se tem configuração, respeitar a escolha do usuário
         return (bool)$row[$tipo_notificacao];
     }
-    
+
     $stmt->close();
     // Se não tem configuração, PERMITIR notificação por padrão (mudança importante!)
     return true;
+}
+
+/**
+ * Retorna os 3 canais escolhidos pelo usuário. Default = todos ligados
+ * (backward-compat: usuários sem linha em notificacoes_usuario continuam
+ * recebendo por todos os canais habilitados globalmente).
+ *
+ * @return array{canal_email:bool, canal_whatsapp:bool, canal_push:bool}
+ */
+function obterCanaisNotificacao(int $usuario_id, mysqli $conn): array {
+    $default = ['canal_email' => true, 'canal_whatsapp' => true, 'canal_push' => true];
+    if (!$conn->query("SHOW COLUMNS FROM notificacoes_usuario LIKE 'canal_email'")->num_rows) {
+        return $default; // migração ainda não aplicada
+    }
+    $stmt = $conn->prepare("SELECT canal_email, canal_whatsapp, canal_push FROM notificacoes_usuario WHERE id_usuario = ?");
+    if (!$stmt) return $default;
+    $stmt->bind_param('i', $usuario_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$row) return $default;
+    return [
+        'canal_email'    => (bool) ($row['canal_email']    ?? 1),
+        'canal_whatsapp' => (bool) ($row['canal_whatsapp'] ?? 1),
+        'canal_push'     => (bool) ($row['canal_push']     ?? 1),
+    ];
 }
 
 /**
@@ -146,21 +172,25 @@ function enviarNotificacaoReserva($usuario_id, $tipo_reserva, $dados_reserva, $c
     // Gerar mensagens
     $mensagens = gerarMensagemNotificacao($tipo_reserva, $dados_reserva, $usuario['nome']);
 
-    // Push (em paralelo ao canal principal — não afeta o resultado retornado).
-    // Se push não estiver configurado ou o usuário não tiver dispositivos
-    // registrados, a chamada sai silenciosamente.
-    PushNotificationService::enviarSilencioso(
-        $conn,
-        (int) $usuario_id,
-        $mensagens['assunto'],
-        PushNotificationService::corpoCurto($mensagens['email_texto'] ?? ''),
-        ['tipo' => 'reserva_' . $tipo_reserva]
-    );
+    // Canais escolhidos pelo usuário (default tudo on para retrocompat).
+    $canais = obterCanaisNotificacao((int) $usuario_id, $conn);
+
+    // Push (em paralelo aos demais canais — silencioso se canal desligado,
+    // se push não estiver configurado ou se o usuário não tiver dispositivos).
+    if ($canais['canal_push']) {
+        PushNotificationService::enviarSilencioso(
+            $conn,
+            (int) $usuario_id,
+            $mensagens['assunto'],
+            PushNotificationService::corpoCurto($mensagens['email_texto'] ?? ''),
+            ['tipo' => 'reserva_' . $tipo_reserva]
+        );
+    }
 
     // Verificar se tem telefone válido usando WhatsAppService
     $telefone_normalizado = WhatsAppService::normalizarTelefone($usuario['telefone']);
-    $tem_telefone = !empty($telefone_normalizado);
-    $tem_email = !empty($usuario['email']) && filter_var($usuario['email'], FILTER_VALIDATE_EMAIL);
+    $tem_telefone = !empty($telefone_normalizado) && $canais['canal_whatsapp'];
+    $tem_email    = !empty($usuario['email']) && filter_var($usuario['email'], FILTER_VALIDATE_EMAIL) && $canais['canal_email'];
     
     // LÓGICA: Se tem telefone, envia APENAS por WhatsApp
     // Se não tem telefone mas tem email, envia APENAS por email

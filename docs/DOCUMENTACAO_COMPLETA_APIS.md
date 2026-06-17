@@ -1240,6 +1240,80 @@ Aceita `foto` ou `foto_base64`. Prefixo `data:image/...;base64,` removido pelo b
 
 ---
 
+### 8.4 `GET /api/notificacao/buscar_configuracao.php`
+
+Retorna as preferências de notificação do usuário autenticado: quais **tipos** ele quer receber e por quais **canais** (e-mail / WhatsApp / push).
+
+**Query:** nenhum.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "configurado": true,
+  "dados": {
+    "notificar_reserva_propria":     true,
+    "notificar_reserva_adicional":   true,
+    "notificar_reserva_multipla":    true,
+    "notificar_reserva_cancelada":   true,
+    "notificar_lembrete_diario":     true,
+    "notificar_justificativa_culto": true,
+    "canal_email":    true,
+    "canal_whatsapp": true,
+    "canal_push":     true
+  }
+}
+```
+
+- `configurado` (bool): `false` se o usuário ainda não salvou nada (defaults aplicados).
+- `notificar_*` (bool): por **tipo** de notificação — se o usuário quer ser notificado quando esse evento ocorrer.
+- `canal_*` (bool): por qual **canal** ele quer receber. Default todos `true` (backward-compat).
+
+**Regra do backend:** uma notificação só vai por um canal se o **tipo** está ligado **E** o **canal** está ligado.
+
+**Erros:** `Usuário não autenticado`.
+
+---
+
+### 8.5 `POST /api/notificacao/salvar_configuracao.php`
+
+Salva as preferências. **Aceita campos parciais** — manda só o que está mudando, o resto preserva.
+
+**Body (JSON):**
+```json
+{
+  "notificar_reserva_propria":     1,
+  "notificar_reserva_adicional":   1,
+  "notificar_reserva_multipla":    1,
+  "notificar_reserva_cancelada":   1,
+  "notificar_lembrete_diario":     1,
+  "notificar_justificativa_culto": 1,
+  "canal_email":    1,
+  "canal_whatsapp": 1,
+  "canal_push":     1
+}
+```
+
+Todos os campos são opcionais. Valores aceitos: `1`/`0`, `true`/`false`, `"sim"`/`"on"`. Campo ausente = não altera.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "mensagem": "Configurações salvas com sucesso",
+  "dados": { /* mesmo formato do buscar_configuracao */ }
+}
+```
+
+**Erros:** `Usuário não autenticado`, `Erro ao salvar: ...`.
+
+**Uso típico no app:**
+- Em uma tela de Configurações → seção "Notificações", carregar com `buscar_configuracao` e mostrar 9 switches (6 tipos + 3 canais).
+- A cada toggle, mandar `salvar_configuracao` só com a chave alterada (parcial).
+- Sub-aviso para o usuário: "Se desligar os 3 canais, você não receberá nada."
+
+---
+
 ## 9. Módulo: Notificações Push (FCM)
 
 O backend envia push pelo **Firebase Cloud Messaging HTTP v1** usando a Service Account configurada pelo admin (tela `/painel/notificacoes_push.php`). Esta seção tem duas partes: (9.0) o passo a passo do Firebase + setup do projeto, e (9.1/9.2) os endpoints mobile.
@@ -1592,6 +1666,8 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 8.1 | `/api/usuarios/buscar_perfil.php` | GET | Bearer | `{status:"ok", usuario}` |
 | 8.2 | `/api/usuarios/atualizar_perfil.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | 8.3 | `/api/usuarios/atualizar_foto.php` | POST | Bearer | `{status:"ok", mensagem, foto_base64}` |
+| 8.4 | `/api/notificacao/buscar_configuracao.php` | GET | Bearer | `{status:"ok", configurado, dados:{notificar_*, canal_email, canal_whatsapp, canal_push}}` |
+| 8.5 | `/api/notificacao/salvar_configuracao.php` | POST | Bearer | `{status:"ok", mensagem, dados}` (parcial OK) |
 | Notificações Push |
 | 9.1 | `/api/mobile/notifications/register.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | 9.2 | `/api/mobile/notifications/unregister.php` | POST | Bearer | `{status:"ok", mensagem}` |
@@ -1626,13 +1702,14 @@ Aviso só para a IA entender que não são bugs do app — são particularidades
 
 ---
 
-**Endpoints totais documentados: 39** (3 auth + 14 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 3 usuários + 2 push + 1 utilitário).
+**Endpoints totais documentados: 41** (3 auth + 14 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 5 usuários + 2 push + 1 utilitário).
 
 **Nome oficial do app mobile:** `Intranet AOM` (não "Presença AOM" — o web continua sendo Presença AOM, só o app foi renomeado em 2026-06-16). Package Android e iOS Bundle ID: `br.org.aom.intranet`. Projeto Firebase: `intranet-aom`.
 
 **Última atualização:** 2026-06-16 (auditoria contra código real + frontend web + push notifications via FCM)
 
 Novidades nesta versão:
+- **§8.4 / §8.5 preferências por canal**: usuário agora escolhe não só QUE tipo de notificação receber, mas também por QUAIS canais (e-mail / WhatsApp / push). 3 colunas novas em `notificacoes_usuario`: `canal_email`, `canal_whatsapp`, `canal_push` (default 1 = backward-compat). APIs `buscar_configuracao.php` e `salvar_configuracao.php` agora aceitam Bearer Token + retornam/aceitam os canais. Backend (reservar/cancelar, justificativa, lembrete diário) respeita cada flag — só envia por um canal se o tipo está ligado E o canal está ligado.
 - **Renomeação do app para "Intranet AOM"** (era "Presença AOM"). Project Firebase: `intranet-aom`, package/bundle: `br.org.aom.intranet`. Aplicado em todo o §9.0 e mensagens default.
 - **§3.11 `reservar_multiplo.php`** agora mobile. Resolve a tela "Reservar para vários dias" que aparecia como "em desenvolvimento" no app.
 - **§3.12-3.14 fluxo admin "Reservas de Departamento"** agora mobile: `listar_entidades.php`, `reservar_departamento.php`, `excluir_reserva_departamento.php`. Resolve o bug do dropdown que mostrava TI/RH/Financeiro (dados de `frota_departamentos`) quando devia mostrar Religiosa/Educação/Loja (tabela `entidade`).
