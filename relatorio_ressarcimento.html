@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Relatório Consolidado de Ressarcimento — Refeitório AOM</title>
+<style>
+  @page { size: A4; margin: 1.5cm; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #1a202c; line-height: 1.5; max-width: 920px; margin: 0 auto; padding: 1.5rem; }
+  h1 { color: #2d3748; margin: 0 0 .25rem; font-size: 1.6rem; }
+  h2 { color: #4a5568; font-size: 1.15rem; margin-top: 2rem; padding-bottom: .35rem; border-bottom: 2px solid #4c51bf; }
+  h3 { color: #2d3748; font-size: 1rem; margin: 1.2rem 0 .4rem; }
+  .meta { color: #718096; font-size: .85rem; margin-bottom: 1rem; }
+  .summary { background: #f7fafc; border-left: 4px solid #4c51bf; padding: 1rem 1.25rem; margin: 1rem 0 1.5rem; border-radius: 4px; }
+  .summary p { margin: .3rem 0; }
+  .total-geral { background: linear-gradient(135deg,#4c51bf 0%,#2d3a8c 100%); color: #fff; padding: 1.25rem 1.5rem; border-radius: 8px; margin: .5rem 0 1.5rem; }
+  .total-geral .v { font-size: 2.2rem; font-weight: 700; margin: .25rem 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: .5rem; font-size: .85rem; }
+  th { background: #edf2f7; color: #2d3748; text-align: left; padding: .55rem .6rem; border-bottom: 2px solid #cbd5e0; }
+  td { padding: .45rem .6rem; border-bottom: 1px solid #e2e8f0; }
+  td.r { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #f7fafc; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .7rem; font-weight: 600; }
+  .tag-c { background: #c6f6d5; color: #22543d; }
+  .tag-e { background: #feebc8; color: #744210; }
+  .titular { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .titular .head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: .5rem; }
+  .titular .nome { font-size: 1.15rem; font-weight: 700; color: #2d3748; }
+  .titular .email { color: #718096; font-size: .85rem; }
+  .titular .valor { font-size: 1.5rem; font-weight: 700; color: #4c51bf; }
+  .breakdown { background: #f7fafc; padding: .5rem .75rem; border-radius: 4px; font-size: .8rem; color: #4a5568; margin: .5rem 0; }
+  .nota { background: #fffaf0; border-left: 3px solid #dd6b20; padding: .65rem .85rem; font-size: .82rem; color: #744210; border-radius: 4px; margin: 1rem 0; }
+  .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; color: #718096; font-size: .8rem; }
+  @media print { body { padding: 0; } .titular { box-shadow: none; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<h1>Relatório Consolidado de Ressarcimento</h1>
+<p class="meta">
+  Sistema Intranet AOM (presenca.aom.org.br) &nbsp;•&nbsp;
+  Cobrança indevida em reservas de dependentes ≤ 12 anos &nbsp;•&nbsp;
+  Gerado em 29/06/2026 às 12:36</p>
+
+<div class="summary">
+  <p><strong>Resumo do incidente:</strong> entre julho/2025 e junho/2026, um bug no recálculo do flag <code>cobrar</code> dos cadastros de dependentes fez o sistema cobrar indevidamente valor de reservas de crianças com até 12 anos — que, conforme a regra, deveriam ser sempre gratuitas (inclusive em reservas fora do horário).</p>
+  <p><strong>Causa raiz:</strong> operador <code>idade &lt; 12</code> usado em vez de <code>idade &lt;= 12</code> em <code>dependentes/editar.php</code> e <code>salvar_dependente.php</code> + <code>js/almoco.js</code>; ausência de defesa em profundidade nos endpoints de reserva.</p>
+  <p><strong>Correções implementadas (commits <code>86d35ab</code> e seguinte):</strong> bug-fonte corrigido em 3 arquivos PHP + 1 JS &nbsp;|&nbsp; defesa em profundidade nos endpoints de reserva (recalculam idade) &nbsp;|&nbsp; trigger MySQL que zera valor para qualquer dependente ≤12 anos automaticamente em INSERT/UPDATE &nbsp;|&nbsp; 2 endpoints legados desativados (HTTP 410).</p>
+  <p><strong>Garantia futura:</strong> mesmo que algum endpoint novo, importação ou ferramenta administrativa tente gravar cobrança para criança ≤12 anos, o banco silenciosamente zera. Auditoria executada e teste do trigger validado em produção.</p>
+</div>
+
+<div class="total-geral">
+  <div style="font-size:.85rem;opacity:.9;">VALOR TOTAL A RESSARCIR</div>
+  <div class="v">R$ 938,00</div>
+  <div style="font-size:.85rem;opacity:.9;">73 reservas indevidas em 5 funcionário(s) titular(es)</div>
+</div>
+
+<h2>Detalhamento por funcionário</h2>
+
+<div class="titular">
+  <div class="head">
+    <div>
+      <div class="nome">Marcos Augusto Nunes de Almeida</div>
+      <div class="email">marcos.augusto@adventistas.org</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:.75rem;color:#718096;text-transform:uppercase;letter-spacing:.05em;">Total a ressarcir</div>
+      <div class="valor">R$ 374,00</div>
+    </div>
+  </div>
+  <div class="breakdown">
+    35 reservas afetadas
+    &nbsp;•&nbsp; 16 confirmadas por notificação (R$ 184,00)
+    &nbsp;•&nbsp; 19 estimadas pela regra do sistema (R$ 190,00)
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:5%;">#</th><th style="width:13%;">Data</th>
+      <th style="width:26%;">Dependente</th><th style="width:8%;">Idade</th>
+      <th style="width:12%;">Tipo</th><th style="width:12%;" class="r">Valor</th>
+      <th>Fonte</th>
+    </tr></thead>
+    <tbody>
+            <tr>
+        <td>1</td>
+        <td>26/08/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>2</td>
+        <td>27/08/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>3</td>
+        <td>28/08/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>4</td>
+        <td>01/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>5</td>
+        <td>02/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>6</td>
+        <td>03/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>7</td>
+        <td>09/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>8</td>
+        <td>10/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>9</td>
+        <td>12/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>10</td>
+        <td>22/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>11</td>
+        <td>26/09/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>12</td>
+        <td>02/10/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>13</td>
+        <td>06/10/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>14</td>
+        <td>08/10/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>15</td>
+        <td>21/10/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>16</td>
+        <td>05/11/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>17</td>
+        <td>28/11/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>18</td>
+        <td>11/12/2025</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>19</td>
+        <td>07/01/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>20</td>
+        <td>08/01/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>21</td>
+        <td>12/01/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>22</td>
+        <td>14/01/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>23</td>
+        <td>09/02/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>5 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 10,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>24</td>
+        <td>03/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>25</td>
+        <td>08/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>26</td>
+        <td>09/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>27</td>
+        <td>10/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>28</td>
+        <td>12/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>29</td>
+        <td>16/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>30</td>
+        <td>19/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>31</td>
+        <td>22/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>32</td>
+        <td>23/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>33</td>
+        <td>24/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>34</td>
+        <td>25/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr>
+        <td>35</td>
+        <td>29/06/2026</td>
+        <td>Maísa Carvalho de Almeida</td>
+        <td>6 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-c">CONFIRMADA</span> &nbsp;Confirmada (notificação enviada)</td>
+      </tr>
+            <tr style="font-weight:700;">
+        <td colspan="5" style="text-align:right;border-top:2px solid #cbd5e0;">Subtotal</td>
+        <td class="r" style="border-top:2px solid #cbd5e0;">R$ 374,00</td>
+        <td style="border-top:2px solid #cbd5e0;"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div class="titular">
+  <div class="head">
+    <div>
+      <div class="nome">Giulian Lopes Vasques</div>
+      <div class="email">giulian.vasques@adventistas.org</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:.75rem;color:#718096;text-transform:uppercase;letter-spacing:.05em;">Total a ressarcir</div>
+      <div class="valor">R$ 348,00</div>
+    </div>
+  </div>
+  <div class="breakdown">
+    26 reservas afetadas
+    &nbsp;•&nbsp; 0 confirmadas por notificação (R$ 0,00)
+    &nbsp;•&nbsp; 26 estimadas pela regra do sistema (R$ 348,00)
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:5%;">#</th><th style="width:13%;">Data</th>
+      <th style="width:26%;">Dependente</th><th style="width:8%;">Idade</th>
+      <th style="width:12%;">Tipo</th><th style="width:12%;" class="r">Valor</th>
+      <th>Fonte</th>
+    </tr></thead>
+    <tbody>
+            <tr>
+        <td>1</td>
+        <td>21/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>2</td>
+        <td>22/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>3</td>
+        <td>23/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>4</td>
+        <td>24/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>5</td>
+        <td>25/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>6</td>
+        <td>28/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>7</td>
+        <td>29/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>8</td>
+        <td>30/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>9</td>
+        <td>31/07/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>10</td>
+        <td>01/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>11</td>
+        <td>04/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>12</td>
+        <td>05/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>13</td>
+        <td>06/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>14</td>
+        <td>07/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>15</td>
+        <td>08/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>16</td>
+        <td>12/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>17</td>
+        <td>13/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>18</td>
+        <td>14/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>19</td>
+        <td>15/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>20</td>
+        <td>21/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 30,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (fora do horário)</td>
+      </tr>
+            <tr>
+        <td>21</td>
+        <td>22/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 30,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (fora do horário)</td>
+      </tr>
+            <tr>
+        <td>22</td>
+        <td>25/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>23</td>
+        <td>26/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>24</td>
+        <td>27/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>25</td>
+        <td>28/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>26</td>
+        <td>29/08/2025</td>
+        <td>Emmanuel</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr style="font-weight:700;">
+        <td colspan="5" style="text-align:right;border-top:2px solid #cbd5e0;">Subtotal</td>
+        <td class="r" style="border-top:2px solid #cbd5e0;">R$ 348,00</td>
+        <td style="border-top:2px solid #cbd5e0;"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div class="titular">
+  <div class="head">
+    <div>
+      <div class="nome">Leandro Machado Santos</div>
+      <div class="email">leandro.machado@adventistas.org</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:.75rem;color:#718096;text-transform:uppercase;letter-spacing:.05em;">Total a ressarcir</div>
+      <div class="valor">R$ 108,00</div>
+    </div>
+  </div>
+  <div class="breakdown">
+    6 reservas afetadas
+    &nbsp;•&nbsp; 0 confirmadas por notificação (R$ 0,00)
+    &nbsp;•&nbsp; 6 estimadas pela regra do sistema (R$ 108,00)
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:5%;">#</th><th style="width:13%;">Data</th>
+      <th style="width:26%;">Dependente</th><th style="width:8%;">Idade</th>
+      <th style="width:12%;">Tipo</th><th style="width:12%;" class="r">Valor</th>
+      <th>Fonte</th>
+    </tr></thead>
+    <tbody>
+            <tr>
+        <td>1</td>
+        <td>24/07/2025</td>
+        <td>Pedro</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>2</td>
+        <td>05/08/2025</td>
+        <td>Pedro</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>3</td>
+        <td>06/08/2025</td>
+        <td>Pedro</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 30,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (fora do horário)</td>
+      </tr>
+            <tr>
+        <td>4</td>
+        <td>12/08/2025</td>
+        <td>Pedro</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 30,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (fora do horário)</td>
+      </tr>
+            <tr>
+        <td>5</td>
+        <td>03/09/2025</td>
+        <td>Pedro</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>6</td>
+        <td>09/09/2025</td>
+        <td>Pedro</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr style="font-weight:700;">
+        <td colspan="5" style="text-align:right;border-top:2px solid #cbd5e0;">Subtotal</td>
+        <td class="r" style="border-top:2px solid #cbd5e0;">R$ 108,00</td>
+        <td style="border-top:2px solid #cbd5e0;"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div class="titular">
+  <div class="head">
+    <div>
+      <div class="nome">Thiago Amaral</div>
+      <div class="email">thiago.amaral@adventistas.org</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:.75rem;color:#718096;text-transform:uppercase;letter-spacing:.05em;">Total a ressarcir</div>
+      <div class="valor">R$ 66,00</div>
+    </div>
+  </div>
+  <div class="breakdown">
+    4 reservas afetadas
+    &nbsp;•&nbsp; 0 confirmadas por notificação (R$ 0,00)
+    &nbsp;•&nbsp; 4 estimadas pela regra do sistema (R$ 66,00)
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:5%;">#</th><th style="width:13%;">Data</th>
+      <th style="width:26%;">Dependente</th><th style="width:8%;">Idade</th>
+      <th style="width:12%;">Tipo</th><th style="width:12%;" class="r">Valor</th>
+      <th>Fonte</th>
+    </tr></thead>
+    <tbody>
+            <tr>
+        <td>1</td>
+        <td>16/06/2026</td>
+        <td>Samuel Nunes Amaral</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>2</td>
+        <td>17/06/2026</td>
+        <td>Samuel Nunes Amaral</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 30,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (fora do horário)</td>
+      </tr>
+            <tr>
+        <td>3</td>
+        <td>18/06/2026</td>
+        <td>Samuel Nunes Amaral</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr>
+        <td>4</td>
+        <td>29/06/2026</td>
+        <td>Samuel Nunes Amaral</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr style="font-weight:700;">
+        <td colspan="5" style="text-align:right;border-top:2px solid #cbd5e0;">Subtotal</td>
+        <td class="r" style="border-top:2px solid #cbd5e0;">R$ 66,00</td>
+        <td style="border-top:2px solid #cbd5e0;"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div class="titular">
+  <div class="head">
+    <div>
+      <div class="nome">Alex Moreira Silva</div>
+      <div class="email">alex.moreira@adventistas.org</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:.75rem;color:#718096;text-transform:uppercase;letter-spacing:.05em;">Total a ressarcir</div>
+      <div class="valor">R$ 42,00</div>
+    </div>
+  </div>
+  <div class="breakdown">
+    2 reservas afetadas
+    &nbsp;•&nbsp; 0 confirmadas por notificação (R$ 0,00)
+    &nbsp;•&nbsp; 2 estimadas pela regra do sistema (R$ 42,00)
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:5%;">#</th><th style="width:13%;">Data</th>
+      <th style="width:26%;">Dependente</th><th style="width:8%;">Idade</th>
+      <th style="width:12%;">Tipo</th><th style="width:12%;" class="r">Valor</th>
+      <th>Fonte</th>
+    </tr></thead>
+    <tbody>
+            <tr>
+        <td>1</td>
+        <td>08/09/2025</td>
+        <td>Sérgio Sousa Silva</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 30,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (fora do horário)</td>
+      </tr>
+            <tr>
+        <td>2</td>
+        <td>09/09/2025</td>
+        <td>Sérgio Sousa Silva</td>
+        <td>12 anos</td>
+        <td>Presencial</td>
+        <td class="r">R$ 12,00</td>
+        <td><span class="tag tag-e">ESTIMADA</span> &nbsp;Estimada (grupo do titular)</td>
+      </tr>
+            <tr style="font-weight:700;">
+        <td colspan="5" style="text-align:right;border-top:2px solid #cbd5e0;">Subtotal</td>
+        <td class="r" style="border-top:2px solid #cbd5e0;">R$ 42,00</td>
+        <td style="border-top:2px solid #cbd5e0;"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="nota">
+  <strong>Observação sobre as fontes:</strong><br>
+  <strong>CONFIRMADA</strong> — o valor foi extraído da mensagem de notificação (WhatsApp/e-mail) realmente enviada ao funcionário no dia da reserva. É o valor exato que o sistema cobrou.<br>
+  <strong>ESTIMADA</strong> — não houve mensagem enviada (notificações desativadas naquela época), então o valor foi reconstituído aplicando a regra do sistema: valor do grupo do titular (R$ 10 até abril/2026, R$ 12 depois) se a reserva foi feita dentro do horário, ou R$ 30 se foi fora do horário. A coluna "Idade" confirma que o dependente tinha ≤ 12 anos na data da reserva.
+</div>
+
+<h2>Auditoria de segurança realizada</h2>
+<p style="font-size:.9rem;color:#4a5568;">Após a correção inicial, foi feita uma auditoria defensiva completa que mapeou todos os pontos do sistema capazes de criar ou alterar cobrança. Foram aplicadas as seguintes correções para impedir reincidência:</p>
+<ul style="font-size:.88rem;color:#4a5568;line-height:1.7;">
+  <li><strong>Bug-fonte corrigido:</strong> operador <code>&lt;</code> trocado por <code>&lt;=</code> em <code>dependentes/editar.php</code>, <code>salvar_dependente.php</code> e <code>js/almoco.js</code>.</li>
+  <li><strong>Defesa em profundidade nos endpoints de reserva:</strong> <code>reservar_adicional.php</code>, <code>editar_reserva_adicional.php</code>, <code>reservar_multiplo.php</code> e <code>verificar_horario_adicional.php</code> agora recalculam o flag pela idade real, ignorando o banco.</li>
+  <li><strong>Trigger MySQL como rede de segurança absoluta:</strong> <code>tr_reservas_adicionais_isenta_menor_ins</code> e <code>_upd</code> zeram automaticamente o valor de qualquer reserva onde o dependente tenha ≤ 12 anos na data — funciona mesmo para inserções vindas de qualquer endpoint atual, futuro, importação manual ou cliente externo.</li>
+  <li><strong>Endpoints legados desativados:</strong> <code>reservar_OK.php</code> e <code>reservar_adicional_ultimo.php</code> retornam agora HTTP 410 (Gone).</li>
+  <li><strong>Estado atual do banco:</strong> zero dependentes ativos com flag inconsistente. Triggers ativas e testadas em produção.</li>
+</ul>
+
+<div class="footer">
+  <strong>Documento gerado automaticamente pelo sistema Intranet AOM.</strong><br>
+  Dados conferidos contra a tabela <code>reservas_adicionais</code> (193 reservas dos 6 dependentes auditadas) e contra o histórico em <code>notificacoes_enviadas</code>.<br>
+  Commits: <code>86d35ab</code> (correção inicial) + commit subsequente desta auditoria (P0-1 a P0-3 + P1-1 a P1-3).
+</div>
+
+</body>
+</html>

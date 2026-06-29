@@ -72,7 +72,7 @@ if ($data_reserva > $data_limite_futuro) {
 }
 
 // Verificar se o dependente pertence ao usuário
-$stmt = $conn->prepare("SELECT id, nome, cobrar FROM dependentes WHERE id = ? AND id_usuario = ? AND ativo = 1");
+$stmt = $conn->prepare("SELECT id, nome, cobrar, nascimento FROM dependentes WHERE id = ? AND id_usuario = ? AND ativo = 1");
 $stmt->bind_param("ii", $id_dependente, $id_usuario);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -84,6 +84,15 @@ if ($result->num_rows === 0) {
 
 $dependente = $result->fetch_assoc();
 $stmt->close();
+
+// Defesa em profundidade: recalcula cobrar pela idade real (vide reservar_adicional.php).
+// Garante que a UX (valor exibido no app) bate com o que o backend de fato cobrará.
+if (!empty($dependente['nascimento'])) {
+    try {
+        $idade_dep = (new DateTime())->diff(new DateTime($dependente['nascimento']))->y;
+        $dependente['cobrar'] = ($idade_dep <= 12) ? 1 : 0;
+    } catch (Exception $e) { /* fallback silencioso */ }
+}
 
 // Verificar se já existe reserva adicional para este dependente nesta data
 $stmt = $conn->prepare("SELECT id FROM reservas_adicionais WHERE id_dependente = ? AND data = ?");

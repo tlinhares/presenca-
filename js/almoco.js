@@ -394,7 +394,9 @@ $('#formDependente').on('submit', function (e) {
     : idade;
 
   // Define o valor do campo cobrar (1 = menor de 12 anos, 0 = maior)
-  const cobrar = idadeAjustada < 12 ? 1 : 0;
+  // Regra: idade <= 12 anos => cobrar = 1 (NÃO cobra). Backend revalida em
+  // salvar_dependente.php, então esse cálculo é apenas para UX.
+  const cobrar = idadeAjustada <= 12 ? 1 : 0;
   formData.append('cobrar', cobrar);
   
   console.log('Idade calculada:', idadeAjustada, 'Cobrar:', cobrar);
