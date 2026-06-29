@@ -23,8 +23,9 @@ try {
     require_once __DIR__ . '/../api/conexao.php';
     require_once __DIR__ . '/../utils/config.php';
     
-    // Buscar configurações dos dispositivos faciais
-    $sql_dispositivos = "SELECT id, nome, ip, porta, usuario, senha FROM dispositivos_faciais WHERE ativo = 1 AND tipo_dispositivo = 'restaurante'";
+    // Buscar configurações dos dispositivos faciais (inclui `modelo` para
+    // roteamento SS / XPE pelo IntelbrasDriver — pode ser NULL = trata como SS).
+    $sql_dispositivos = "SELECT id, nome, ip, porta, usuario, senha, modelo FROM dispositivos_faciais WHERE ativo = 1 AND tipo_dispositivo = 'restaurante'";
     $result_dispositivos = $conn->query($sql_dispositivos);
     
     if ($result_dispositivos->num_rows == 0) {
@@ -99,44 +100,70 @@ try {
             }
             
             try {
-                // Remover do dispositivo facial
-                $url = "http://{$dispositivo['ip']}:{$dispositivo['porta']}/cgi-bin/recordUpdater.cgi";
-                $postData = [
-                    'action' => 'delete',
-                    'name' => 'AccessControlCard',
-                    'id' => $usuario['id_usuario']
-                ];
-                
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-                curl_setopt($ch, CURLOPT_USERPWD, "{$dispositivo['usuario']}:{$dispositivo['senha']}");
-                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                
-                $resposta = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $erro = curl_error($ch);
-                curl_close($ch);
-                
-                if ($httpCode == 200 && !$erro) {
+                // Usar IntelbrasDriver — mesmo motor que o projeto `acesso`
+                // (escola segura) usa em produção. Cobre SS/XPE com fallbacks
+                // automáticos de URL/método/auth.
+                require_once __DIR__ . '/../utils/intelbras_driver.php';
+
+                $driver = new IntelbrasDriver(
+                    (string) $dispositivo['ip'],
+                    (int) ($dispositivo['porta'] ?? 80),
+                    (string) ($dispositivo['usuario'] ?? ''),
+                    (string) ($dispositivo['senha'] ?? ''),
+                    (string) ($dispositivo['modelo'] ?? '')
+                );
+
+                $r = $driver->deleteUser((int) $usuario['id_usuario']);
+
+                if (!empty($r['ok'])) {
                     // Atualizar status na tabela facial_sync
-                    $update_sql = "UPDATE facial_sync SET status = 'removido', detalhes = ? WHERE id_usuario = ? AND id_dispositivo = ? AND data = ?";
+                    $update_sql = "UPDATE facial_sync
+                                      SET status = 'removido',
+                                          detalhes = ?,
+                                          ultima_tentativa = NOW()
+                                    WHERE id_usuario = ?
+                                      AND id_dispositivo = ?
+                                      AND data = ?";
                     $stmt_update = $conn->prepare($update_sql);
-                    $detalhes = "Removido automaticamente - reserva cancelada";
+                    $detalhes = sprintf(
+                        "Removido automaticamente — reserva cancelada (%s/%s HTTP %d)",
+                        $r['mode']  ?? '?',
+                        $r['auth']  ?? '?',
+                        (int) ($r['http'] ?? 0)
+                    );
                     $stmt_update->bind_param("siis", $detalhes, $usuario['id_usuario'], $usuario['id_dispositivo'], $data_hoje);
                     $stmt_update->execute();
                     $stmt_update->close();
-                    
+
                     $removidos_dispositivo++;
-                    logRemocoes("✓ Removido: {$usuario['nome_usuario']} (ID: {$usuario['id_usuario']}) do dispositivo {$dispositivo['nome']}");
+                    logRemocoes("✓ Removido: {$usuario['nome_usuario']} (ID: {$usuario['id_usuario']}) "
+                              . "via {$r['path']} [{$r['mode']}/{$r['auth']}] no dispositivo {$dispositivo['nome']}");
                 } else {
                     $falhas_dispositivo++;
-                    logRemocoes("✗ Falha ao remover: {$usuario['nome_usuario']} (ID: {$usuario['id_usuario']}) - HTTP: $httpCode, Erro: $erro");
+                    $msg = sprintf(
+                        "HTTP %d | path=%s | mode=%s | auth=%s | err=%s | raw=%s",
+                        (int) ($r['http'] ?? 0),
+                        (string) ($r['path'] ?? ''),
+                        (string) ($r['mode'] ?? ''),
+                        (string) ($r['auth'] ?? ''),
+                        (string) ($r['err']  ?? ''),
+                        mb_substr((string) ($r['raw'] ?? ''), 0, 120)
+                    );
+                    logRemocoes("✗ Falha ao remover: {$usuario['nome_usuario']} (ID: {$usuario['id_usuario']}) - $msg");
+
+                    // Marca falha e incrementa tentativas — útil pra diagnóstico.
+                    $upFail = $conn->prepare(
+                        "UPDATE facial_sync
+                            SET tentativas = COALESCE(tentativas, 0) + 1,
+                                ultima_tentativa = NOW(),
+                                detalhes = ?
+                          WHERE id_usuario = ? AND id_dispositivo = ? AND data = ?"
+                    );
+                    $det = mb_substr($msg, 0, 250);
+                    $upFail->bind_param("siis", $det, $usuario['id_usuario'], $usuario['id_dispositivo'], $data_hoje);
+                    $upFail->execute();
+                    $upFail->close();
                 }
-                
             } catch (Exception $e) {
                 $falhas_dispositivo++;
                 logRemocoes("✗ Erro ao remover: {$usuario['nome_usuario']} (ID: {$usuario['id_usuario']}) - " . $e->getMessage());
