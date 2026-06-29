@@ -188,16 +188,23 @@ try {
         if (!empty($dependentes) && is_array($dependentes)) {
             $dependentesProcessados = 0;
             foreach ($dependentes as $dependente_id) {
-                $stmt = $conn->prepare("SELECT id, cobrar FROM dependentes WHERE id = ? AND id_usuario = ? AND ativo = 1");
+                $stmt = $conn->prepare("SELECT id, cobrar, nascimento FROM dependentes WHERE id = ? AND id_usuario = ? AND ativo = 1");
                 $stmt->bind_param("ii", $dependente_id, $id_usuario);
                 $stmt->execute();
                 $result = $stmt->get_result();
-                
+
                 if ($result->num_rows > 0) {
                     $dependente = $result->fetch_assoc();
                     $stmt->close();
-                    
+
                     $cobrar = intval($dependente['cobrar']);
+                    // Defesa em profundidade: recalcula pela idade real.
+                    if (!empty($dependente['nascimento'])) {
+                        try {
+                            $idade_dep = (new DateTime())->diff(new DateTime($dependente['nascimento']))->y;
+                            $cobrar = ($idade_dep <= 12) ? 1 : 0;
+                        } catch (Exception $e) { /* fallback silencioso */ }
+                    }
                     
                     // Verificar duplicata: mesmo dependente + mesma data
                     $stmt = $conn->prepare("SELECT id FROM reservas_adicionais WHERE id_usuario = ? AND id_dependente = ? AND data = ?");

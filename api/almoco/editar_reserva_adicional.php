@@ -45,16 +45,24 @@ try {
     }
     $stmt->close();
 
-    // Verifica se o dependente pertence ao usuário e obtém o campo "cobrar"
-    $stmt = $conn->prepare("SELECT cobrar FROM dependentes WHERE id = ? AND id_usuario = ? AND ativo = 1");
+    // Verifica se o dependente pertence ao usuário e obtém cobrar + nascimento
+    $stmt = $conn->prepare("SELECT cobrar, nascimento FROM dependentes WHERE id = ? AND id_usuario = ? AND ativo = 1");
     $stmt->bind_param("ii", $id_dependente, $id_usuario);
     $stmt->execute();
-    $stmt->bind_result($cobrar);
+    $stmt->bind_result($cobrar, $nascimento_dep);
     if (!$stmt->fetch()) {
         echo json_encode(['status' => 'erro', 'mensagem' => 'Dependente inválido.']);
         exit;
     }
     $stmt->close();
+
+    // Defesa em profundidade: recalcula 'cobrar' pela idade real (vide reservar_adicional.php).
+    if (!empty($nascimento_dep)) {
+        try {
+            $idade_dep = (new DateTime())->diff(new DateTime($nascimento_dep))->y;
+            $cobrar = ($idade_dep <= 12) ? 1 : 0;
+        } catch (Exception $e) { /* fallback silencioso */ }
+    }
 
     // Configurações globais
     $valor_fora = floatval(get_config('valor_fora_horario', '30.00'));

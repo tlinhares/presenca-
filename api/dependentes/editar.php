@@ -220,12 +220,16 @@ try {
     }
 
     // Calcular idade e definir cobrar
+    // Regra oficial: idade <= 12 anos => cobrar = 1 (NÃO cobra). Bate com
+    // dependentes/criar.php e verificar_horario_adicional. Antes daqui usava
+    // '< 12', o que zerava o cobrar de quem tinha exatamente 12 anos e gerava
+    // cobrança indevida (caso Samuel Nunes Amaral, 16/06/2026).
     $cobrar = 0;
     if (!empty($nascimento)) {
         $nascimento_date = new DateTime($nascimento);
         $hoje = new DateTime();
         $idade = $nascimento_date->diff($hoje)->y;
-        $cobrar = $idade < 12 ? 1 : 0;
+        $cobrar = $idade <= 12 ? 1 : 0;
     }
 
     // Verificar se o dependente existe antes de atualizar e obter o id_usuario para checagem de permissão
