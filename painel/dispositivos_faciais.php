@@ -26,7 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $usuario = $_POST['usuario'];
                 $senha = $_POST['senha'];
                 $tipo_dispositivo = $_POST['tipo_dispositivo'];
-                $modelo = isset($_POST['modelo']) ? $_POST['modelo'] : null;
+                // Modelo válido: apenas 'SS' ou 'XPE'. Outros valores caem em null
+                // (IntelbrasDriver trata null como SS por compatibilidade — não quebra produção).
+                $modelo_in = strtoupper(trim((string)($_POST['modelo'] ?? '')));
+                $modelo = in_array($modelo_in, ['SS', 'XPE'], true) ? $modelo_in : null;
                 $ativo = isset($_POST['ativo']) ? 1 : 0;
                 
                 // Validar formato do IP
@@ -56,7 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $usuario = $_POST['usuario'];
                 $senha = $_POST['senha'];
                 $tipo_dispositivo = $_POST['tipo_dispositivo'];
-                $modelo = isset($_POST['modelo']) ? $_POST['modelo'] : null;
+                // Modelo válido: apenas 'SS' ou 'XPE'. Outros valores caem em null
+                // (IntelbrasDriver trata null como SS por compatibilidade — não quebra produção).
+                $modelo_in = strtoupper(trim((string)($_POST['modelo'] ?? '')));
+                $modelo = in_array($modelo_in, ['SS', 'XPE'], true) ? $modelo_in : null;
                 $ativo = isset($_POST['ativo']) ? 1 : 0;
                 
                 // Validar formato do IP
@@ -79,79 +85,115 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
                 
             case 'excluir':
-                $id = $_POST['id'];
-                
-                // Verificar se há registros na facial_sync
-                $check = $conn->prepare("SELECT COUNT(*) FROM facial_sync WHERE id_dispositivo = ?");
-                $check->bind_param("i", $id);
-                $check->execute();
-                $check->bind_result($count);
-                $check->fetch();
-                $check->close();
-                
-                if ($count > 0) {
-                    $mensagem = 'Não é possível excluir o dispositivo pois existem registros de sincronização associados.';
+                $id = (int) $_POST['id'];
+
+                // Regra: só pode excluir dispositivo DESATIVADO. Dispositivo ativo
+                // continua bloqueado (proteção contra exclusão acidental em produção).
+                $chk = $conn->prepare("SELECT ativo FROM dispositivos_faciais WHERE id = ?");
+                $chk->bind_param("i", $id);
+                $chk->execute();
+                $chk->bind_result($disp_ativo);
+                $found = $chk->fetch();
+                $chk->close();
+
+                if (!$found) {
+                    $mensagem = 'Dispositivo não encontrado.';
                     $tipoMensagem = 'warning';
-                } else {
-                    $stmt = $conn->prepare("DELETE FROM dispositivos_faciais WHERE id = ?");
-                    $stmt->bind_param("i", $id);
-                    
-                    if ($stmt->execute()) {
-                        $mensagem = 'Dispositivo excluído com sucesso!';
-                        $tipoMensagem = 'success';
-                    } else {
-                        $mensagem = 'Erro ao excluir dispositivo: ' . $stmt->error;
-                        $tipoMensagem = 'error';
+                    break;
+                }
+                if ((int) $disp_ativo === 1) {
+                    $mensagem = 'Desative o dispositivo antes de excluir. Dispositivos ativos não podem ser removidos.';
+                    $tipoMensagem = 'warning';
+                    break;
+                }
+
+                // Desativado: exclui em transação, removendo também o histórico em facial_sync.
+                $conn->begin_transaction();
+                try {
+                    $del_fs = $conn->prepare("DELETE FROM facial_sync WHERE id_dispositivo = ?");
+                    $del_fs->bind_param("i", $id);
+                    $del_fs->execute();
+                    $fs_afetados = $del_fs->affected_rows;
+                    $del_fs->close();
+
+                    $del_disp = $conn->prepare("DELETE FROM dispositivos_faciais WHERE id = ?");
+                    $del_disp->bind_param("i", $id);
+                    if (!$del_disp->execute()) {
+                        throw new Exception($del_disp->error ?: 'Erro ao remover dispositivo.');
                     }
+                    $del_disp->close();
+
+                    $conn->commit();
+                    $mensagem = "Dispositivo excluído com sucesso (e {$fs_afetados} registro(s) de sincronização removidos).";
+                    $tipoMensagem = 'success';
+                } catch (Throwable $e) {
+                    $conn->rollback();
+                    $mensagem = 'Erro ao excluir dispositivo: ' . $e->getMessage();
+                    $tipoMensagem = 'error';
                 }
                 break;
                 
             case 'testar_conectividade':
-                $id = $_POST['id'];
-                
-                $stmt = $conn->prepare("SELECT ip, porta, usuario, senha FROM dispositivos_faciais WHERE id = ?");
+                $id = (int) $_POST['id'];
+
+                $stmt = $conn->prepare("SELECT ip, porta, usuario, senha, modelo FROM dispositivos_faciais WHERE id = ?");
                 $stmt->bind_param("i", $id);
                 $stmt->execute();
-                $stmt->bind_result($ip, $porta, $usuario, $senha);
+                $stmt->bind_result($ip, $porta, $usuario, $senha, $modelo_disp);
                 $stmt->fetch();
                 $stmt->close();
-                
-                // Testar conectividade - usar endpoint global.cgi para Intelbras
-                $url = "http://$ip:$porta/cgi-bin/global.cgi?action=getCurrentTime";
+
+                // Mesmo critério do cron de health check: endpoint por linha (SS=CGI Digest, XPE=REST Basic).
+                $isXpe = (strtoupper(trim((string)$modelo_disp)) === 'XPE');
+                $url = $isXpe
+                    ? "http://$ip:$porta/api/login.cgi"
+                    : "http://$ip:$porta/cgi-bin/global.cgi?action=getCurrentTime";
+
                 $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-                curl_setopt($ch, CURLOPT_USERPWD, "$usuario:$senha");
-                curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-                
-                $resposta = curl_exec($ch);
-                $erro = curl_error($ch);
-                $codigo = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_setopt_array($ch, [
+                    CURLOPT_URL            => $url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CONNECTTIMEOUT => 3,
+                    CURLOPT_TIMEOUT        => 5,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_HTTPAUTH       => $isXpe ? CURLAUTH_BASIC : CURLAUTH_DIGEST,
+                    CURLOPT_USERPWD        => "$usuario:$senha",
+                ]);
+                curl_exec($ch);
+                $codigo = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $erro   = (string) curl_error($ch);
                 curl_close($ch);
-                
-                if ($codigo == 200 || $codigo == 401 || $codigo == 400) {
-                    if ($codigo == 200) {
-                        $mensagem = 'Conectividade OK! Dispositivo respondendo normalmente. Código: ' . $codigo;
+
+                // Qualquer resposta HTTP do socket (2xx, 3xx, 4xx) significa que o
+                // dispositivo está VIVO. Só conta como offline se houve erro de
+                // conexão (timeout, conn refused, host unreachable) ou 5xx.
+                $online = ($erro === '' && $codigo > 0 && $codigo < 500);
+
+                if ($online) {
+                    if ($codigo === 200) {
+                        $mensagem = "Conectividade OK! Dispositivo respondendo normalmente. (HTTP $codigo)";
                         $tipoMensagem = 'success';
-                    } elseif ($codigo == 401) {
-                        $mensagem = 'Dispositivo online, mas credenciais podem estar incorretas. Código: ' . $codigo;
+                    } elseif ($codigo === 401) {
+                        $mensagem = "Dispositivo online, mas credenciais podem estar incorretas. (HTTP $codigo)";
                         $tipoMensagem = 'warning';
+                    } elseif ($codigo === 302) {
+                        $mensagem = "Dispositivo online (redirecionando — HTTP $codigo). Comportamento normal em alguns firmwares.";
+                        $tipoMensagem = 'success';
                     } else {
-                        $mensagem = 'Dispositivo online, mas parâmetros podem estar incorretos. Código: ' . $codigo;
-                        $tipoMensagem = 'warning';
+                        $mensagem = "Dispositivo online (HTTP $codigo).";
+                        $tipoMensagem = 'success';
                     }
-                    
-                    // Atualizar status
-                    $update = $conn->prepare("UPDATE dispositivos_faciais SET status_conexao = 'online' WHERE id = ?");
+
+                    $update = $conn->prepare("UPDATE dispositivos_faciais SET status_conexao = 'online', ultima_verificacao_status = NOW() WHERE id = ?");
                     $update->bind_param("i", $id);
                     $update->execute();
                 } else {
-                    $mensagem = 'Falha na conectividade. Código: ' . $codigo . ' | Erro: ' . $erro;
+                    $detalhe = $erro !== '' ? "Erro de conexão: $erro" : "HTTP $codigo (não respondendo)";
+                    $mensagem = "Falha na conectividade. $detalhe";
                     $tipoMensagem = 'error';
-                    
-                    // Atualizar status
-                    $update = $conn->prepare("UPDATE dispositivos_faciais SET status_conexao = 'offline' WHERE id = ?");
+
+                    $update = $conn->prepare("UPDATE dispositivos_faciais SET status_conexao = 'offline', ultima_verificacao_status = NOW() WHERE id = ?");
                     $update->bind_param("i", $id);
                     $update->execute();
                 }
@@ -319,32 +361,55 @@ if ($result && $result->num_rows > 0) {
                                         </td>
                                         <td>
                                             <?php
+                                            // Health check roda a cada 5 min via cron. Se a última
+                                            // verificação tem mais de 15 min, não confie no status
+                                            // gravado — mostra "Desconhecido" (cron travou? servidor reiniciado?).
+                                            $ult_verif = $dispositivo['ultima_verificacao_status'] ?? null;
+                                            $minutos_desde = null;
+                                            if ($ult_verif) {
+                                                $minutos_desde = max(0, (int) floor((time() - strtotime($ult_verif)) / 60));
+                                            }
+                                            $stale = ($minutos_desde === null || $minutos_desde > 15);
+
                                             $status_class = 'bg-secondary';
-                                            $status_text = 'Desconhecido';
-                                            $status_icon = 'bi-question-circle';
-                                            
-                                            switch ($dispositivo['status_conexao']) {
-                                                case 'online':
-                                                    $status_class = 'bg-success';
-                                                    $status_text = 'Online';
-                                                    $status_icon = 'bi-check-circle';
-                                                    break;
-                                                case 'offline':
-                                                    $status_class = 'bg-danger';
-                                                    $status_text = 'Offline';
-                                                    $status_icon = 'bi-x-circle';
-                                                    break;
-                                                case 'erro':
-                                                    $status_class = 'bg-warning text-dark';
-                                                    $status_text = 'Erro';
-                                                    $status_icon = 'bi-exclamation-triangle';
-                                                    break;
+                                            $status_text  = 'Desconhecido';
+                                            $status_icon  = 'bi-question-circle';
+
+                                            if ($stale) {
+                                                $status_class = 'bg-secondary';
+                                                $status_text  = 'Sem verificação';
+                                                $status_icon  = 'bi-question-circle';
+                                            } else {
+                                                switch ($dispositivo['status_conexao']) {
+                                                    case 'online':
+                                                        $status_class = 'bg-success';
+                                                        $status_text  = 'Online';
+                                                        $status_icon  = 'bi-check-circle';
+                                                        break;
+                                                    case 'offline':
+                                                        $status_class = 'bg-danger';
+                                                        $status_text  = 'Offline';
+                                                        $status_icon  = 'bi-x-circle';
+                                                        break;
+                                                    case 'erro':
+                                                        $status_class = 'bg-warning text-dark';
+                                                        $status_text  = 'Erro';
+                                                        $status_icon  = 'bi-exclamation-triangle';
+                                                        break;
+                                                }
                                             }
                                             ?>
                                             <span class="badge <?php echo $status_class; ?> badge-status">
                                                 <i class="bi <?php echo $status_icon; ?> me-1"></i>
                                                 <?php echo $status_text; ?>
                                             </span>
+                                            <?php if ($ult_verif): ?>
+                                                <div><small class="text-muted" title="<?= htmlspecialchars($ult_verif) ?>">
+                                                    Verificado há <?= $minutos_desde === 0 ? 'menos de 1 min' : $minutos_desde . ' min' ?>
+                                                </small></div>
+                                            <?php elseif ((int)($dispositivo['ativo'] ?? 0) === 1): ?>
+                                                <div><small class="text-muted">Aguardando 1ª verificação…</small></div>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <?php 
@@ -423,9 +488,12 @@ if ($result && $result->num_rows > 0) {
                         </div>
                         
                         <div class="mb-3">
-                            <label for="modelo" class="form-label">Modelo do Dispositivo</label>
-                            <input type="text" class="form-control" id="modelo" name="modelo" placeholder="Ex: ct3000 2pb, ss3710, facial_recon">
-                            <small class="form-text text-muted">Opcional: Modelo do dispositivo (ex: ct3000 2pb, ss3710)</small>
+                            <label for="modelo" class="form-label">Linha do Dispositivo (facial)</label>
+                            <select class="form-select" id="modelo" name="modelo" required>
+                                <option value="SS">Linha SS (padrão)</option>
+                                <option value="XPE">Linha XPE</option>
+                            </select>
+                            <small class="text-muted">SS usa CGI Digest. XPE usa REST Basic. Define qual API o sistema chama no dispositivo.</small>
                         </div>
                         
                         <div class="mb-3">
@@ -500,9 +568,12 @@ if ($result && $result->num_rows > 0) {
                         </div>
                         
                         <div class="mb-3">
-                            <label for="edit_modelo" class="form-label">Modelo do Dispositivo</label>
-                            <input type="text" class="form-control" id="edit_modelo" name="modelo" placeholder="Ex: ct3000 2pb, ss3710, facial_recon">
-                            <small class="form-text text-muted">Opcional: Modelo do dispositivo (ex: ct3000 2pb, ss3710)</small>
+                            <label for="edit_modelo" class="form-label">Linha do Dispositivo (facial)</label>
+                            <select class="form-select" id="edit_modelo" name="modelo" required>
+                                <option value="SS">Linha SS (padrão)</option>
+                                <option value="XPE">Linha XPE</option>
+                            </select>
+                            <small class="text-muted">SS usa CGI Digest. XPE usa REST Basic.</small>
                         </div>
                         
                         <div class="mb-3">
@@ -667,7 +738,9 @@ if ($result && $result->num_rows > 0) {
         document.getElementById('edit_usuario').value = usuario;
         document.getElementById('edit_senha').value = senha;
         document.getElementById('edit_tipo_dispositivo').value = tipo_dispositivo;
-        document.getElementById('edit_modelo').value = modelo || '';
+        // Modelo só aceita SS ou XPE. Valor antigo (texto livre) cai em SS por padrão.
+        var m = String(modelo || '').toUpperCase();
+        document.getElementById('edit_modelo').value = (m === 'XPE') ? 'XPE' : 'SS';
         document.getElementById('edit_ativo').checked = ativo == 1;
         
         new bootstrap.Modal(document.getElementById('modalEditarDispositivo')).show();
