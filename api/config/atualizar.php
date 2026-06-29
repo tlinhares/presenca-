@@ -27,7 +27,10 @@ try {
         'valor_marmitex' => $_POST['valor_marmitex'] ?? '0.00',
         'valor_fora_horario' => $_POST['valor_fora_horario'] ?? '0.00',
         'marmitex_habilitado' => $_POST['marmitex_habilitado'] ?? '0',
-        
+
+        // Dependentes — idade-limite para isenção (regra "<= X anos não cobra")
+        'idade_isencao_dependente' => (string) max(0, min(18, intval($_POST['idade_isencao_dependente'] ?? 12))),
+
         // Departamentos
         'valor_departamento' => $_POST['valor_departamento'] ?? '0.00',
         'valor_departamento_fora_horario' => $_POST['valor_departamento_fora_horario'] ?? '0.00',

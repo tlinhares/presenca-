@@ -56,12 +56,11 @@ try {
     }
     $stmt->close();
 
-    // Defesa em profundidade: recalcula 'cobrar' pela idade real (vide reservar_adicional.php).
-    if (!empty($nascimento_dep)) {
-        try {
-            $idade_dep = (new DateTime())->diff(new DateTime($nascimento_dep))->y;
-            $cobrar = ($idade_dep <= 12) ? 1 : 0;
-        } catch (Exception $e) { /* fallback silencioso */ }
+    // Regra centralizada em DependenteService (idade-limite vem da config).
+    require_once __DIR__ . '/../../core/services/DependenteService.php';
+    $recalc = DependenteService::calcularCobrar($conn, $nascimento_dep);
+    if ($recalc !== null) {
+        $cobrar = $recalc;
     }
 
     // Configurações globais

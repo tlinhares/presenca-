@@ -267,6 +267,25 @@ MenuPermissaoService::exigirAcesso('configuracoes');
                                 </div>
                             </div>
                             
+                            <!-- Seção: Dependentes -->
+                            <h5 class="section-title"><i class="fas fa-child me-2"></i>Dependentes</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="idade_isencao_dependente" class="form-label">
+                                            Idade-limite para isenção (anos)
+                                        </label>
+                                        <input type="number" min="0" max="18" step="1" class="form-control"
+                                               id="idade_isencao_dependente" name="idade_isencao_dependente"
+                                               placeholder="12">
+                                        <small class="text-muted">
+                                            Dependentes com idade <strong>menor ou igual</strong> a este valor não pagam refeição
+                                            (nem fora do horário). Padrão: <code>12</code>. Validado também por trigger no banco.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Seção: Departamentos -->
                             <h5 class="section-title"><i class="fas fa-building me-2"></i>Departamentos</h5>
                             <div class="row">
@@ -473,6 +492,9 @@ MenuPermissaoService::exigirAcesso('configuracoes');
                         $('#valor_marmitex').val(configs.valor_marmitex || '');
                         $('#valor_fora_horario').val(configs.valor_fora_horario || '');
                         $('#marmitex_habilitado').prop('checked', configs.marmitex_habilitado === '1');
+
+                        // Dependentes
+                        $('#idade_isencao_dependente').val(configs.idade_isencao_dependente || '12');
                         
                         // Departamentos
                         $('#valor_departamento').val(configs.valor_departamento || '');
@@ -532,7 +554,10 @@ MenuPermissaoService::exigirAcesso('configuracoes');
                 valor_marmitex: $('#valor_marmitex').val(),
                 valor_fora_horario: $('#valor_fora_horario').val(),
                 marmitex_habilitado: $('#marmitex_habilitado').is(':checked') ? '1' : '0',
-                
+
+                // Dependentes
+                idade_isencao_dependente: $('#idade_isencao_dependente').val() || '12',
+
                 // Departamentos
                 valor_departamento: $('#valor_departamento').val(),
                 valor_departamento_fora_horario: $('#valor_departamento_fora_horario').val(),

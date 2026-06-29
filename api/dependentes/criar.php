@@ -87,14 +87,10 @@ try {
         $foto_base64 = base64_encode($foto_data);
     }
     
-    // Calcular idade e definir cobrar
-    $cobrar = 0;
-    if (!empty($nascimento)) {
-        $nascimento_date = new DateTime($nascimento);
-        $hoje = new DateTime();
-        $idade = $nascimento_date->diff($hoje)->y;
-        $cobrar = $idade <= 12 ? 1 : 0;
-    }
+    // Regra centralizada em DependenteService — idade-limite vem da config
+    // 'idade_isencao_dependente' (default 12). Nunca duplicar regra hardcoded.
+    require_once __DIR__ . '/../../core/services/DependenteService.php';
+    $cobrar = DependenteService::calcularCobrar($conn, $nascimento) ?? 0;
     
     // Inserir dependente
     $sql = "INSERT INTO dependentes (id_usuario, nome, parentesco, nascimento, foto_base64, cobrar) 

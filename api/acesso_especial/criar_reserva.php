@@ -168,14 +168,11 @@ try {
             $dependente = $result->fetch_assoc();
             $stmt->close();
             
-            // Calcular idade e definir cobrança
-            $nascimento = new DateTime($dependente['nascimento']);
-            $hoje = new DateTime();
-            $idade = $hoje->diff($nascimento)->y;
-            
-            // Se idade <= 12 anos, não cobra (cobrar = 1 significa não cobrar)
-            // Se idade > 12 anos, cobra (cobrar = 0 significa cobrar)
-            $cobrar = $idade <= 12 ? 1 : 0;
+            // Regra centralizada em DependenteService — idade-limite vem da
+            // config 'idade_isencao_dependente' (default 12). Se ausente, cobra.
+            require_once __DIR__ . '/../../core/services/DependenteService.php';
+            $cobrar = DependenteService::calcularCobrar($conn, $dependente['nascimento']) ?? 0;
+            $idade  = DependenteService::calcularIdade($dependente['nascimento']) ?? 0;
 
             // Converter tipo para o formato esperado pela tabela
             $tipo_banco = ($tipo === 'adicional') ? 'presencial' : 'marmitex';

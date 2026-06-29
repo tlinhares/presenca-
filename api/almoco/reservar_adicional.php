@@ -85,16 +85,12 @@ if (!$stmt->fetch()) {
 $stmt->close();
 
 // Defesa em profundidade: recalcula 'cobrar' pela idade real, independente
-// do que está no banco. Se a data de nascimento existe, ela é a fonte da
-// verdade — assim mesmo um campo 'cobrar' corrompido (ex.: gravado errado
-// por outro endpoint) não causa cobrança indevida em dependente <= 12 anos.
-if (!empty($nascimento_dep)) {
-    try {
-        $idade_dep = (new DateTime())->diff(new DateTime($nascimento_dep))->y;
-        $cobrar = ($idade_dep <= 12) ? 1 : 0;
-    } catch (Exception $e) {
-        // fallback silencioso: mantém o cobrar do banco
-    }
+// do que está no banco. Idade-limite vem da config 'idade_isencao_dependente'
+// (default 12) — regra centralizada em DependenteService.
+require_once __DIR__ . '/../../core/services/DependenteService.php';
+$recalc = DependenteService::calcularCobrar($conn, $nascimento_dep);
+if ($recalc !== null) {
+    $cobrar = $recalc;
 }
 
 // Configurações globais

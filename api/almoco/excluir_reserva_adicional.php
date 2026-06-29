@@ -55,24 +55,30 @@ try {
         exit;
     }
 
-    // Verificar se a reserva pertence ao usuário (através do dependente)
-    $stmt = $conn->prepare("SELECT ra.id FROM reservas_adicionais ra 
-                           INNER JOIN dependentes d ON ra.id_dependente = d.id 
+    // Verificar se a reserva pertence ao usuário (através do dependente),
+    // capturando também id_dependente e data para sinalizar a fila facial.
+    $stmt = $conn->prepare("SELECT ra.id, ra.id_dependente, ra.data FROM reservas_adicionais ra
+                           INNER JOIN dependentes d ON ra.id_dependente = d.id
                            WHERE ra.id = ? AND d.id_usuario = ?");
     $stmt->bind_param("ii", $reserva_id, $_SESSION['usuario_id']);
     $stmt->execute();
-    
-    if (!$stmt->get_result()->fetch_row()) {
+    $reserva_info = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$reserva_info) {
         echo json_encode(['status' => 'erro', 'mensagem' => 'Reserva não encontrada']);
         exit;
     }
-    $stmt->close();
 
     // Excluir reserva adicional
     $stmt = $conn->prepare("DELETE FROM reservas_adicionais WHERE id = ?");
     $stmt->bind_param("i", $reserva_id);
-    
+
     if ($stmt->execute()) {
+        // Sinaliza fila facial para o dependente.
+        require_once __DIR__ . '/../../core/services/FacialService.php';
+        FacialService::onReservaCancelada($conn, (int) $reserva_info['id_dependente'], 'dependente', $reserva_info['data']);
+
         echo json_encode([
             'status' => 'ok',
             'mensagem' => 'Reserva adicional excluída com sucesso'

@@ -93,6 +93,10 @@ $stmt = $conn->prepare("DELETE FROM reservas_almoco WHERE id_usuario = ? AND dat
 $stmt->bind_param("is", $id_usuario, $data);
 
 if ($stmt->execute()) {
+    // Sinaliza fila facial: cancela pendentes e marca sincronizados para remoção.
+    require_once __DIR__ . '/../../core/services/FacialService.php';
+    FacialService::onReservaCancelada($conn, (int) $id_usuario, 'usuario', $data);
+
     // Enviar notificação se habilitada
     require_once __DIR__ . '/../notificacao/enviar_notificacao_reserva.php';
     $horario_atual = date('H:i');
@@ -102,7 +106,7 @@ if ($stmt->execute()) {
         'tipo_reserva' => 'própria'
     ];
     enviarNotificacaoReserva($id_usuario, 'cancelada', $dados_notificacao, $conn);
-    
+
     echo json_encode(['status' => 'ok', 'mensagem' => 'Reserva cancelada com sucesso']);
 } else {
     echo json_encode(['status' => 'erro', 'mensagem' => 'Erro ao cancelar reserva']);

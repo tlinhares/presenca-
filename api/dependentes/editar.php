@@ -219,18 +219,10 @@ try {
         }
     }
 
-    // Calcular idade e definir cobrar
-    // Regra oficial: idade <= 12 anos => cobrar = 1 (NÃO cobra). Bate com
-    // dependentes/criar.php e verificar_horario_adicional. Antes daqui usava
-    // '< 12', o que zerava o cobrar de quem tinha exatamente 12 anos e gerava
-    // cobrança indevida (caso Samuel Nunes Amaral, 16/06/2026).
-    $cobrar = 0;
-    if (!empty($nascimento)) {
-        $nascimento_date = new DateTime($nascimento);
-        $hoje = new DateTime();
-        $idade = $nascimento_date->diff($hoje)->y;
-        $cobrar = $idade <= 12 ? 1 : 0;
-    }
+    // Calcular cobrar pela idade — regra centralizada em DependenteService.
+    // Idade-limite vem de configuracoes.idade_isencao_dependente (default 12).
+    require_once __DIR__ . '/../../core/services/DependenteService.php';
+    $cobrar = DependenteService::calcularCobrar($conn, $nascimento) ?? 0;
 
     // Verificar se o dependente existe antes de atualizar e obter o id_usuario para checagem de permissão
     $stmt_check = $conn->prepare("SELECT id, id_usuario FROM dependentes WHERE id = ?");

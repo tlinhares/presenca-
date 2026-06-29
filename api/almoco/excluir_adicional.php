@@ -42,22 +42,22 @@ if ($data_reserva !== $data_hoje || ($hora_agora > $hora_limite && $permitir_atr
     exit;
 }
 
-// Buscar nome do dependente antes de excluir
-$stmt_dep = $conn->prepare("SELECT d.nome FROM reservas_adicionais ra 
-                           INNER JOIN dependentes d ON ra.id_dependente = d.id 
+// Buscar nome e id do dependente antes de excluir (id usado pela fila facial)
+$dependente_nome = null;
+$id_dependente_facial = null;
+$stmt_dep = $conn->prepare("SELECT d.nome, ra.id_dependente FROM reservas_adicionais ra
+                           INNER JOIN dependentes d ON ra.id_dependente = d.id
                            WHERE ra.id = ? AND ra.id_usuario = ?");
 if ($stmt_dep) {
     $stmt_dep->bind_param("ii", $id_reserva, $id_usuario);
     $stmt_dep->execute();
     $result_dep = $stmt_dep->get_result();
-    $dependente_nome = null;
     if ($result_dep->num_rows > 0) {
         $row_dep = $result_dep->fetch_assoc();
         $dependente_nome = $row_dep['nome'];
+        $id_dependente_facial = (int) $row_dep['id_dependente'];
     }
     $stmt_dep->close();
-} else {
-    $dependente_nome = null;
 }
 
 // Excluir reserva
@@ -65,6 +65,12 @@ $stmt = $conn->prepare("DELETE FROM reservas_adicionais WHERE id = ? AND id_usua
 $stmt->bind_param("ii", $id_reserva, $id_usuario);
 
 if ($stmt->execute()) {
+    // Sinaliza fila facial para o dependente.
+    if ($id_dependente_facial) {
+        require_once __DIR__ . '/../../core/services/FacialService.php';
+        FacialService::onReservaCancelada($conn, $id_dependente_facial, 'dependente', $data_reserva);
+    }
+
     // Enviar notificação se habilitada
     require_once __DIR__ . '/../notificacao/enviar_notificacao_reserva.php';
     $horario_atual = date('H:i');
@@ -75,7 +81,7 @@ if ($stmt->execute()) {
         'dependente_nome' => $dependente_nome
     ];
     enviarNotificacaoReserva($id_usuario, 'cancelada', $dados_notificacao, $conn);
-    
+
     echo json_encode(['status' => 'ok']);
 } else {
     echo json_encode(['status' => 'erro', 'mensagem' => 'Erro ao excluir reserva.']);

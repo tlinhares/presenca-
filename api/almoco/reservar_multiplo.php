@@ -198,12 +198,11 @@ try {
                     $stmt->close();
 
                     $cobrar = intval($dependente['cobrar']);
-                    // Defesa em profundidade: recalcula pela idade real.
-                    if (!empty($dependente['nascimento'])) {
-                        try {
-                            $idade_dep = (new DateTime())->diff(new DateTime($dependente['nascimento']))->y;
-                            $cobrar = ($idade_dep <= 12) ? 1 : 0;
-                        } catch (Exception $e) { /* fallback silencioso */ }
+                    // Regra centralizada em DependenteService.
+                    require_once __DIR__ . '/../../core/services/DependenteService.php';
+                    $recalc = DependenteService::calcularCobrar($conn, $dependente['nascimento'] ?? null);
+                    if ($recalc !== null) {
+                        $cobrar = $recalc;
                     }
                     
                     // Verificar duplicata: mesmo dependente + mesma data

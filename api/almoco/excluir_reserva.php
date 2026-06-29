@@ -65,6 +65,10 @@ try {
         $stmt->bind_param("ii", $id_reserva, $id_usuario);
         
         if ($stmt->execute()) {
+            // Sinaliza fila facial.
+            require_once __DIR__ . '/../../core/services/FacialService.php';
+            FacialService::onReservaCancelada($conn, (int) $id_usuario, 'usuario', $reserva['data']);
+
             // Enviar notificação se habilitada
             require_once __DIR__ . '/../notificacao/enviar_notificacao_reserva.php';
             $horario_atual = date('H:i');
@@ -74,7 +78,7 @@ try {
                 'tipo_reserva' => 'própria'
             ];
             enviarNotificacaoReserva($id_usuario, 'cancelada', $dados_notificacao, $conn);
-            
+
             echo json_encode(['status' => 'ok', 'mensagem' => 'Reserva excluída com sucesso']);
         } else {
             echo json_encode(['status' => 'erro', 'mensagem' => 'Erro ao excluir reserva: ' . $stmt->error]);
@@ -110,25 +114,35 @@ try {
             }
         }
         
-        // Buscar nome do dependente antes de excluir
-        $stmt_dep = $conn->prepare("SELECT d.nome FROM reservas_adicionais ra 
-                                   INNER JOIN dependentes d ON ra.id_dependente = d.id 
+        // Buscar dados do dependente antes de excluir (nome + id + data para a fila facial)
+        $stmt_dep = $conn->prepare("SELECT d.id, d.nome, ra.id_dependente, ra.data FROM reservas_adicionais ra
+                                   INNER JOIN dependentes d ON ra.id_dependente = d.id
                                    WHERE ra.id = ? AND ra.id_usuario = ?");
         $stmt_dep->bind_param("ii", $id_reserva, $id_usuario);
         $stmt_dep->execute();
         $result_dep = $stmt_dep->get_result();
         $dependente_nome = null;
+        $id_dependente_facial = null;
+        $data_reserva_facial = null;
         if ($result_dep->num_rows > 0) {
             $row_dep = $result_dep->fetch_assoc();
             $dependente_nome = $row_dep['nome'];
+            $id_dependente_facial = (int) $row_dep['id_dependente'];
+            $data_reserva_facial = $row_dep['data'];
         }
         $stmt_dep->close();
-        
+
         // Excluir reserva do dependente
         $stmt = $conn->prepare("DELETE FROM reservas_adicionais WHERE id = ?");
         $stmt->bind_param("i", $id_reserva);
-        
+
         if ($stmt->execute()) {
+            // Sinaliza fila facial para o dependente.
+            if ($id_dependente_facial && $data_reserva_facial) {
+                require_once __DIR__ . '/../../core/services/FacialService.php';
+                FacialService::onReservaCancelada($conn, $id_dependente_facial, 'dependente', $data_reserva_facial);
+            }
+
             // Enviar notificação se habilitada
             require_once __DIR__ . '/../notificacao/enviar_notificacao_reserva.php';
             $horario_atual = date('H:i');
@@ -139,7 +153,7 @@ try {
                 'dependente_nome' => $dependente_nome
             ];
             enviarNotificacaoReserva($id_usuario, 'cancelada', $dados_notificacao, $conn);
-            
+
             echo json_encode(['status' => 'ok', 'mensagem' => 'Reserva excluída com sucesso']);
         } else {
             echo json_encode(['status' => 'erro', 'mensagem' => 'Erro ao excluir reserva: ' . $stmt->error]);

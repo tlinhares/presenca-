@@ -85,13 +85,11 @@ if ($result->num_rows === 0) {
 $dependente = $result->fetch_assoc();
 $stmt->close();
 
-// Defesa em profundidade: recalcula cobrar pela idade real (vide reservar_adicional.php).
-// Garante que a UX (valor exibido no app) bate com o que o backend de fato cobrará.
-if (!empty($dependente['nascimento'])) {
-    try {
-        $idade_dep = (new DateTime())->diff(new DateTime($dependente['nascimento']))->y;
-        $dependente['cobrar'] = ($idade_dep <= 12) ? 1 : 0;
-    } catch (Exception $e) { /* fallback silencioso */ }
+// Regra centralizada em DependenteService — alinhado com a config dinâmica.
+require_once __DIR__ . '/../../core/services/DependenteService.php';
+$recalc = DependenteService::calcularCobrar($conn, $dependente['nascimento'] ?? null);
+if ($recalc !== null) {
+    $dependente['cobrar'] = $recalc;
 }
 
 // Verificar se já existe reserva adicional para este dependente nesta data

@@ -17,16 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $nome = $_POST['nome_dependente'] ?? '';
 $parentesco = $_POST['parentesco_dependente'] ?? '';
 $nascimento = $_POST['nascimento_dependente'] ?? '';
-// SEMPRE recalcular cobrar pela idade — NUNCA confiar no POST (frontend pode mandar
-// errado, ou outro cliente pode tentar burlar). Regra: idade <= 12 anos => cobrar = 1
-// (NÃO cobra). Sem data de nascimento => default cobra (administrador deve completar).
-$cobrar = 0;
-if (!empty($nascimento)) {
-    try {
-        $idade = (new DateTime())->diff(new DateTime($nascimento))->y;
-        $cobrar = ($idade <= 12) ? 1 : 0;
-    } catch (Exception $e) { $cobrar = 0; }
-}
+// Regra centralizada em DependenteService (idade-limite vem da config).
+// NUNCA confiar em 'cobrar' do POST.
+require_once __DIR__ . '/../../core/services/DependenteService.php';
+$cobrar = DependenteService::calcularCobrar($conn, $nascimento) ?? 0;
 $foto_base64 = $_POST['foto_base64'] ?? '';
 
 try {
