@@ -163,7 +163,7 @@ $(document).ready(function() {
     $(document).on('click', '.btn-excluir', function() {
         const id = $(this).data('id');
         const usuario = usuarios.find(u => u.id == id);
-        
+
         if (usuario) {
             mostrarConfirmacao(`Tem certeza que deseja excluir o usuário "${usuario.nome}"?`, function() {
                 $.ajax({
@@ -187,6 +187,31 @@ $(document).ready(function() {
         } else {
             exibirToast('Usuário não encontrado', 'error');
         }
+    });
+
+    // Reativar usuário (substitui o lixo cinza quando o usuário está inativo)
+    $(document).on('click', '.btn-reativar', function() {
+        const id = $(this).data('id');
+        const nome = $(this).data('nome') || 'este usuário';
+        mostrarConfirmacao(`Reativar o usuário "${nome}"?`, function() {
+            $.ajax({
+                url: '../api/usuarios/reativar.php',
+                method: 'GET',
+                data: { id: id },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'ok') {
+                        exibirToast(response.mensagem || 'Usuário reativado!', 'success');
+                        recarregarUsuariosComFiltros();
+                    } else {
+                        exibirToast('Erro: ' + (response.mensagem || 'falha ao reativar'), 'error');
+                    }
+                },
+                error: function() {
+                    exibirToast('Erro ao reativar usuário', 'error');
+                }
+            });
+        });
     });
     
     // Gerenciar dependentes
@@ -479,9 +504,9 @@ $(document).ready(function() {
                 `<button class="btn btn-sm btn-info btn-dependentes" data-id="${usuario.id}" data-nome="${usuario.nome}" title="Gerenciar dependentes">👥</button>` :
                 `<button class="btn btn-sm btn-secondary" disabled title="Usuário inativo - não é possível gerenciar dependentes">👥</button>`;
             
-            const botaoExcluir = isAtivo ? 
-                `<button class="btn btn-sm btn-danger btn-excluir" data-id="${usuario.id}" title="Excluir usuário">🗑️</button>` :
-                `<button class="btn btn-sm btn-secondary" disabled title="Usuário inativo - não é possível excluir">🗑️</button>`;
+            const botaoExcluir = isAtivo ?
+                `<button class="btn btn-sm btn-danger btn-excluir" data-id="${usuario.id}" title="Inativar usuário">🗑️</button>` :
+                `<button class="btn btn-sm btn-success btn-reativar" data-id="${usuario.id}" data-nome="${usuario.nome}" title="Reativar usuário">♻️</button>`;
             
             const botaoNotificar = 
                 `<button class="btn btn-sm btn-success btn-notificar" data-id="${usuario.id}" data-nome="${usuario.nome}" title="Notificar usuário">📧</button>`;
