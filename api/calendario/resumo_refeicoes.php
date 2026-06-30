@@ -1,12 +1,35 @@
 <?php
 /**
  * API de Resumo de Refeições do Mês
- * Retorna total de reservas confirmadas e valor estimado
+ * Retorna total de reservas confirmadas e valor estimado (próprias + dependentes).
+ *
+ * Usado por:
+ *  - Web (dashboard /resumo.php)
+ *  - Mobile (dashboard do app Intranet AOM via Bearer Token)
  */
 header('Content-Type: application/json; charset=UTF-8');
-session_start();
-require_once '../../auth/verifica_sessao.php';
-require_once '../../api/conexao.php';
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../../api/conexao.php';
+require_once __DIR__ . '/../../core/middleware/mobile_auth.php';
+
+if (!isset($_SESSION['usuario_id'])) {
+    if (!MobileAuthMiddleware::handle()) {
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não autenticado']);
+        exit;
+    }
+}
 
 $usuario_id = $_SESSION['usuario_id'] ?? 0;
 $mes = isset($_GET['mes']) ? intval($_GET['mes']) : date('n');

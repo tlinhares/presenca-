@@ -690,6 +690,49 @@ Dados de presença em culto, dia a dia, para um mês.
 
 ---
 
+### 4.2 `GET /api/calendario/resumo_refeicoes.php`
+
+Resumo do mês de refeições confirmadas do usuário autenticado: **soma reservas próprias E reservas de dependentes**. É o que alimenta o card "Refeições confirmadas" no dashboard do site — use este endpoint também no dashboard do app para os valores baterem entre as duas telas.
+
+**Query:**
+- `mes` (opcional, default = mês atual) — int 1–12.
+- `ano` (opcional, default = ano atual) — int.
+
+**Sucesso:**
+```json
+{
+  "status": "ok",
+  "resumo": {
+    "total_confirmadas": 21,
+    "reservas_proprias": 10,
+    "reservas_dependentes": 11,
+    "valor_total": 252.00,
+    "valor_formatado": "R$ 252,00",
+    "mes_nome": "Junho",
+    "ano": 2026,
+    "horario_limite_passado": false,
+    "permitir_reserva_atraso": 0,
+    "fora_do_horario": false,
+    "horario_limite": "09:31",
+    "horario_atual": "15:42"
+  }
+}
+```
+
+**Campos:**
+- `total_confirmadas` (int) — soma de próprias + dependentes do mês.
+- `reservas_proprias` / `reservas_dependentes` (int) — separação se o app quiser mostrar detalhado.
+- `valor_total` (float) — soma de `valor_refeicao` das próprias + `valor_refeicao + valor_marmitex` dos dependentes.
+- `valor_formatado` (string) — pronto pra exibir.
+- `horario_limite_passado` (bool) — útil para a UI desabilitar o botão "reservar hoje".
+- `permitir_reserva_atraso`, `fora_do_horario`, `horario_limite`, `horario_atual` — contexto adicional.
+
+**Erros:** `Usuário não autenticado`, `Erro ao buscar resumo: ...`.
+
+⚠️ **Diferença vs `/api/almoco/listar_reservas_usuario.php`** (§3.5): aquele endpoint lista **só reservas próprias** (sem dependentes). Use o `listar_reservas_usuario` para o histórico/extrato; use o `resumo_refeicoes` para o card consolidado do dashboard.
+
+---
+
 ## 5. Módulo: Culto
 
 ### 5.1 `POST /api/culto/enviar_justificativa.php`
@@ -1644,6 +1687,7 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 3.14 | `/api/almoco/excluir_reserva_departamento.php` | POST | Bearer (admin) | `{status:"ok", mensagem}` |
 | Calendário |
 | 4.1 | `/api/calendario/dados_culto.php` | GET | Bearer | `{status:"ok", dados, resumo}` |
+| 4.2 | `/api/calendario/resumo_refeicoes.php` | GET | Bearer | `{status:"ok", resumo:{total_confirmadas, valor_total, …}}` |
 | Culto |
 | 5.1 | `/api/culto/enviar_justificativa.php` | POST | Bearer | `{status:"ok", mensagem}` |
 | 5.2 | `/api/culto/frequencia.php` | GET | Bearer | `{status:"ok", frequencia, dados}` |
@@ -1702,7 +1746,7 @@ Aviso só para a IA entender que não são bugs do app — são particularidades
 
 ---
 
-**Endpoints totais documentados: 41** (3 auth + 14 almoço + 1 calendário + 4 culto + 4 dependentes + 7 frota + 5 usuários + 2 push + 1 utilitário).
+**Endpoints totais documentados: 42** (3 auth + 14 almoço + 2 calendário + 4 culto + 4 dependentes + 7 frota + 5 usuários + 2 push + 1 utilitário).
 
 **Nome oficial do app mobile:** `Intranet AOM` (não "Presença AOM" — o web continua sendo Presença AOM, só o app foi renomeado em 2026-06-16). Package Android e iOS Bundle ID: `br.org.aom.intranet`. Projeto Firebase: `intranet-aom`.
 
