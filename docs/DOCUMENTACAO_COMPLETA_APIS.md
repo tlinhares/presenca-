@@ -363,7 +363,7 @@ Cancela a reserva do próprio usuário.
 
 ### 3.5 `GET /api/almoco/listar_reservas_usuario.php`
 
-Lista reservas próprias num período.
+Lista reservas próprias num período. **Importante:** a lista `reservas[]` traz apenas as reservas próprias, mas o `resumo` é **consolidado** (próprias + dependentes) para o app conseguir mostrar o total da família no card do dashboard sem precisar combinar endpoints.
 
 **Query:**
 - `data_inicio` (opcional, default = primeiro dia do mês atual) — `YYYY-MM-DD`.
@@ -382,18 +382,31 @@ Lista reservas próprias num período.
       "pode_excluir": true
     }
   ],
-  "resumo": { "quantidade": 1, "valor_total": 15.0 }
+  "resumo": {
+    "quantidade": 21,
+    "valor_total": 252.00,
+    "proprias":    { "quantidade": 10, "valor_total": 120.00 },
+    "dependentes": { "quantidade": 11, "valor_total": 132.00 }
+  }
 }
 ```
 
-**Campos por reserva:**
+**Campos por reserva** (na lista `reservas[]` — apenas próprias):
 - `id` (int) — id da reserva.
 - `data` (string `YYYY-MM-DD`) — data da reserva.
 - `valor` (float) — valor cobrado.
 - `status` (enum string) — `"Atual"` (hoje, ainda dentro do horário) | `"Futura"` (data ainda não chegou) | `"Finalizada"` (passou do horário ou data já passou).
 - `pode_excluir` (bool) — se ainda é possível cancelar (true para `Atual` e `Futura`).
 
+**Campos do `resumo`:**
+- `quantidade` (int) — **soma total** (próprias + dependentes) no período.
+- `valor_total` (float) — **soma total** dos valores (próprias + dependentes).
+- `proprias` (objeto) — breakdown só das reservas próprias `{quantidade, valor_total}`.
+- `dependentes` (objeto) — breakdown só das reservas de dependentes `{quantidade, valor_total}`.
+
 **Erros:** `Usuário não logado`, `Método não permitido`, `Erro: <mensagem>`.
+
+**Observação:** se precisar da lista detalhada das reservas de dependentes, use `/api/almoco/listar_reservas_adicionais_usuario.php` (§3.8).
 
 ---
 
@@ -729,7 +742,7 @@ Resumo do mês de refeições confirmadas do usuário autenticado: **soma reserv
 
 **Erros:** `Usuário não autenticado`, `Erro ao buscar resumo: ...`.
 
-⚠️ **Diferença vs `/api/almoco/listar_reservas_usuario.php`** (§3.5): aquele endpoint lista **só reservas próprias** (sem dependentes). Use o `listar_reservas_usuario` para o histórico/extrato; use o `resumo_refeicoes` para o card consolidado do dashboard.
+⚠️ **Relação com `/api/almoco/listar_reservas_usuario.php`** (§3.5): aquele endpoint **também devolve o resumo consolidado** (próprias + dependentes) dentro do campo `resumo`. Use o que preferir — os dois entregam o mesmo total no dashboard. O `listar_reservas_usuario` é melhor se você já vai mostrar a lista de reservas; o `resumo_refeicoes` é mais leve se quer só os números do card.
 
 ---
 
@@ -1675,7 +1688,7 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 3.2 | `/api/almoco/status_reserva.php` | GET | Bearer | `{reservou_hoje, hora_excedida, ...}` (sem `status`) |
 | 3.3 | `/api/almoco/reservar.php` | POST | Bearer | `{status:"ok", mensagem, valor_aplicado}` |
 | 3.4 | `/api/almoco/cancelar_reserva_propria.php` | POST | Bearer | `{status:"ok", mensagem}` |
-| 3.5 | `/api/almoco/listar_reservas_usuario.php` | GET | Bearer | `{status:"ok", reservas[], resumo}` |
+| 3.5 | `/api/almoco/listar_reservas_usuario.php` | GET | Bearer | `{status:"ok", reservas[], resumo}` — **`resumo` soma próprias + dependentes** |
 | 3.6 | `/api/almoco/verificar_horario_adicional.php` | GET | Bearer | `{status:"ok", dependente, valores, horario}` |
 | 3.7 | `/api/almoco/reservar_adicional.php` | POST | Bearer | `{status:"ok"}` |
 | 3.8 | `/api/almoco/listar_reservas_adicionais_usuario.php` | GET | Bearer | `{status:"ok", reservas[], resumo}` |

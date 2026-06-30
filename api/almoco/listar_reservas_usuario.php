@@ -98,16 +98,44 @@ try {
         ];
     }
     $stmt->close();
-    
+
+    // ATENÇÃO: o resumo retornado SOMA reservas próprias + reservas de
+    // dependentes no MESMO INTERVALO. Isso é proposital para que o card
+    // "Refeições confirmadas" do dashboard mostre o total da família
+    // (igual o site faz via /api/calendario/resumo_refeicoes.php).
+    // A lista `reservas[]` continua só com as próprias — quem quiser a lista
+    // dos dependentes usa /api/almoco/listar_reservas_adicionais_usuario.php.
+    $quantidade_dependentes = 0;
+    $valor_dependentes = 0.0;
+    $stmt_dep = $conn->prepare("SELECT COUNT(*) AS qtd,
+                                       COALESCE(SUM(ra.valor_refeicao + ra.valor_marmitex), 0) AS valor
+                                  FROM reservas_adicionais ra
+                                  JOIN dependentes d ON d.id = ra.id_dependente
+                                 WHERE d.id_usuario = ? AND ra.data BETWEEN ? AND ?");
+    if ($stmt_dep) {
+        $stmt_dep->bind_param("iss", $id_usuario, $data_inicio, $data_fim);
+        $stmt_dep->execute();
+        $row_dep = $stmt_dep->get_result()->fetch_assoc();
+        if ($row_dep) {
+            $quantidade_dependentes = (int) $row_dep['qtd'];
+            $valor_dependentes      = (float) $row_dep['valor'];
+        }
+        $stmt_dep->close();
+    }
+
     echo json_encode([
         'status' => 'ok',
         'reservas' => $reservas,
         'resumo' => [
-            'quantidade' => $quantidade_reservas,
-            'valor_total' => $valor_total
+            // Total consolidado (próprias + dependentes) — o que o app deve exibir.
+            'quantidade'   => $quantidade_reservas + $quantidade_dependentes,
+            'valor_total'  => $valor_total + $valor_dependentes,
+            // Breakdown opcional pra quem quiser detalhar.
+            'proprias'     => ['quantidade' => $quantidade_reservas, 'valor_total' => $valor_total],
+            'dependentes'  => ['quantidade' => $quantidade_dependentes, 'valor_total' => $valor_dependentes],
         ]
     ]);
-    
+
 } catch (Exception $e) {
     echo json_encode(['status' => 'erro', 'mensagem' => 'Erro: ' . $e->getMessage()]);
 }
