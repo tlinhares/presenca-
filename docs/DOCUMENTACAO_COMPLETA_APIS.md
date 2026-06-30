@@ -363,7 +363,7 @@ Cancela a reserva do próprio usuário.
 
 ### 3.5 `GET /api/almoco/listar_reservas_usuario.php`
 
-Lista reservas próprias num período. **Importante:** a lista `reservas[]` traz apenas as reservas próprias, mas o `resumo` é **consolidado** (próprias + dependentes) para o app conseguir mostrar o total da família no card do dashboard sem precisar combinar endpoints.
+Lista reservas confirmadas num período — **inclui tanto as reservas próprias do usuário quanto as reservas dos dependentes dele** na mesma lista, marcadas com o campo `tipo`. Assim o card "Refeições confirmadas" do dashboard mostra o total da família independente de o app usar `reservas.length` ou `resumo.quantidade`.
 
 **Query:**
 - `data_inicio` (opcional, default = primeiro dia do mês atual) — `YYYY-MM-DD`.
@@ -377,9 +377,21 @@ Lista reservas próprias num período. **Importante:** a lista `reservas[]` traz
     {
       "id": 123,
       "data": "2026-06-16",
-      "valor": 15.0,
+      "valor": 12.0,
       "status": "Futura",
-      "pode_excluir": true
+      "pode_excluir": true,
+      "tipo": "propria"
+    },
+    {
+      "id": 456,
+      "data": "2026-06-15",
+      "valor": 12.0,
+      "status": "Finalizada",
+      "pode_excluir": false,
+      "tipo": "adicional",
+      "tipo_refeicao": "presencial",
+      "id_dependente": 84,
+      "dependente_nome": "Jamylle da Silva"
     }
   ],
   "resumo": {
@@ -391,22 +403,27 @@ Lista reservas próprias num período. **Importante:** a lista `reservas[]` traz
 }
 ```
 
-**Campos por reserva** (na lista `reservas[]` — apenas próprias):
-- `id` (int) — id da reserva.
-- `data` (string `YYYY-MM-DD`) — data da reserva.
-- `valor` (float) — valor cobrado.
-- `status` (enum string) — `"Atual"` (hoje, ainda dentro do horário) | `"Futura"` (data ainda não chegou) | `"Finalizada"` (passou do horário ou data já passou).
-- `pode_excluir` (bool) — se ainda é possível cancelar (true para `Atual` e `Futura`).
+**Campos comuns por reserva:**
+- `id` (int) — id da reserva (em `reservas_almoco` se `tipo=propria`, em `reservas_adicionais` se `tipo=adicional`).
+- `data` (string `YYYY-MM-DD`).
+- `valor` (float) — valor cobrado (para `adicional` já é a soma `valor_refeicao + valor_marmitex`).
+- `status` (enum string) — `"Atual"` | `"Futura"` | `"Finalizada"`.
+- `pode_excluir` (bool) — **sempre `false` para reservas adicionais** (exclusão de adicional usa `/api/almoco/excluir_reserva_adicional.php`). Para próprias, segue a regra normal.
+- `tipo` (enum string) — `"propria"` ou `"adicional"`.
+
+**Campos extras quando `tipo == "adicional"`:**
+- `tipo_refeicao` (string) — `"presencial"` ou `"marmitex"`.
+- `id_dependente` (int) — id do dependente.
+- `dependente_nome` (string) — nome do dependente para exibição.
 
 **Campos do `resumo`:**
-- `quantidade` (int) — **soma total** (próprias + dependentes) no período.
-- `valor_total` (float) — **soma total** dos valores (próprias + dependentes).
-- `proprias` (objeto) — breakdown só das reservas próprias `{quantidade, valor_total}`.
-- `dependentes` (objeto) — breakdown só das reservas de dependentes `{quantidade, valor_total}`.
+- `quantidade` (int) — soma total (próprias + dependentes).
+- `valor_total` (float) — soma total dos valores.
+- `proprias` / `dependentes` (objetos) — breakdown `{quantidade, valor_total}`.
 
 **Erros:** `Usuário não logado`, `Método não permitido`, `Erro: <mensagem>`.
 
-**Observação:** se precisar da lista detalhada das reservas de dependentes, use `/api/almoco/listar_reservas_adicionais_usuario.php` (§3.8).
+**Observação:** a lista vem ordenada por `data` desc com próprias e adicionais misturadas. Se o app precisar dos dois separados, use o campo `tipo` para filtrar.
 
 ---
 
