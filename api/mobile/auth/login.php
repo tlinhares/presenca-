@@ -64,7 +64,7 @@ try {
     
     $email = isset($data['email']) ? trim($data['email']) : '';
     $senha = isset($data['senha']) ? trim($data['senha']) : '';
-    
+
     if (empty($email) || empty($senha)) {
         echo json_encode(MobileResponse::error('Email e senha são obrigatórios', 400));
         exit;

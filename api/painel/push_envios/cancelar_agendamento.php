@@ -5,8 +5,7 @@
  * Cancela um agendamento ainda pendente (não pode cancelar depois de executado).
  */
 header('Content-Type: application/json; charset=UTF-8');
-session_start();
-require_once __DIR__ . '/../../../auth/verifica_sessao.php';
+require_once __DIR__ . '/../../../auth/verifica_sessao_ajax.php';
 require_once __DIR__ . '/../../../core/services/MenuPermissaoService.php';
 require_once __DIR__ . '/../../conexao.php';
 
