@@ -267,6 +267,41 @@ Renova o access token usando o refresh.
 
 ---
 
+### 2.4 `POST /api/mobile/auth/esqueci_senha.php`
+
+Solicita recuperação de senha por e-mail. **Espelha 1:1 o fluxo do botão "Esqueci minha senha" do site**: gera um token único de 1h, salva em `tokens_senha` e envia um e-mail HTML com link para `https://presenca.aom.org.br/redefinir_senha.php?token=...`. O usuário redefine a senha no browser e volta ao app para logar com a nova senha.
+
+**Sem autenticação** — o usuário justamente não sabe a senha atual.
+
+**Body (JSON):**
+```json
+{ "email": "usuario@exemplo.com" }
+```
+
+**Sucesso (HTTP 200):**
+```json
+{
+  "success": true,
+  "message": "E-mail de recuperação enviado com sucesso. Verifique sua caixa de entrada.",
+  "data": { "email": "usuario@exemplo.com" },
+  "timestamp": "2026-07-01T16:37:12-04:00"
+}
+```
+
+**Erros:**
+- `400 Informe um e-mail válido.` — campo vazio ou formato inválido.
+- `400 JSON inválido` — body não é JSON.
+- `404 E-mail não encontrado ou usuário inativo.` — não há usuário ativo com esse e-mail.
+- `405 Método não permitido` — só aceita POST.
+- `500 Erro ao enviar e-mail de recuperação. ...` — SMTP falhou (o token já é apagado nesse caso para não deixar link válido órfão).
+
+**Observações:**
+- Cada nova solicitação **invalida tokens anteriores** do mesmo usuário.
+- O corpo do e-mail é o mesmo do fluxo web, com o texto ajustado para citar o app.
+- O registro do envio vai para a tabela de histórico de notificações com origem `recuperacao_senha_mobile`.
+
+---
+
 ## 3. Módulo: Almoço
 
 Endpoints sob `/api/almoco/`. **Todos usam o formato B (legado).**
@@ -1717,6 +1752,7 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 2.1 | `/api/mobile/auth/login.php` | POST | — | `{success, data:{token,refresh_token,user}}` |
 | 2.2 | `/api/mobile/auth/refresh.php` | POST | Bearer (refresh) | `{success, data:{token,refresh_token}}` |
 | 2.3 | `/api/mobile/auth/logout.php` | POST | Bearer | `{success, message}` |
+| 2.4 | `/api/mobile/auth/esqueci_senha.php` | POST | — | `{success, message, data:{email}}` |
 | Almoço |
 | 3.1 | `/api/almoco/verificar_horario.php` | GET | Bearer | `{status:"sucesso", ...valores}` |
 | 3.2 | `/api/almoco/status_reserva.php` | GET | Bearer | `{reservou_hoje, hora_excedida, ...}` (sem `status`) |
