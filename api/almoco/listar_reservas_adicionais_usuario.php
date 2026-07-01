@@ -42,14 +42,20 @@ $data_fim = $_GET['data_fim'] ?? date('Y-m-t');
 $dependente_id = $_GET['dependente'] ?? '';
 
 try {
-    // Buscar reservas adicionais do usuário
-    $sql = "SELECT ra.id, ra.data, ra.quantidade, ra.tipo, ra.detalhe, 
+    // Buscar reservas adicionais do usuário.
+    // FILTRO por `d.id_usuario` (dono do dependente) e NÃO por `ra.id_usuario`
+    // (quem gravou o registro). Alinhado com resumo_refeicoes.php e
+    // listar_reservas_usuario.php — o site é a fonte da verdade.
+    // Hoje coincide 100% no banco, mas se algum fluxo admin futuro criar
+    // reserva de dependente sob outro `ra.id_usuario`, essa padronização
+    // impede divergência entre o card de dashboard e essa listagem.
+    $sql = "SELECT ra.id, ra.data, ra.quantidade, ra.tipo, ra.detalhe,
                    (ra.valor_refeicao + ra.valor_marmitex) as valor_total,
                    ra.data_cadastro, d.nome as dependente_nome, d.id as dependente_id
             FROM reservas_adicionais ra
             INNER JOIN dependentes d ON ra.id_dependente = d.id
-            WHERE ra.id_usuario = ? 
-            AND ra.data >= ? 
+            WHERE d.id_usuario = ?
+            AND ra.data >= ?
             AND ra.data <= ?";
     
     // Adicionar filtro por dependente se especificado
