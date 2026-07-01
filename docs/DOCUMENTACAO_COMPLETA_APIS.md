@@ -179,8 +179,25 @@ Realiza login e devolve par access/refresh.
 
 **Body (JSON):**
 ```json
-{ "email": "fulano@aom.org.br", "senha": "minhasenha" }
+{
+  "email": "fulano@aom.org.br",
+  "senha": "minhasenha",
+  "fcm_token": "fhT8a3K...string longa do Firebase...",
+  "plataforma": "ios",
+  "modelo_dispositivo": "iPhone 15",
+  "versao_app": "1.0.0"
+}
 ```
+
+**Campos obrigatórios:** `email`, `senha`.
+
+**Campos opcionais para registro oportunístico de FCM** (recomendado — evita depender de chamada separada ao `/api/mobile/notifications/register.php`):
+- `fcm_token` (string) — token do Firebase (mínimo 20 caracteres).
+- `plataforma` (string) — `"ios"` | `"android"` | `"web"`. Default `"android"`.
+- `modelo_dispositivo` (string) — ex.: `"iPhone 15"`, `"Pixel 7"`.
+- `versao_app` (string) — versão do app.
+
+Se `fcm_token` vier no body, o backend faz automaticamente o mesmo UPSERT do endpoint `/api/mobile/notifications/register.php` — grava o dispositivo com `ativo=1`. Isso é mais robusto porque o app pode esquecer/errar de chamar o `register` separadamente após o login (bug observado em produção em jul/2026).
 
 **Sucesso (HTTP 200):**
 ```json

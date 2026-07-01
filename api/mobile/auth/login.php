@@ -94,7 +94,39 @@ try {
     
     // Atualiza último login
     $conn->query("UPDATE usuarios SET ultimo_login = NOW() WHERE id = {$id}");
-    
+
+    // Registro OPORTUNÍSTICO do token FCM: se o app mandar `fcm_token` no body
+    // do login, já faz o UPSERT (equivalente a /api/mobile/notifications/register.php).
+    // Isso serve para apps que não conseguem/lembram chamar o register separadamente
+    // após o login — mais robusto do que depender só de onTokenRefresh.
+    if (!empty($data['fcm_token'])) {
+        $fcm_token  = trim((string) $data['fcm_token']);
+        $plataforma = strtolower(trim((string) ($data['plataforma'] ?? 'android')));
+        if (!in_array($plataforma, ['android', 'ios', 'web'], true)) $plataforma = 'android';
+        $modelo = trim((string) ($data['modelo_dispositivo'] ?? '')) ?: null;
+        $versao = trim((string) ($data['versao_app']         ?? '')) ?: null;
+
+        if (strlen($fcm_token) >= 20) {
+            $stmt_r = $conn->prepare(
+                "INSERT INTO notificacoes_push_dispositivos
+                    (id_usuario, fcm_token, plataforma, modelo_dispositivo, versao_app, ativo, ultimo_uso)
+                 VALUES (?, ?, ?, ?, ?, 1, NOW())
+                 ON DUPLICATE KEY UPDATE
+                    id_usuario = VALUES(id_usuario),
+                    plataforma = VALUES(plataforma),
+                    modelo_dispositivo = VALUES(modelo_dispositivo),
+                    versao_app = VALUES(versao_app),
+                    ativo = 1,
+                    ultimo_uso = NOW()"
+            );
+            if ($stmt_r) {
+                $stmt_r->bind_param('issss', $id, $fcm_token, $plataforma, $modelo, $versao);
+                $stmt_r->execute();
+                $stmt_r->close();
+            }
+        }
+    }
+
     // Gera tokens
     $tokens = TokenService::generateToken($id, $nome, $categoria, $email_db);
     
