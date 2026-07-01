@@ -182,8 +182,12 @@ try {
             // Usar presença existente
             $presenca = $presencas_existentes[$data_str];
             
-            // Se tem justificativa, o status deve ser 'justificado'
-            if ($presenca['justificativa_id']) {
+            // Só marca como 'justificado' quando a justificativa foi APROVADA.
+            // Pendente ou rejeitada mantém o status original (`falta`) — alinhado com
+            // `api/culto/frequencia.php` e `api/calendario/estatisticas_presenca.php`.
+            // Sem esse gate, a tela "Histórico" do app contava justificativas
+            // pendentes como se já estivessem aprovadas (bug reportado em 2026-07-01).
+            if ($presenca['justificativa_id'] && ($presenca['justificativa_status'] ?? '') === 'aprovada') {
                 $presenca['status'] = 'justificado';
             }
             
