@@ -251,6 +251,13 @@ try {
         exit;
     }
 
+    // Corrige orientação EXIF (foto de celular deitada) — sem isso o
+    // dispositivo facial recusa a foto ("foto falhou" no sync).
+    if ($foto_processada) {
+        require_once __DIR__ . '/../../utils/imagem.php';
+        $foto_processada = normalizar_foto_base64($foto_processada);
+    }
+
     // Atualizar dependente
     if ($foto_processada) {
         $stmt = $conn->prepare("

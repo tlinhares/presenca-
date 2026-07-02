@@ -109,7 +109,12 @@ try {
         if (strpos($foto_base64, 'data:image/') === 0) {
             $foto_base64 = substr($foto_base64, strpos($foto_base64, ',') + 1);
         }
-        
+
+        // Corrige orientação EXIF (foto de celular deitada) — sem isso o
+        // dispositivo facial recusa a foto ("foto falhou" no sync).
+        require_once __DIR__ . '/../../utils/imagem.php';
+        $foto_base64 = normalizar_foto_base64($foto_base64);
+
         $sql .= ", foto_base64 = ?";
         $params[] = $foto_base64;
         $types .= "s";

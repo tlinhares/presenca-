@@ -277,6 +277,11 @@ if ($foto_base64) {
     
     if ($imagem_teste) {
         imagedestroy($imagem_teste);
+        // Corrige orientação EXIF ANTES do redimensionamento — o resize
+        // re-encoda sem EXIF e, sem esta etapa, gravaria a foto deitada
+        // permanentemente (dispositivo facial recusa: "foto falhou").
+        require_once __DIR__ . '/../../utils/imagem.php';
+        $foto_base64 = normalizar_foto_base64($foto_base64);
         $foto_base64 = redimensionarImagemBase64($foto_base64);
         $nova_foto = true;
     } else {

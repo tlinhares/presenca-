@@ -69,6 +69,11 @@ try {
         $foto_base64 = substr($foto, strpos($foto, ',') + 1);
     }
 
+    // Corrige orientação EXIF (foto de celular deitada) — sem isso o
+    // dispositivo facial recusa a foto ("foto falhou" no sync).
+    require_once __DIR__ . '/../../utils/imagem.php';
+    $foto_base64 = normalizar_foto_base64($foto_base64);
+
     // Atualizar foto no banco
     $stmt = $conn->prepare("UPDATE usuarios SET foto_base64 = ? WHERE id = ?");
     $stmt->bind_param("si", $foto_base64, $_SESSION['usuario_id']);

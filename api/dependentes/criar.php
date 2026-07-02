@@ -86,7 +86,14 @@ try {
         $foto_data = file_get_contents($foto_tmp);
         $foto_base64 = base64_encode($foto_data);
     }
-    
+
+    // Corrige orientação EXIF (foto de celular deitada) — sem isso o
+    // dispositivo facial recusa a foto ("foto falhou" no sync).
+    if ($foto_base64) {
+        require_once __DIR__ . '/../../utils/imagem.php';
+        $foto_base64 = normalizar_foto_base64($foto_base64);
+    }
+
     // Regra centralizada em DependenteService — idade-limite vem da config
     // 'idade_isencao_dependente' (default 12). Nunca duplicar regra hardcoded.
     require_once __DIR__ . '/../../core/services/DependenteService.php';
