@@ -1711,6 +1711,54 @@ Desativa um token FCM (chame no logout).
 
 ---
 
+## 9B. Módulo: Comunicados Internos (Avisos do app)
+
+Comunicados publicados pelo admin no painel web (`/painel/comunicados.php`) e exibidos no app na aba **Avisos** e no **banner da Home** (quando `destaque`). Controle de leitura por usuário alimenta o badge.
+
+### 9B.1 `GET /api/mobile/comunicados/listar.php`
+
+**Header:** `Authorization: Bearer <access_token>`.
+
+**Query (opcional):** `limite` (default 50, máx 100).
+
+**Sucesso:**
+```json
+{
+  "success": true,
+  "message": "Comunicados recuperados com sucesso",
+  "data": {
+    "nao_lidos": 2,
+    "destaque": { "id": 5, "titulo": "...", "corpo": "...", "imagem_url": "https://presenca.aom.org.br/uploads/comunicados/com_x.jpg", "link": null, "destaque": true, "publicado_em": "2026-07-02 09:00:00", "lido": false },
+    "comunicados": [ { ...mesmo formato... } ]
+  }
+}
+```
+
+**Regras:**
+- Só vêm comunicados `status='publicado'` e não expirados, do mais recente ao mais antigo.
+- `nao_lidos` → badge da aba Avisos (e do sino no header).
+- `destaque` → banner da Home (o publicado mais recente com flag destaque; `null` = não renderizar o banner).
+- `imagem_url` é URL absoluta ou `null`. `link` (se presente) abre no navegador.
+- Push de publicação chega com `data: { tipo: "comunicado", id_comunicado: N }` — ao tocar, abrir a aba Avisos (ou o comunicado N).
+
+### 9B.2 `POST /api/mobile/comunicados/marcar_lido.php`
+
+**Header:** `Authorization: Bearer <access_token>`.
+
+**Body (um dos dois):**
+```json
+{ "id": 5 }
+{ "todos": true }
+```
+
+**Sucesso:** `{ "success": true, "data": { "nao_lidos": 1 } }` — devolve o badge atualizado.
+
+**Erros:** `400` sem id/todos; `404` comunicado inexistente/expirado; `401` sem token.
+
+**Recomendação de UX:** marcar como lido quando o usuário abrir o comunicado (não ao listar). "Marcar todas como lidas" usa `{"todos": true}`.
+
+---
+
 ## 10. Módulo: Utilitários
 
 ### 10.1 `GET /api/dias_fechado/verificar.php`
@@ -1753,6 +1801,9 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | 2.2 | `/api/mobile/auth/refresh.php` | POST | Bearer (refresh) | `{success, data:{token,refresh_token}}` |
 | 2.3 | `/api/mobile/auth/logout.php` | POST | Bearer | `{success, message}` |
 | 2.4 | `/api/mobile/auth/esqueci_senha.php` | POST | — | `{success, message, data:{email}}` |
+| Comunicados |
+| 9B.1 | `/api/mobile/comunicados/listar.php` | GET | Bearer | `{success, data:{nao_lidos, destaque, comunicados}}` |
+| 9B.2 | `/api/mobile/comunicados/marcar_lido.php` | POST | Bearer | `{success, data:{nao_lidos}}` |
 | Almoço |
 | 3.1 | `/api/almoco/verificar_horario.php` | GET | Bearer | `{status:"sucesso", ...valores}` |
 | 3.2 | `/api/almoco/status_reserva.php` | GET | Bearer | `{reservou_hoje, hora_excedida, ...}` (sem `status`) |
