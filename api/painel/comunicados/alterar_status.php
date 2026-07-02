@@ -54,8 +54,12 @@ try {
         $stmt->close();
 
         $push_info = null;
+        $push_erro = null;
         if ($enviar_push) {
-            // Reusa a fila de push agendado (cron roda a cada minuto)
+            // Reusa a fila de push agendado (cron roda a cada minuto).
+            // IMPORTANTE: com MYSQLI_REPORT_OFF, execute() que falha retorna
+            // false sem exceção — precisamos conferir o retorno explicitamente
+            // pra não reportar "enfileirado" com a fila vazia.
             $titulo_push = '📢 ' . mb_substr($com['titulo'], 0, 90);
             $corpo_push  = mb_substr(trim(preg_replace('/\s+/', ' ', $com['corpo'])), 0, 140);
             $dados_json  = json_encode(['tipo' => 'comunicado', 'id_comunicado' => $id], JSON_UNESCAPED_UNICODE);
@@ -65,13 +69,22 @@ try {
                     (titulo, corpo, dados_json, destinatarios_tipo, destinatarios_ids, agendado_para, status, criado_por)
                  VALUES (?, ?, ?, 'todos', NULL, ?, 'pendente', ?)"
             );
-            $stmt->bind_param('ssssi', $titulo_push, $corpo_push, $dados_json, $agora, $criado_por);
-            $stmt->execute();
-            $push_info = 'Push enfileirado — sai em até 1 minuto para todos os dispositivos';
-            $stmt->close();
+            if ($stmt && $stmt->bind_param('ssssi', $titulo_push, $corpo_push, $dados_json, $agora, $criado_por) && $stmt->execute()) {
+                $push_info = 'Push enfileirado — sai em até 1 minuto para todos os dispositivos';
+            } else {
+                $push_erro = 'Comunicado publicado, mas FALHOU o enfileiramento do push: '
+                           . ($stmt ? $stmt->error : $conn->error)
+                           . ' — use a tela Enviar Push para disparar manualmente.';
+                error_log('Falha ao enfileirar push do comunicado ' . $id . ': ' . ($stmt ? $stmt->error : $conn->error));
+            }
+            if ($stmt) $stmt->close();
         }
 
-        echo json_encode(['status' => 'ok', 'mensagem' => 'Comunicado publicado', 'push' => $push_info]);
+        echo json_encode([
+            'status'   => $push_erro ? 'parcial' : 'ok',
+            'mensagem' => $push_erro ?: 'Comunicado publicado',
+            'push'     => $push_info,
+        ]);
         exit;
     }
 

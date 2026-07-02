@@ -25,7 +25,10 @@ if (!isset($conn) || $conn->connect_error || $conn->ping() === false) {
             die("Erro ao conectar ao banco de dados. Verifique os logs.");
         }
         
-        $conn->set_charset("utf8");
+        // utf8mb4 (não "utf8"/mb3): suporta emojis e caracteres de 4 bytes.
+        // 62 das 67 tabelas do banco já são utf8mb4; a conexão em mb3 fazia
+        // INSERTs com emoji falharem com erro de collation.
+        $conn->set_charset("utf8mb4");
         
         // Configurar para manter a conexão viva
         $conn->options(MYSQLI_OPT_CONNECT_TIMEOUT, 60);
