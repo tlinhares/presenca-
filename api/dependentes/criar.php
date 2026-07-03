@@ -37,13 +37,11 @@ if (!isset($_SESSION['usuario_id'])) {
     }
 }
 
-// Verificar se é admin
+// Admin pode criar dependente para qualquer usuário; funcionário comum só
+// para si mesmo (mesma regra do editar.php). O bloqueio total a não-admin
+// impedia o auto-serviço pelo app — na web o usuário sempre pôde cadastrar
+// os próprios dependentes.
 $isAdmin = isset($_SESSION['usuario_categoria']) && $_SESSION['usuario_categoria'] === 'admin';
-
-if (!$isAdmin) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Acesso negado']);
-    exit;
-}
 
 try {
     // Aceita tanto JSON (mobile) quanto form-data (web)
@@ -63,9 +61,15 @@ try {
     $nome = $input_data['nome'] ?? null;
     $parentesco = $input_data['parentesco'] ?? null;
     $nascimento = $input_data['nascimento_dependente'] ?? $input_data['nascimento'] ?? null;
-    
+
     if (!$usuario_id || !$nome || !$parentesco || !$nascimento) {
         echo json_encode(['status' => 'erro', 'mensagem' => 'Dados obrigatórios não fornecidos']);
+        exit;
+    }
+
+    // Não-admin: só pode criar dependente vinculado a si mesmo
+    if (!$isAdmin && (int) $usuario_id !== (int) $_SESSION['usuario_id']) {
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Acesso negado - você só pode cadastrar seus próprios dependentes']);
         exit;
     }
     
