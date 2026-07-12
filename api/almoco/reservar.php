@@ -80,14 +80,41 @@ try {
         exit;
     }
 
+    // Recalcula "fora do horário" NO SERVIDOR — o valor cobrado não pode
+    // depender do que o cliente informa (regra idêntica ao verificar_horario.php:
+    // só vale para reservas do dia corrente).
+    $hora_limite_cfg = get_config('hora_limite', '09:00');
+    $fora_srv = ($data === date('Y-m-d')) && (date('H:i') > $hora_limite_cfg);
+
+    if ($fora_srv) {
+        // Trava de negócio: reserva em atraso só se habilitada na configuração.
+        if (get_config('permitir_reserva_atraso', '0') !== '1') {
+            echo json_encode(['status' => 'erro', 'mensagem' => "O horário limite ($hora_limite_cfg) já passou e reservas fora do horário estão desabilitadas."]);
+            exit;
+        }
+        // Valor maior exige consentimento: o front confirma no modal e envia
+        // fora_do_horario=true. Sem confirmação, orienta em vez de cobrar mais.
+        if (!$fora_do_horario) {
+            echo json_encode(['status' => 'erro', 'mensagem' => "O horário limite ($hora_limite_cfg) já passou. Confirme a reserva fora do horário (valor diferenciado) e tente novamente."]);
+            exit;
+        }
+    }
+    // Daqui em diante vale o relógio do servidor (cliente confirmando "fora"
+    // para uma data futura, por exemplo, paga o valor normal).
+    $fora_do_horario = $fora_srv;
+
     // Definir valor da refeição
     $valor_refeicao = 0.00;
-    
+
     if ($fora_do_horario) {
         // Usar valor fora do horário
         $valor_refeicao = floatval(get_config('valor_fora_horario', '30.00'));
     } else {
-        // Usar valor normal do grupo do usuário
+        // Usar valor normal do grupo do usuário.
+        // O fallback é lido ANTES de abrir o statement: get_config() com um
+        // stmt aberto na mesma conexão falha ("commands out of sync") e
+        // devolvia o padrão 0.00 — reserva saía de graça pra quem não tem grupo.
+        $valor_refeicao_padrao = floatval(get_config('valor_refeicao', '0.00'));
         $stmt = $conn->prepare("SELECT u.id_valor, gv.valor FROM usuarios u LEFT JOIN grupo_valor gv ON u.id_valor = gv.id WHERE u.id = ?");
         $stmt->bind_param("i", $_SESSION['usuario_id']);
         $stmt->execute();
@@ -96,7 +123,7 @@ try {
             if ($id_valor && $valor_grupo) {
                 $valor_refeicao = floatval($valor_grupo);
             } else {
-                $valor_refeicao = floatval(get_config('valor_refeicao', '0.00'));
+                $valor_refeicao = $valor_refeicao_padrao;
             }
         }
         $stmt->close();

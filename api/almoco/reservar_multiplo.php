@@ -79,6 +79,13 @@ $valor_refeicao_config = floatval($config['valor_refeicao'] ?? 0);
 $valor_fora_horario = floatval($config['valor_fora_horario'] ?? 30);
 $hora_limite = $config['hora_limite'] ?? '10:00';
 
+// Trava de negócio: com "Permitir Reserva Fora do Horário" desabilitado,
+// ignora a confirmação do cliente — o dia atual fora do horário volta a ser
+// bloqueado pela checagem existente no loop (que já usa o relógio do servidor).
+if (($config['permitir_reserva_atraso'] ?? '0') !== '1') {
+    $fora_do_horario = false;
+}
+
 // Buscar valor do grupo_valor do usuário (igual ao reservar.php)
 $valor_grupo = null;
 $stmt_grupo = $conn->prepare("SELECT gv.valor FROM usuarios u LEFT JOIN grupo_valor gv ON u.id_valor = gv.id WHERE u.id = ?");

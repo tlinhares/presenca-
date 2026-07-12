@@ -73,6 +73,26 @@ if ($tipo === 'marmitex' && $marmitex_habilitado !== '1') {
     exit;
 }
 
+// Recalcula "fora do horário" NO SERVIDOR — o valor cobrado não pode depender
+// do que o cliente informa (mesma regra do reservar.php: só vale para hoje).
+$hora_limite_cfg = get_config('hora_limite', '09:00');
+$fora_srv = ($data === date('Y-m-d')) && (date('H:i') > $hora_limite_cfg);
+
+if ($fora_srv) {
+    // Trava de negócio: reserva em atraso só se habilitada na configuração.
+    if (get_config('permitir_reserva_atraso', '0') !== '1') {
+        echo json_encode(['status' => 'erro', 'mensagem' => "O horário limite ($hora_limite_cfg) já passou e reservas fora do horário estão desabilitadas."]);
+        exit;
+    }
+    // Valor maior exige consentimento (front confirma no modal e envia true).
+    if (!$fora_do_horario) {
+        echo json_encode(['status' => 'erro', 'mensagem' => "O horário limite ($hora_limite_cfg) já passou. Confirme a reserva fora do horário (valor diferenciado) e tente novamente."]);
+        exit;
+    }
+}
+// Daqui em diante vale o relógio do servidor.
+$fora_do_horario = $fora_srv;
+
 // Verifica se o dependente pertence ao usuário e obtém cobrar + nascimento
 $stmt = $conn->prepare("SELECT cobrar, nascimento FROM dependentes WHERE id = ? AND id_usuario = ? AND ativo = 1");
 $stmt->bind_param("ii", $id_dependente, $id_usuario);

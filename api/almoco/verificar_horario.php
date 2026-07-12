@@ -87,8 +87,19 @@ try {
         $fora_do_horario = $hora_atual > $horario_limite;
     }
 
-    // Buscar valor normal do usuário
+    // Trava de negócio: se passou do horário e a configuração "Permitir
+    // Reserva Fora do Horário" está desabilitada, não há reserva possível —
+    // devolve erro para o front nem oferecer o modal de confirmação.
+    if ($fora_do_horario && get_config('permitir_reserva_atraso', '0') !== '1') {
+        echo json_encode(['status' => 'erro', 'mensagem' => "O horário limite ($horario_limite) já passou e reservas fora do horário estão desabilitadas."]);
+        exit;
+    }
+
+    // Buscar valor normal do usuário.
+    // Fallback lido ANTES do statement — get_config() com stmt aberto falha
+    // ("commands out of sync") e devolvia 0.00 pra usuário sem grupo.
     $valor_normal = 0.00;
+    $valor_refeicao_padrao = floatval(get_config('valor_refeicao', '0.00'));
     $stmt = $conn->prepare("SELECT u.id_valor, gv.valor FROM usuarios u LEFT JOIN grupo_valor gv ON u.id_valor = gv.id WHERE u.id = ?");
     $stmt->bind_param("i", $_SESSION['usuario_id']);
     $stmt->execute();
@@ -97,7 +108,7 @@ try {
         if ($id_valor && $valor_grupo) {
             $valor_normal = floatval($valor_grupo);
         } else {
-            $valor_normal = floatval(get_config('valor_refeicao', '0.00'));
+            $valor_normal = $valor_refeicao_padrao;
         }
     }
     $stmt->close();

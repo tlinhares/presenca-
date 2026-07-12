@@ -113,6 +113,13 @@ if ($data_reserva == date('Y-m-d')) {
     $fora_do_horario = $hora_atual > $hora_limite;
 }
 
+// Trava de negócio: se passou do horário e a configuração "Permitir Reserva
+// Fora do Horário" está desabilitada, não há reserva possível.
+if ($fora_do_horario && get_config('permitir_reserva_atraso', '0') !== '1') {
+    echo json_encode(['status' => 'erro', 'mensagem' => "O horário limite ($hora_limite) já passou e reservas fora do horário estão desabilitadas."]);
+    exit;
+}
+
 // Calcular valores
 $valor_normal_refeicao = 0.00;
 $valor_normal_marmitex = 0.00;
