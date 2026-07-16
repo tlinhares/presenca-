@@ -90,11 +90,18 @@ class PushNotificationService {
     /**
      * Envia notificação para todos os dispositivos ativos de um usuário.
      *
+     * @param string|null $plataformaFiltro 'android'|'ios'|'web' pra restringir
+     *                    a uma plataforma; null (default) = todos os dispositivos.
      * @return array ['enviados' => int, 'falhas' => int, 'erros' => string[]]
      */
-    public static function enviarParaUsuario(mysqli $conn, int $idUsuario, string $titulo, string $corpo, array $dados = []): array {
-        $stmt = $conn->prepare("SELECT id, fcm_token, plataforma FROM notificacoes_push_dispositivos WHERE id_usuario = ? AND ativo = 1");
-        $stmt->bind_param('i', $idUsuario);
+    public static function enviarParaUsuario(mysqli $conn, int $idUsuario, string $titulo, string $corpo, array $dados = [], ?string $plataformaFiltro = null): array {
+        if ($plataformaFiltro !== null && in_array($plataformaFiltro, ['android', 'ios', 'web'], true)) {
+            $stmt = $conn->prepare("SELECT id, fcm_token, plataforma FROM notificacoes_push_dispositivos WHERE id_usuario = ? AND ativo = 1 AND plataforma = ?");
+            $stmt->bind_param('is', $idUsuario, $plataformaFiltro);
+        } else {
+            $stmt = $conn->prepare("SELECT id, fcm_token, plataforma FROM notificacoes_push_dispositivos WHERE id_usuario = ? AND ativo = 1");
+            $stmt->bind_param('i', $idUsuario);
+        }
         $stmt->execute();
         $rs = $stmt->get_result();
         $dispositivos = [];

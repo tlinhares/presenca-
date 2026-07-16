@@ -23,6 +23,7 @@ try {
     }
 
     $sql = "SELECT a.id, a.titulo, a.corpo, a.destinatarios_tipo, a.destinatarios_ids,
+                   a.plataforma_filtro,
                    a.agendado_para, a.status, a.criado_em, a.executado_em, a.resultado_json,
                    a.criado_por, u.nome AS criado_por_nome
               FROM notificacoes_push_agendadas a
@@ -49,6 +50,7 @@ try {
             'destinatarios_tipo' => $x['destinatarios_tipo'],
             'destinatarios_ids'  => $ids,
             'destinatarios_resumo' => $resumo_dest,
+            'plataforma'         => $x['plataforma_filtro'] ?: 'todos',
             'agendado_para'      => $x['agendado_para'],
             'status'             => $x['status'],
             'criado_em'          => $x['criado_em'],

@@ -54,8 +54,18 @@ try {
     }
     $stmt->close();
 
-    // Contagem total de alcançáveis pra facilitar o botão "todos"
-    $tot = (int) $conn->query("SELECT COUNT(DISTINCT id_usuario) t FROM notificacoes_push_dispositivos WHERE ativo = 1")->fetch_assoc()['t'];
+    // Contagem total de alcançáveis pra facilitar o botão "todos".
+    // Com ?plataforma=android|ios, conta só usuários com dispositivo daquele SO.
+    $plataforma = strtolower(trim($_GET['plataforma'] ?? 'todos'));
+    if (in_array($plataforma, ['android', 'ios'], true)) {
+        $stmt_t = $conn->prepare("SELECT COUNT(DISTINCT id_usuario) t FROM notificacoes_push_dispositivos WHERE ativo = 1 AND plataforma = ?");
+        $stmt_t->bind_param('s', $plataforma);
+        $stmt_t->execute();
+        $tot = (int) $stmt_t->get_result()->fetch_assoc()['t'];
+        $stmt_t->close();
+    } else {
+        $tot = (int) $conn->query("SELECT COUNT(DISTINCT id_usuario) t FROM notificacoes_push_dispositivos WHERE ativo = 1")->fetch_assoc()['t'];
+    }
 
     echo json_encode([
         'status'   => 'ok',

@@ -49,7 +49,7 @@ try {
     $stmt_lock->execute();
     $stmt_lock->close();
 
-    $rs = $conn->query("SELECT id, titulo, corpo, dados_json, destinatarios_tipo, destinatarios_ids
+    $rs = $conn->query("SELECT id, titulo, corpo, dados_json, destinatarios_tipo, destinatarios_ids, plataforma_filtro
                          FROM notificacoes_push_agendadas
                         WHERE status = 'processando'
                         ORDER BY agendado_para ASC");
@@ -68,12 +68,24 @@ try {
         $dados   = $it['dados_json'] ? (json_decode($it['dados_json'], true) ?: []) : [];
         $tipo    = (string) $it['destinatarios_tipo'];
         $ids_raw = $it['destinatarios_ids'] ? (json_decode($it['destinatarios_ids'], true) ?: []) : [];
+        // Filtro de SO gravado no agendamento: 'android'|'ios' ou NULL (= todos)
+        $plataforma_filtro = in_array($it['plataforma_filtro'] ?? null, ['android', 'ios'], true)
+            ? $it['plataforma_filtro'] : null;
 
-        // Resolver destinatários
+        // Resolver destinatários (respeitando o filtro de plataforma)
         $usuarios_target = [];
         if ($tipo === 'todos') {
-            $r = $conn->query("SELECT DISTINCT id_usuario FROM notificacoes_push_dispositivos WHERE ativo = 1");
-            while ($x = $r->fetch_assoc()) $usuarios_target[] = (int) $x['id_usuario'];
+            if ($plataforma_filtro !== null) {
+                $stmt_u = $conn->prepare("SELECT DISTINCT id_usuario FROM notificacoes_push_dispositivos WHERE ativo = 1 AND plataforma = ?");
+                $stmt_u->bind_param('s', $plataforma_filtro);
+                $stmt_u->execute();
+                $r = $stmt_u->get_result();
+                while ($x = $r->fetch_assoc()) $usuarios_target[] = (int) $x['id_usuario'];
+                $stmt_u->close();
+            } else {
+                $r = $conn->query("SELECT DISTINCT id_usuario FROM notificacoes_push_dispositivos WHERE ativo = 1");
+                while ($x = $r->fetch_assoc()) $usuarios_target[] = (int) $x['id_usuario'];
+            }
         } else {
             $usuarios_target = array_values(array_unique(array_filter(array_map('intval', $ids_raw), fn($v) => $v > 0)));
         }
@@ -82,7 +94,7 @@ try {
         $falhas   = 0;
         $sem_dispositivo = 0;
         foreach ($usuarios_target as $uid) {
-            $r = PushNotificationService::enviarParaUsuario($conn, $uid, $titulo, $corpo, $dados);
+            $r = PushNotificationService::enviarParaUsuario($conn, $uid, $titulo, $corpo, $dados, $plataforma_filtro);
             if (($r['dispositivos'] ?? 0) === 0) {
                 $sem_dispositivo++;
             } else {

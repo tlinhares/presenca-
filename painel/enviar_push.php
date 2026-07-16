@@ -118,8 +118,23 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
 
             <div id="bloco-todos" class="alert alert-info mb-0" style="display:none;">
                 <i class="bi bi-broadcast me-1"></i>
-                A notificação será enviada para <strong><span id="total-alcancaveis">–</span> usuário(s)</strong> que têm o aplicativo instalado e ativo agora.
+                A notificação será enviada para <strong><span id="total-alcancaveis">–</span> usuário(s)</strong> que têm o aplicativo instalado e ativo agora<span id="total-plat-sufixo"></span>.
             </div>
+
+            <hr class="my-3">
+            <label class="form-label d-block mb-2"><i class="bi bi-phone me-1"></i>Sistema operacional</label>
+            <div class="d-flex gap-2 flex-wrap">
+                <div class="tipo-btn active" data-plat="todos" onclick="setPlataforma('todos')">
+                    <i class="bi bi-globe2"></i>Todos
+                </div>
+                <div class="tipo-btn" data-plat="android" onclick="setPlataforma('android')">
+                    <i class="bi bi-android2"></i>Android
+                </div>
+                <div class="tipo-btn" data-plat="ios" onclick="setPlataforma('ios')">
+                    <i class="bi bi-apple"></i>iOS (Apple)
+                </div>
+            </div>
+            <small class="help d-block mt-2">Com Android ou iOS selecionado, só os dispositivos daquele sistema recebem — vale pro envio imediato e pro agendado.</small>
         </div>
 
         <div class="card-main p-4 mb-4">
@@ -190,20 +205,33 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
     <script>
         const baseUrl = '<?= MenuPermissaoService::getBaseUrl() ?>';
         let tipoAtual = 'usuario';
+        let platAtual = 'todos';  // 'todos' | 'android' | 'ios'
         let destinatarios = [];   // array de {id, nome, email}
         let filtroAgendamento = 'pendente';
         let buscaTimeout = null;
 
+        function setPlataforma(p) {
+            platAtual = p;
+            $('.tipo-btn[data-plat]').removeClass('active');
+            $(`.tipo-btn[data-plat="${p}"]`).addClass('active');
+            $('#total-plat-sufixo').text(p === 'todos' ? '' : (p === 'android' ? ' no Android' : ' no iOS'));
+            if (tipoAtual === 'todos') atualizarTotalAlcancaveis();
+        }
+
+        function atualizarTotalAlcancaveis() {
+            $.getJSON(baseUrl + '/api/painel/push_envios/buscar_usuarios.php', { plataforma: platAtual }, function(data) {
+                if (data.status === 'ok') $('#total-alcancaveis').text(data.total_alcancaveis);
+            });
+        }
+
         function setTipo(t) {
             tipoAtual = t;
-            $('.tipo-btn').removeClass('active');
+            $('.tipo-btn[data-tipo]').removeClass('active');
             $(`.tipo-btn[data-tipo="${t}"]`).addClass('active');
             if (t === 'todos') {
                 $('#bloco-usuarios').hide();
                 $('#bloco-todos').show();
-                $.getJSON(baseUrl + '/api/painel/push_envios/buscar_usuarios.php', function(data) {
-                    if (data.status === 'ok') $('#total-alcancaveis').text(data.total_alcancaveis);
-                });
+                atualizarTotalAlcancaveis();
             } else {
                 $('#bloco-usuarios').show();
                 $('#bloco-todos').hide();
@@ -297,13 +325,18 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
                 dados: dados,
                 destinatarios_tipo: tipoAtual,
                 ids: destinatarios.map(u => u.id),
+                plataforma: platAtual,
             };
+        }
+
+        function labelPlataforma(p) {
+            return p === 'android' ? ' (só Android)' : (p === 'ios' ? ' (só iOS)' : '');
         }
 
         $('#btnEnviarAgora').on('click', function() {
             const p = coletarPayload();
             if (!p) return;
-            const alvo = (p.destinatarios_tipo === 'todos') ? 'TODOS os usuários com o app' : (p.ids.length + ' usuário(s)');
+            const alvo = ((p.destinatarios_tipo === 'todos') ? 'TODOS os usuários com o app' : (p.ids.length + ' usuário(s)')) + labelPlataforma(p.plataforma);
             if (!confirm(`Enviar push AGORA para ${alvo}?`)) return;
             $('#btnEnviarAgora').prop('disabled', true);
             $('#resultado').html('<div class="text-muted"><i class="bi bi-hourglass-split"></i> Enviando…</div>');
@@ -375,6 +408,9 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
                     const acao = (a.status === 'pendente') ?
                         `<button class="btn btn-sm btn-outline-danger" onclick="cancelarAgend(${a.id})"><i class="bi bi-x-lg"></i> Cancelar</button>` :
                         `<span class="badge bg-secondary">${a.status.toUpperCase()}</span>`;
+                    const badgePlat = (a.plataforma === 'android')
+                        ? ' <span class="badge bg-success"><i class="bi bi-android2"></i> Android</span>'
+                        : (a.plataforma === 'ios' ? ' <span class="badge bg-dark"><i class="bi bi-apple"></i> iOS</span>' : '');
                     let resultado = '';
                     if (a.resultado) {
                         resultado = `<div class="small text-muted mt-1">Executado ${a.executado_em || ''} — enviados ${a.resultado.enviados || 0}, falhas ${a.resultado.falhas || 0}</div>`;
@@ -387,7 +423,7 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
                                     <div class="text-muted small">${$('<div/>').text(a.corpo).html()}</div>
                                     <div class="small mt-1">
                                         <i class="bi bi-calendar-event me-1"></i>${dtFmt} ·
-                                        <i class="bi bi-people me-1"></i>${a.destinatarios_resumo} ·
+                                        <i class="bi bi-people me-1"></i>${a.destinatarios_resumo}${badgePlat} ·
                                         criado por ${$('<div/>').text(a.criado_por_nome || '—').html()}
                                     </div>
                                     ${resultado}

@@ -5,7 +5,8 @@
  *   titulo, corpo, dados?: object,
  *   destinatarios_tipo: "usuario"|"varios"|"todos",
  *   ids?: number[],
- *   agendado_para: "YYYY-MM-DD HH:MM"   // horário local (America/Cuiaba)
+ *   agendado_para: "YYYY-MM-DD HH:MM",  // horário local (America/Cuiaba)
+ *   plataforma?: "todos"|"android"|"ios" // default "todos"
  * }
  *
  * Agenda um disparo futuro. Um cron de 1 em 1 minuto processa disparos vencidos.
@@ -26,11 +27,14 @@ try {
     $ids    = is_array($input['ids'] ?? null) ? array_values(array_filter(array_map('intval', $input['ids']), fn($v) => $v > 0)) : [];
     $dados  = is_array($input['dados'] ?? null) ? $input['dados'] : [];
     $agendado_para_raw = trim((string) ($input['agendado_para'] ?? ''));
+    $plataforma = strtolower(trim((string) ($input['plataforma'] ?? 'todos')));
 
     if ($titulo === '' || $corpo === '')     throw new RuntimeException('Título e corpo são obrigatórios');
     if (!in_array($tipo, ['usuario', 'varios', 'todos'], true)) throw new RuntimeException('destinatarios_tipo inválido');
     if ($tipo !== 'todos' && empty($ids))   throw new RuntimeException('Selecione ao menos um usuário destinatário');
     if ($agendado_para_raw === '')          throw new RuntimeException('Data/hora do agendamento é obrigatória');
+    if (!in_array($plataforma, ['todos', 'android', 'ios'], true)) throw new RuntimeException('plataforma inválida — use todos, android ou ios');
+    $plataforma_filtro = ($plataforma === 'todos') ? null : $plataforma;
 
     // Aceita "YYYY-MM-DDTHH:MM" (input datetime-local) ou "YYYY-MM-DD HH:MM"
     $agendado_para_raw = str_replace('T', ' ', $agendado_para_raw);
@@ -56,10 +60,10 @@ try {
 
     $stmt = $conn->prepare(
         "INSERT INTO notificacoes_push_agendadas
-            (titulo, corpo, dados_json, destinatarios_tipo, destinatarios_ids, agendado_para, criado_por)
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
+            (titulo, corpo, dados_json, destinatarios_tipo, destinatarios_ids, plataforma_filtro, agendado_para, criado_por)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     );
-    $stmt->bind_param('ssssssi', $titulo, $corpo, $dados_json, $tipo, $ids_json, $agendado_str, $usuario_id);
+    $stmt->bind_param('sssssssi', $titulo, $corpo, $dados_json, $tipo, $ids_json, $plataforma_filtro, $agendado_str, $usuario_id);
     if (!$stmt->execute()) {
         throw new RuntimeException('Erro ao gravar agendamento: ' . $conn->error);
     }

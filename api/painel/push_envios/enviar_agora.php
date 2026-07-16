@@ -4,10 +4,12 @@
  * Body JSON: {
  *   titulo, corpo, dados?: object,
  *   destinatarios_tipo: "usuario"|"varios"|"todos",
- *   ids?: number[]   // obrigatório se destinatarios_tipo != "todos"
+ *   ids?: number[],  // obrigatório se destinatarios_tipo != "todos"
+ *   plataforma?: "todos"|"android"|"ios"   // default "todos"
  * }
  *
- * Envia push imediatamente para os destinatários.
+ * Envia push imediatamente para os destinatários. Com plataforma definida,
+ * só os dispositivos daquele SO recebem.
  */
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../../auth/verifica_sessao_ajax.php';
@@ -25,27 +27,41 @@ try {
     $tipo   = (string) ($input['destinatarios_tipo'] ?? '');
     $ids    = is_array($input['ids'] ?? null) ? array_values(array_filter(array_map('intval', $input['ids']), fn($v) => $v > 0)) : [];
     $dados  = is_array($input['dados'] ?? null) ? $input['dados'] : [];
+    $plataforma = strtolower(trim((string) ($input['plataforma'] ?? 'todos')));
 
     if ($titulo === '' || $corpo === '')     throw new RuntimeException('Título e corpo são obrigatórios');
     if (!in_array($tipo, ['usuario', 'varios', 'todos'], true)) throw new RuntimeException('destinatarios_tipo inválido');
     if ($tipo !== 'todos' && empty($ids))   throw new RuntimeException('Selecione ao menos um usuário destinatário');
+    if (!in_array($plataforma, ['todos', 'android', 'ios'], true)) throw new RuntimeException('plataforma inválida — use todos, android ou ios');
+    $plataforma_filtro = ($plataforma === 'todos') ? null : $plataforma;
 
     if (!PushNotificationService::estaConfigurado($conn)) {
         throw new RuntimeException('Push notifications não estão configuradas (Service Account do Firebase pendente).');
     }
 
-    // Resolve a lista final de usuários
+    // Resolve a lista final de usuários (respeitando o filtro de plataforma)
     $usuarios_target = [];
     if ($tipo === 'todos') {
-        $r = $conn->query("SELECT DISTINCT id_usuario FROM notificacoes_push_dispositivos WHERE ativo = 1");
-        while ($x = $r->fetch_assoc()) $usuarios_target[] = (int) $x['id_usuario'];
+        if ($plataforma_filtro !== null) {
+            $stmt = $conn->prepare("SELECT DISTINCT id_usuario FROM notificacoes_push_dispositivos WHERE ativo = 1 AND plataforma = ?");
+            $stmt->bind_param('s', $plataforma_filtro);
+            $stmt->execute();
+            $r = $stmt->get_result();
+            while ($x = $r->fetch_assoc()) $usuarios_target[] = (int) $x['id_usuario'];
+            $stmt->close();
+        } else {
+            $r = $conn->query("SELECT DISTINCT id_usuario FROM notificacoes_push_dispositivos WHERE ativo = 1");
+            while ($x = $r->fetch_assoc()) $usuarios_target[] = (int) $x['id_usuario'];
+        }
     } else {
         $usuarios_target = $ids;
     }
     $usuarios_target = array_values(array_unique($usuarios_target));
 
     if (empty($usuarios_target)) {
-        throw new RuntimeException('Nenhum destinatário elegível — nenhum usuário com dispositivo push registrado.');
+        throw new RuntimeException($plataforma_filtro !== null
+            ? "Nenhum destinatário elegível — nenhum usuário com dispositivo $plataforma_filtro registrado."
+            : 'Nenhum destinatário elegível — nenhum usuário com dispositivo push registrado.');
     }
 
     $enviados = 0;
@@ -54,7 +70,7 @@ try {
     $detalhes = [];
 
     foreach ($usuarios_target as $uid) {
-        $r = PushNotificationService::enviarParaUsuario($conn, $uid, $titulo, $corpo, $dados);
+        $r = PushNotificationService::enviarParaUsuario($conn, $uid, $titulo, $corpo, $dados, $plataforma_filtro);
         if (($r['dispositivos'] ?? 0) === 0) {
             $sem_dispositivo++;
         } else {
