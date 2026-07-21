@@ -33,9 +33,11 @@ class TokenService {
     private static $expirationTime = 86400; // 24 horas
     
     /**
-     * Tempo de expiração do refresh token em segundos (padrão: 7 dias)
+     * Tempo de expiração do refresh token em segundos (padrão: 30 dias).
+     * Como o refresh emite um refresh novo, na prática o usuário só precisa
+     * relogar se ficar 30 dias seguidos sem abrir o app.
      */
-    private static $refreshExpirationTime = 604800; // 7 dias
+    private static $refreshExpirationTime = 2592000; // 30 dias
     
     /**
      * Obtém a chave secreta
