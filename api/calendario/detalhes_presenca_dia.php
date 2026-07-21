@@ -11,7 +11,7 @@ $usuario_id = $_SESSION['usuario_id'] ?? 0;
 $data = $_GET['data'] ?? '';
 
 if (!$usuario_id) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não autenticado']);
+    echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
     exit;
 }
 

@@ -65,7 +65,7 @@ try {
     $tokens = TokenService::refreshAccessToken($refreshToken, $conn);
     
     if (!$tokens) {
-        echo json_encode(MobileResponse::error('Refresh token inválido ou expirado', 401));
+        echo json_encode(MobileResponse::error('Sua sessão expirou. Faça logoff e login novamente para continuar.', 401));
         exit;
     }
     

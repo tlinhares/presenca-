@@ -26,7 +26,7 @@ require_once __DIR__ . '/../../core/middleware/mobile_auth.php';
 
 if (!isset($_SESSION['usuario_id'])) {
     if (!MobileAuthMiddleware::handle()) {
-        echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não autenticado']);
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
         exit;
     }
 }
@@ -36,7 +36,7 @@ $mes = isset($_GET['mes']) ? intval($_GET['mes']) : date('n');
 $ano = isset($_GET['ano']) ? intval($_GET['ano']) : date('Y');
 
 if (!$usuario_id) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não autenticado']);
+    echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
     exit;
 }
 

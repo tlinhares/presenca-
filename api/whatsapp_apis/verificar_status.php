@@ -173,7 +173,7 @@ try {
         }
     } elseif ($http_code === 401) {
         $status_sessao = 'erro';
-        $mensagem = 'Token inválido ou expirado';
+        $mensagem = 'Sua sessão expirou. Faça logoff e login novamente para continuar.';
     } elseif ($http_code === 404) {
         $status_sessao = 'erro';
         $mensagem = 'Sessão não encontrada no servidor';

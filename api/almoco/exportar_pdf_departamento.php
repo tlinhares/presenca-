@@ -5,7 +5,7 @@ session_start();
 include_once(__DIR__ . '/../conexao.php');
 
 if (!isset($_SESSION['usuario_id'])) {
-    die('Usuário não autenticado');
+    die('Sua sessão expirou. Faça logoff e login novamente para continuar.');
 }
 
 $isAdmin = isset($_SESSION['usuario_categoria']) && $_SESSION['usuario_categoria'] === 'admin';

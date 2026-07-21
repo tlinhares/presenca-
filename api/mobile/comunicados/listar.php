@@ -53,7 +53,7 @@ require_once __DIR__ . '/../utils/response.php';
 
 if (!isset($_SESSION['usuario_id'])) {
     if (!MobileAuthMiddleware::handle()) {
-        echo json_encode(MobileResponse::unauthorized('Usuário não autenticado'));
+        echo json_encode(MobileResponse::unauthorized('Sua sessão expirou. Faça logoff e login novamente para continuar.'));
         exit;
     }
 }

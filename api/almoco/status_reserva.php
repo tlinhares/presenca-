@@ -24,7 +24,7 @@ require_once __DIR__ . '/../../core/middleware/mobile_auth.php';
 if (!isset($_SESSION['usuario_id'])) {
     // Tenta autenticar via token mobile
     if (!MobileAuthMiddleware::handle()) {
-        echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não logado']);
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
         exit;
     }
 }

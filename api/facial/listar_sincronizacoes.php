@@ -8,7 +8,7 @@ require_once __DIR__ . '/..../../conexao.php';
 // Verificar se está autenticado via sessão
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não autenticado']);
+    echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
     exit;
 }
 

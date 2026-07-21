@@ -10,7 +10,7 @@ require_once __DIR__ . '/../conexao.php';
 require_once __DIR__ . '/../../core/services/MenuPermissaoService.php';
 
 if (!isset($_SESSION['usuario_id'])) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não logado']);
+    echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
     exit;
 }
 

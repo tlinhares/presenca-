@@ -34,7 +34,7 @@ if (!isset($_SESSION['usuario_id'])) {
     
     if (!$authResult) {
         error_log("verificar_horario.php - Autenticação falhou, retornando erro");
-        echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não logado']);
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
         exit;
     }
     

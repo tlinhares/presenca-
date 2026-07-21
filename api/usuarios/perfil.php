@@ -5,7 +5,7 @@ session_start();
 include_once(__DIR__ . '/../conexao.php');
 
 if (!isset($_SESSION['id_usuario'])) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não logado']);
+    echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
     exit;
 }
 

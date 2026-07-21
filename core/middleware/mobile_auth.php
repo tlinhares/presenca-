@@ -82,7 +82,7 @@ class MobileAuthMiddleware {
                 http_response_code(401);
                 echo json_encode([
                     'success' => false,
-                    'message' => 'Não autorizado. Token inválido ou ausente.',
+                    'message' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.',
                     'timestamp' => date('c')
                 ]);
                 exit;

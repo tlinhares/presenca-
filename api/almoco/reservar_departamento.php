@@ -24,7 +24,7 @@ if (strpos($content_type, 'application/json') !== false) {
 
 if (!isset($_SESSION['usuario_id'])) {
     if (!MobileAuthMiddleware::handle()) {
-        echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não autenticado']);
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
         exit;
     }
 }

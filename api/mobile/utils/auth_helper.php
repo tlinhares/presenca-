@@ -35,7 +35,7 @@ function mobile_require_auth() {
         http_response_code(401);
         echo json_encode([
             'status' => 'erro',
-            'mensagem' => 'Usuário não autenticado. Token inválido ou ausente.'
+            'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.'
         ]);
         exit;
     }

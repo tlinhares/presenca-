@@ -4,7 +4,7 @@ require_once '../conexao.php';
 include_once(__DIR__ . '/../../auth/verifica_sessao.php');
 
 if (!isset($_SESSION['usuario_id'])) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Usuário não logado']);
+    echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
     exit;
 }
 

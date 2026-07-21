@@ -10,7 +10,7 @@ require_once __DIR__ . '/../autenticacao.php';
 if (!estaLogado()) {
     echo json_encode([
         'status' => 'erro',
-        'mensagem' => 'Usuário não autenticado'
+        'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.'
     ]);
     exit;
 }
