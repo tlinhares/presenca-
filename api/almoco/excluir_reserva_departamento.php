@@ -63,8 +63,12 @@ try {
     
     $stmt_check->close();
     
-    // Excluir reserva (soft delete - marcar como inativo)
-    $stmt = $conn->prepare("UPDATE reservas_departamento SET status = 'inativo' WHERE id = ?");
+    // Excluir de verdade (DELETE): a tabela não tem coluna `status` — o
+    // soft-delete anterior referenciava coluna inexistente e SEMPRE dava
+    // fatal no prepare. E todos os leitores (dashboard, duplicata, listagem)
+    // consultam sem filtro de status, então soft-delete deixaria a reserva
+    // "excluída" ainda contando nos relatórios.
+    $stmt = $conn->prepare("DELETE FROM reservas_departamento WHERE id = ?");
     $stmt->bind_param("i", $id);
     
     if ($stmt->execute()) {
