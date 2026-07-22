@@ -4,6 +4,10 @@ require_once '../conexao.php';
 
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 
+// Auditoria: registra IP real (X-Forwarded-For) e user-agent de toda solicitação
+require_once __DIR__ . '/../../utils/auditoria_recuperacao.php';
+auditar_recuperacao_senha('web', $email, 'solicitado');
+
 if ($email === '') {
     echo json_encode(['status' => 'erro', 'mensagem' => 'Digite seu e-mail.']);
     exit;

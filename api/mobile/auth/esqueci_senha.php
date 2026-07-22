@@ -53,6 +53,12 @@ try {
     }
 
     $email = isset($data['email']) ? trim((string) $data['email']) : '';
+
+    // Auditoria: registra TODA solicitação com IP real (X-Forwarded-For) e
+    // user-agent — o access log só mostra o IP do proxy.
+    require_once __DIR__ . '/../../../utils/auditoria_recuperacao.php';
+    auditar_recuperacao_senha('mobile', $email, 'solicitado');
+
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         echo json_encode(MobileResponse::error('Informe um e-mail válido.', 400));
         exit;
@@ -65,6 +71,7 @@ try {
     $r = $stmt->get_result();
     if ($r->num_rows === 0) {
         $stmt->close();
+        auditar_recuperacao_senha('mobile', $email, 'nao_encontrado');
         echo json_encode(MobileResponse::error('E-mail não encontrado ou usuário inativo.', 404));
         exit;
     }
