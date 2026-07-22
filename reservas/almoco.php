@@ -1147,7 +1147,12 @@ $mensagem_inicio = get_config('mensagem_inicio', '');
 <script src="../js/feedback-system.js?v=<?php echo time(); ?>"></script>
 <script src="../js/editar_reserva_adicional.js?v=<?php echo time(); ?>"></script>
 <script src="../js/almoco.js?v=<?php echo time(); ?>&fix=9"></script>
-<script src="../js/dept_almoco.js?v=<?php echo time(); ?>"></script>
+<!-- dept_almoco.js REMOVIDO (2026-07-22): arquivo legado — nenhum dos IDs que
+     ele manipula existe nesta página. Único efeito real era sobrescrever
+     window.excluirReservaDepartamento (definida corretamente no almoco.js)
+     com uma versão de alert()/confirm() nativos que recarregava um container
+     inexistente, quebrando o refresh da tabela após excluir. -->
+
 <style>
 /* ========================================
    ESTILOS DO MODAL DE CONFIGURAÇÕES
