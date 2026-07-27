@@ -29,12 +29,28 @@ function tema_usuario(): string
         return $cache[$uid];
     }
 
-    require_once __DIR__ . '/../api/conexao.php';
+    // NUNCA fazer require_once de api/conexao.php aqui dentro: por estarmos
+    // dentro de uma função, o $conn cairia no escopo local e o require_once
+    // ficaria "consumido" — inclusões posteriores do conexao.php (ex.: pelo
+    // MenuPermissaoService) virariam no-op e a página perderia a conexão
+    // (sintoma real: dashboard do culto sem nenhum menu). Reusa o $conn
+    // global se existir; senão abre uma conexão própria e descartável.
     global $conn;
+    $db = ($conn instanceof mysqli && !$conn->connect_error) ? $conn : null;
+    $propria = false;
+    if ($db === null) {
+        require_once __DIR__ . '/env.php';
+        $db = @new mysqli(env('DB_HOST', 'localhost'), env('DB_USER', 'root'), env('DB_PASS', ''), env('DB_NAME', 'presenca_aom'));
+        if ($db->connect_error) {
+            return $cache[$uid] = 'light';
+        }
+        $db->set_charset('utf8mb4');
+        $propria = true;
+    }
 
     $tema = 'light';
     try {
-        $stmt = $conn->prepare("SELECT tema FROM usuarios WHERE id = ?");
+        $stmt = $db->prepare("SELECT tema FROM usuarios WHERE id = ?");
         if ($stmt) {
             $stmt->bind_param('i', $uid);
             $stmt->execute();
@@ -46,6 +62,9 @@ function tema_usuario(): string
         }
     } catch (Throwable $e) {
         error_log('tema_usuario: ' . $e->getMessage());
+    }
+    if ($propria) {
+        $db->close();
     }
 
     return $cache[$uid] = $tema;
