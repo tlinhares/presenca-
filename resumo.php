@@ -134,11 +134,6 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
         [data-theme="dark"] main h5.text-slate-900 {
             color: #f1f5f9 !important;
         }
-        /* Melhorar contraste do sidebar no modo claro */
-        html:not(.dark) nav,
-        [data-theme="light"] nav {
-            background-color: #1e293b !important;
-        }
         /* Melhorar contraste dos headers do calendário no modo claro */
         html:not(.dark) .day-header,
         [data-theme="light"] .day-header {
@@ -288,15 +283,15 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
     <div class="sidebar-overlay lg:hidden" id="sidebarOverlay" onclick="toggleSidebar()"></div>
     
     <!-- Sidebar -->
-    <nav class="fixed lg:static w-64 h-full flex flex-col py-6 bg-[#101623] border-r border-white/5 z-40 lg:z-20 shrink-0 transition-all duration-300 sidebar-mobile lg:translate-x-0" id="sidebar">
+    <nav class="fixed lg:static w-64 h-full flex flex-col py-6 bg-white dark:bg-[#151e2e] border-r border-slate-200 dark:border-slate-800 z-40 lg:z-20 shrink-0 transition-all duration-300 sidebar-mobile lg:translate-x-0" id="sidebar">
         <div class="px-6 mb-10 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <div class="bg-primary aspect-square rounded-xl size-8 flex items-center justify-center shadow-lg shadow-primary/30">
                     <span class="material-symbols-outlined text-white text-xl">grid_view</span>
                 </div>
-                <span class="text-lg font-bold text-white tracking-tight">Intranet</span>
+                <span class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Intranet</span>
             </div>
-            <button onclick="toggleSidebar()" class="lg:hidden p-1 rounded-lg hover:bg-white/10 text-white">
+            <button onclick="toggleSidebar()" class="lg:hidden p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-white">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
@@ -329,7 +324,7 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
                             $cor_hover = htmlspecialchars($modulo['cor_hover']);
                             
                             echo <<<HTML
-<a href="{$url}" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+<a href="{$url}" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
     <span class="material-symbols-outlined text-[20px] group-hover:text-{$cor_hover} transition-colors">{$icone}</span>
     <span class="text-sm font-medium">{$nome}</span>
 </a>
@@ -338,31 +333,31 @@ HTML;
                     } else {
                         // Fallback: usar código hardcoded se não encontrar menus no banco
                         if ($temCulto): ?>
-                        <a href="<?= MenuPermissaoService::ajustarUrl('/culto/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                        <a href="<?= MenuPermissaoService::ajustarUrl('/culto/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                             <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">calendar_month</span>
                             <span class="text-sm font-medium">Presença</span>
                         </a>
                         <?php endif; ?>
                         <?php if ($temRefeicoes): ?>
-                        <a href="<?= MenuPermissaoService::ajustarUrl('/reservas/almoco.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                        <a href="<?= MenuPermissaoService::ajustarUrl('/reservas/almoco.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                             <span class="material-symbols-outlined text-[20px] group-hover:text-orange-400 transition-colors">restaurant</span>
                             <span class="text-sm font-medium">Refeições</span>
                         </a>
                         <?php endif; ?>
                         <?php if ($temFrota): ?>
-                        <a href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                        <a href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                             <span class="material-symbols-outlined text-[20px] group-hover:text-blue-400 transition-colors">directions_car</span>
                             <span class="text-sm font-medium">Veículos</span>
                         </a>
                         <?php endif; ?>
                         <?php if ($temEstoque): ?>
-                        <a href="<?= MenuPermissaoService::ajustarUrl('/estoque/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                        <a href="<?= MenuPermissaoService::ajustarUrl('/estoque/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                             <span class="material-symbols-outlined text-[20px] group-hover:text-purple-400 transition-colors">inventory</span>
                             <span class="text-sm font-medium">Estoque</span>
                         </a>
                         <?php endif; ?>
                         <?php if ($temGerenciamento): ?>
-                        <a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                        <a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                             <span class="material-symbols-outlined text-[20px] group-hover:text-purple-400 transition-colors">settings</span>
                             <span class="text-sm font-medium">Sistema</span>
                         </a>
@@ -372,31 +367,31 @@ HTML;
                     // Em caso de erro, usar fallback hardcoded
                     error_log("Erro ao buscar módulos dinamicamente: " . $e->getMessage());
                     if ($temCulto): ?>
-                    <a href="<?= MenuPermissaoService::ajustarUrl('/culto/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                    <a href="<?= MenuPermissaoService::ajustarUrl('/culto/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                         <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">calendar_month</span>
                         <span class="text-sm font-medium">Presença</span>
                     </a>
                     <?php endif; ?>
                     <?php if ($temRefeicoes): ?>
-                    <a href="<?= MenuPermissaoService::ajustarUrl('/reservas/almoco.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                    <a href="<?= MenuPermissaoService::ajustarUrl('/reservas/almoco.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                         <span class="material-symbols-outlined text-[20px] group-hover:text-orange-400 transition-colors">restaurant</span>
                         <span class="text-sm font-medium">Refeições</span>
                     </a>
                     <?php endif; ?>
                     <?php if ($temFrota): ?>
-                    <a href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                    <a href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                         <span class="material-symbols-outlined text-[20px] group-hover:text-blue-400 transition-colors">directions_car</span>
                         <span class="text-sm font-medium">Veículos</span>
                     </a>
                     <?php endif; ?>
                     <?php if ($temEstoque): ?>
-                    <a href="<?= MenuPermissaoService::ajustarUrl('/estoque/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                    <a href="<?= MenuPermissaoService::ajustarUrl('/estoque/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                         <span class="material-symbols-outlined text-[20px] group-hover:text-purple-400 transition-colors">inventory</span>
                         <span class="text-sm font-medium">Estoque</span>
                     </a>
                     <?php endif; ?>
                     <?php if ($temGerenciamento): ?>
-                    <a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
+                    <a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200">
                         <span class="material-symbols-outlined text-[20px] group-hover:text-purple-400 transition-colors">settings</span>
                         <span class="text-sm font-medium">Sistema</span>
                     </a>
@@ -405,14 +400,14 @@ HTML;
                 ?>
             </div>
         </div>
-        <div class="px-4 mt-4 pt-4 border-t border-white/5">
-            <a href="logout.php" class="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-white/5 transition-colors text-left group">
+        <div class="px-4 mt-4 pt-4 border-t border-slate-200 dark:border-white/5">
+            <a href="logout.php" class="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left group">
                 <div class="size-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shrink-0 group-hover:ring-2 group-hover:ring-primary/50 transition-all">
                     <span class="material-symbols-outlined text-white text-lg">person</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-white truncate"><?= htmlspecialchars($nomeUsuario) ?></p>
-                    <p class="text-[11px] text-slate-400 truncate"><?= htmlspecialchars($usuarioEmail) ?></p>
+                    <p class="text-sm font-medium text-slate-900 dark:text-white truncate"><?= htmlspecialchars($nomeUsuario) ?></p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate"><?= htmlspecialchars($usuarioEmail) ?></p>
                 </div>
                 <span class="material-symbols-outlined text-slate-500 text-lg">logout</span>
             </a>
@@ -429,7 +424,7 @@ HTML;
         <header class="flex items-center justify-between px-4 md:px-8 py-4 md:py-6 z-10">
             <div class="flex items-center gap-3 md:gap-0">
                 <!-- Botão hambúrguer mobile -->
-                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-white">
                     <span class="material-symbols-outlined">menu</span>
                 </button>
                 <div class="flex flex-col">
