@@ -283,7 +283,7 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
     <div class="sidebar-overlay lg:hidden" id="sidebarOverlay" onclick="toggleSidebar()"></div>
     
     <!-- Sidebar -->
-    <nav class="fixed lg:static w-64 h-full flex flex-col py-6 bg-white dark:bg-[#151e2e] border-r border-slate-200 dark:border-slate-800 z-40 lg:z-20 shrink-0 transition-all duration-300 sidebar-mobile lg:translate-x-0" id="sidebar">
+    <nav class="fixed lg:static w-64 h-full flex flex-col py-6 bg-[#ffffff] dark:bg-[#151e2e] border-r border-slate-200 dark:border-slate-800 z-40 lg:z-20 shrink-0 transition-all duration-300 sidebar-mobile lg:translate-x-0" id="sidebar">
         <div class="px-6 mb-10 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <div class="bg-primary aspect-square rounded-xl size-8 flex items-center justify-center shadow-lg shadow-primary/30">
@@ -441,9 +441,9 @@ HTML;
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span class="material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">search</span>
                     </div>
-                    <input id="campoBusca" class="block w-64 lg:w-80 pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm" placeholder="Pesquisar módulos, menus..." type="text" autocomplete="off"/>
+                    <input id="campoBusca" class="block w-64 lg:w-80 pl-10 pr-4 py-2.5 bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm" placeholder="Pesquisar módulos, menus..." type="text" autocomplete="off"/>
                     <!-- Dropdown de resultados -->
-                    <div id="resultadosBusca" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
+                    <div id="resultadosBusca" class="hidden absolute top-full left-0 right-0 mt-2 bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
                         <div id="conteudoResultadosBusca" class="p-2">
                             <!-- Resultados serão inseridos aqui -->
                         </div>
@@ -647,7 +647,7 @@ HTML;
     <!-- Modal de Detalhes de Presença -->
     <div class="modal fade" id="modalDetalhesPresenca" tabindex="-1" aria-labelledby="modalDetalhesPresencaLabel">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-white dark:bg-[#1e293b] border border-white/10">
+            <div class="modal-content bg-[#ffffff] dark:bg-[#1e293b] border border-white/10">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalDetalhesPresencaLabel">
                         <span class="material-symbols-outlined me-2">calendar_month</span>Detalhes de Presença
@@ -682,7 +682,7 @@ HTML;
     
     <div class="modal fade" id="modalDetalhesReservas" tabindex="-1" aria-labelledby="modalDetalhesReservasLabel">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-white dark:bg-[#1e293b] border border-white/10">
+            <div class="modal-content bg-[#ffffff] dark:bg-[#1e293b] border border-white/10">
                 <div class="modal-header bg-green-500 text-white">
                     <h5 class="modal-title" id="modalDetalhesReservasLabel">
                         <span class="material-symbols-outlined me-2">event</span>Reservas do Dia
@@ -708,7 +708,7 @@ HTML;
 
     <div class="modal fade" id="modalPrimeiraConfiguracaoNotificacoes" tabindex="-1" aria-labelledby="modalPrimeiraConfiguracaoNotificacoesLabel" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-white dark:bg-[#1e293b] border border-white/10">
+            <div class="modal-content bg-[#ffffff] dark:bg-[#1e293b] border border-white/10">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalPrimeiraConfiguracaoNotificacoesLabel">
                         <span class="material-symbols-outlined me-2">notifications</span>Configure suas Notificações
@@ -1478,7 +1478,7 @@ HTML;
                 const status = statusConfig[v.status] || statusConfig['inativo'];
                 
                 html += `
-                    <div class="group flex items-center justify-between p-2 md:p-3 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 hover:border-primary/50 transition-all cursor-pointer">
+                    <div class="group flex items-center justify-between p-2 md:p-3 rounded-xl md:rounded-2xl bg-[#ffffff] dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 hover:border-primary/50 transition-all cursor-pointer">
                         <div class="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                             <div class="size-10 md:size-12 rounded-lg md:rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
                                 <span class="material-symbols-outlined text-slate-600 dark:text-slate-200 text-xl md:text-2xl">directions_car</span>
