@@ -15,6 +15,10 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
 $usuarioId = $_SESSION['usuario_id'] ?? 0;
 $usuarioEmail = $_SESSION['usuario_email'] ?? '';
 
+// Tema renderizado no servidor (sem flash) — ver utils/tema.php
+require_once __DIR__ . '/utils/tema.php';
+$temaUsuario = tema_usuario();
+
 // Nome do mês atual
 $nomesMeses = [
     1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
@@ -33,7 +37,7 @@ $temFrota = MenuPermissaoService::podeAcessar('frota_dashboard');
 $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
 ?>
 <!DOCTYPE html>
-<html lang="pt-br" id="htmlTheme" data-theme="dark">
+<html lang="pt-br" id="htmlTheme" <?= tema_html_attrs() ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -97,27 +101,27 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         /* Modo Claro - Melhor contraste */
-        :not(.dark) .glass-panel,
+        html:not(.dark) .glass-panel,
         [data-theme="light"] .glass-panel {
             background: #ffffff;
             border: 1px solid #e2e8f0;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         /* Ajustar fundo do body no modo claro */
-        :not(.dark) body,
+        html:not(.dark) body,
         [data-theme="light"] body {
             background-color: #f1f5f9 !important;
         }
         /* Melhorar contraste dos textos no modo claro */
-        :not(.dark) .text-slate-900,
+        html:not(.dark) .text-slate-900,
         [data-theme="light"] .text-slate-900 {
             color: #0f172a !important;
         }
-        :not(.dark) .text-slate-500,
+        html:not(.dark) .text-slate-500,
         [data-theme="light"] .text-slate-500 {
             color: #475569 !important;
         }
-        :not(.dark) .text-slate-400,
+        html:not(.dark) .text-slate-400,
         [data-theme="light"] .text-slate-400 {
             color: #64748b !important;
         }
@@ -131,12 +135,12 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
             color: #f1f5f9 !important;
         }
         /* Melhorar contraste do sidebar no modo claro */
-        :not(.dark) nav,
+        html:not(.dark) nav,
         [data-theme="light"] nav {
             background-color: #1e293b !important;
         }
         /* Melhorar contraste dos headers do calendário no modo claro */
-        :not(.dark) .day-header,
+        html:not(.dark) .day-header,
         [data-theme="light"] .day-header {
             background-color: #475569 !important;
             color: white !important;
@@ -1661,34 +1665,17 @@ HTML;
         // GERENCIAMENTO DE TEMA (CLARO/ESCURO)
         // ═══════════════════════════════════════════════════════════════════
         
-        let temaAtual = 'dark'; // Padrão é dark neste arquivo
-        
-        // Carregar tema salvo ao carregar a página
+        // O tema já vem renderizado do SERVIDOR (classe dark no <html>, ver
+        // utils/tema.php) — nada de AJAX pós-carregamento, que causava o
+        // "flash" de tema errado a cada abertura da página.
+        let temaAtual = '<?= $temaUsuario ?>';
+
+        // Espelha no localStorage pra outras páginas abrirem já certas
         $(document).ready(function() {
-            carregarTema();
+            localStorage.setItem('theme', temaAtual);
+            aplicarTema(temaAtual); // garante ícone/título do botão corretos
         });
-        
-        function carregarTema() {
-            $.ajax({
-                url: 'api/usuarios/buscar_tema.php',
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'ok' && response.tema) {
-                        temaAtual = response.tema;
-                        aplicarTema(temaAtual);
-                    } else {
-                        // Se não encontrar, usar tema padrão (dark neste arquivo)
-                        aplicarTema('dark');
-                    }
-                },
-                error: function() {
-                    // Em caso de erro, usar tema padrão
-                    aplicarTema('dark');
-                }
-            });
-        }
-        
+
         function aplicarTema(tema) {
             temaAtual = tema;
             const html = document.documentElement;
@@ -1734,6 +1721,7 @@ HTML;
             const novoTema = temaAtual === 'light' ? 'dark' : 'light';
             aplicarTema(novoTema);
             salvarTema(novoTema);
+            localStorage.setItem('theme', novoTema); // sincroniza com os dashboards
         });
     </script>
 </body>

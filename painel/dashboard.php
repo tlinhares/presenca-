@@ -16,6 +16,10 @@ MenuPermissaoService::exigirAcesso('painel_dashboard');
 $isAdmin = MenuPermissaoService::isAdmin();
 $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
 
+// Tema renderizado no servidor (sem flash) — ver utils/tema.php
+require_once __DIR__ . '/../utils/tema.php';
+$temaUsuario = tema_usuario();
+
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURAÇÃO DAS SEÇÕES DO DASHBOARD
 // Cada seção mostra menus de uma categoria específica
@@ -94,25 +98,17 @@ $iconeMapping = [
     'bi-arrow-left' => 'arrow_back',
 ];
 
-// Cores para os cards (gradientes com valores hex)
-$coresCards = [
-    ['from' => '#3b82f6', 'to' => '#4f46e5', 'hover' => '#6366f1', 'shadow' => '#3b82f6'],
-    ['from' => '#8b5cf6', 'to' => '#c026d3', 'hover' => '#a855f7', 'shadow' => '#8b5cf6'],
-    ['from' => '#06b6d4', 'to' => '#2563eb', 'hover' => '#3b82f6', 'shadow' => '#06b6d4'],
-    ['from' => '#475569', 'to' => '#1f2937', 'hover' => '#4b5563', 'shadow' => '#475569'],
-    ['from' => '#ec4899', 'to' => '#e11d48', 'hover' => '#f43f5e', 'shadow' => '#ec4899'],
-    ['from' => '#14b8a6', 'to' => '#059669', 'hover' => '#10b981', 'shadow' => '#14b8a6'],
-    ['from' => '#fb923c', 'to' => '#ef4444', 'hover' => '#f97316', 'shadow' => '#fb923c'],
-    ['from' => '#f43f5e', 'to' => '#db2777', 'hover' => '#ec4899', 'shadow' => '#f43f5e'],
-    ['from' => '#d946ef', 'to' => '#9333ea', 'hover' => '#a855f7', 'shadow' => '#d946ef'],
-    ['from' => '#eab308', 'to' => '#f59e0b', 'hover' => '#fbbf24', 'shadow' => '#eab308'],
-    ['from' => '#22d3ee', 'to' => '#3b82f6', 'hover' => '#3b82f6', 'shadow' => '#22d3ee'],
-    ['from' => '#38bdf8', 'to' => '#6366f1', 'hover' => '#4f46e5', 'shadow' => '#38bdf8'],
-    ['from' => '#60a5fa', 'to' => '#8b5cf6', 'hover' => '#a855f7', 'shadow' => '#60a5fa'],
-    ['from' => '#818cf8', 'to' => '#9333ea', 'hover' => '#a855f7', 'shadow' => '#818cf8'],
-    ['from' => '#34d399', 'to' => '#14b8a6', 'hover' => '#10b981', 'shadow' => '#34d399'],
-    ['from' => '#2dd4bf', 'to' => '#06b6d4', 'hover' => '#14b8a6', 'shadow' => '#2dd4bf'],
-    ['from' => '#22d3ee', 'to' => '#0ea5e9', 'hover' => '#38bdf8', 'shadow' => '#22d3ee'],
+// Acento visual POR SEÇÃO (antes: 17 gradientes aleatórios por índice — cada
+// card de uma cor diferente, visual caótico nos dois temas). Agora todos os
+// cards de uma seção compartilham o acento da seção; o resto do card é neutro.
+// Classes literais de propósito: o Tailwind CDN só gera o que enxerga no DOM.
+$acentosSecao = [
+    'indigo'  => ['tile' => 'from-indigo-500 to-indigo-600',   'hover' => 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400'],
+    'orange'  => ['tile' => 'from-orange-500 to-orange-600',   'hover' => 'group-hover:text-orange-600 dark:group-hover:text-orange-400'],
+    'cyan'    => ['tile' => 'from-cyan-500 to-cyan-600',       'hover' => 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400'],
+    'teal'    => ['tile' => 'from-teal-500 to-teal-600',       'hover' => 'group-hover:text-teal-600 dark:group-hover:text-teal-400'],
+    'emerald' => ['tile' => 'from-emerald-500 to-emerald-600', 'hover' => 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400'],
+    'slate'   => ['tile' => 'from-slate-500 to-slate-600',     'hover' => 'group-hover:text-slate-600 dark:group-hover:text-slate-300'],
 ];
 
 function converterIcone($iconeBootstrap) {
@@ -122,9 +118,9 @@ function converterIcone($iconeBootstrap) {
     return $iconeMapping[$chave] ?? $iconeMapping['bi-gear'] ?? 'settings';
 }
 
-function obterCorCard($index) {
-    global $coresCards;
-    return $coresCards[$index % count($coresCards)];
+function obterAcentoSecao($corIcone) {
+    global $acentosSecao;
+    return $acentosSecao[$corIcone] ?? $acentosSecao['indigo'];
 }
 
 function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone, $excluir = []) {
@@ -160,37 +156,26 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
     $html .= '</div>';
     $html .= '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">';
     
+    $acento = obterAcentoSecao($corIcone);
+
     foreach ($menus as $index => $menu) {
         $url = MenuPermissaoService::ajustarUrl($menu['url']);
         $nome = htmlspecialchars($menu['nome']);
         $descricao = htmlspecialchars($menu['descricao_card'] ?? $menu['descricao'] ?? 'Gestão de ' . strtolower($nome));
         $iconeBootstrap = $menu['icone'] ?? 'bi-gear';
         $iconeMaterial = converterIcone($iconeBootstrap);
-        $cor = obterCorCard($index);
-        $uniqueId = 'card-' . $categoria . '-' . $index;
-        
-        // Converter hex para RGB para sombra
-        $rgbFrom = [
-            hexdec(substr($cor['from'], 1, 2)),
-            hexdec(substr($cor['from'], 3, 2)),
-            hexdec(substr($cor['from'], 5, 2))
-        ];
-        
-        $html .= '<a class="dashboard-card group bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-card hover:shadow-card-hover border border-gray-100 dark:border-slate-700/50 relative overflow-hidden" href="' . htmlspecialchars($url) . '" id="' . $uniqueId . '">';
-        $html .= '<div class="flex items-start justify-between mb-4 relative z-10">';
-        $html .= '<div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white premium-icon-box" style="background: linear-gradient(to bottom right, ' . $cor['from'] . ', ' . $cor['to'] . '); box-shadow: 0 10px 15px -3px rgba(' . $rgbFrom[0] . ', ' . $rgbFrom[1] . ', ' . $rgbFrom[2] . ', 0.2);">';
+
+        $html .= '<a class="dashboard-card group bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-card hover:shadow-card-hover border border-gray-100 dark:border-slate-700/50" href="' . htmlspecialchars($url) . '">';
+        $html .= '<div class="flex items-start justify-between mb-4">';
+        $html .= '<div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white premium-icon-box bg-gradient-to-br ' . $acento['tile'] . ' shadow-md">';
         $html .= '<span class="material-symbols-outlined text-2xl">' . htmlspecialchars($iconeMaterial) . '</span>';
         $html .= '</div>';
-        $html .= '<span class="material-symbols-outlined text-gray-300 dark:text-slate-600 transition-colors" id="icon-' . $uniqueId . '">arrow_outward</span>';
+        $html .= '<span class="material-symbols-outlined text-gray-300 dark:text-slate-500 transition-colors ' . $acento['hover'] . '">arrow_outward</span>';
         $html .= '</div>';
-        $html .= '<div class="relative z-10">';
-        $html .= '<h3 class="text-base font-bold text-gray-900 dark:text-white mb-1 transition-colors" id="title-' . $uniqueId . '">' . $nome . '</h3>';
+        $html .= '<div>';
+        $html .= '<h3 class="text-base font-bold text-gray-900 dark:text-white mb-1 transition-colors ' . $acento['hover'] . '">' . $nome . '</h3>';
         $html .= '<p class="text-xs text-gray-500 dark:text-gray-400 font-medium">' . $descricao . '</p>';
         $html .= '</div>';
-        $html .= '<style>';
-        $html .= '#' . $uniqueId . ':hover #icon-' . $uniqueId . ' { color: ' . $cor['hover'] . ' !important; }';
-        $html .= '#' . $uniqueId . ':hover #title-' . $uniqueId . ' { color: ' . $cor['hover'] . ' !important; }';
-        $html .= '</style>';
         $html .= '</a>';
     }
     
@@ -202,7 +187,7 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
 ?>
 
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" <?= tema_html_attrs() ?>>
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -331,7 +316,7 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
 </nav>
 </div>
 <div class="flex items-center gap-4">
-<button class="hidden md:flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-indigo-600 transition-all duration-200" onclick="toggleTheme()">
+<button class="flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-indigo-600 transition-all duration-200" onclick="toggleTheme()" title="Alternar tema claro/escuro">
 <span class="material-symbols-outlined dark:hidden">dark_mode</span>
 <span class="material-symbols-outlined hidden dark:block">light_mode</span>
 </button>
@@ -387,7 +372,7 @@ Nenhum menu disponível para seu perfil de acesso.
 
 </div>
 <footer class="mt-auto py-8 text-center border-t border-gray-200 dark:border-slate-800/50 bg-gray-50/50 dark:bg-slate-900/50">
-<p class="text-xs font-medium text-gray-500 dark:text-gray-500">
+<p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                 © <?php echo date('Y'); ?> Sistema de Presença - Desenvolvido por Tiago Linhares
             </p>
 </footer>
@@ -395,30 +380,25 @@ Nenhum menu disponível para seu perfil de acesso.
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
-// Toggle de tema claro/escuro
+// Tema: já vem renderizado do SERVIDOR (classe dark no <html>, ver
+// utils/tema.php) — sem loader pós-carregamento, sem flash.
+// O toggle alterna a classe, persiste no servidor (usuarios.tema) e espelha
+// no localStorage pra outras páginas.
 function toggleTheme() {
     const html = document.documentElement;
     html.classList.toggle('dark');
-    
-    // Salvar preferência
-    const isDark = html.classList.contains('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-}
 
-// Carregar tema salvo
-document.addEventListener('DOMContentLoaded', function() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-    } else if (savedTheme === 'light') {
-        document.documentElement.classList.remove('dark');
-    } else {
-        // Preferência do sistema
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-    }
-});
+    const novoTema = html.classList.contains('dark') ? 'dark' : 'light';
+    html.setAttribute('data-theme', novoTema);
+    localStorage.setItem('theme', novoTema);
+    $.ajax({
+        url: '<?= MenuPermissaoService::ajustarUrl('/api/usuarios/salvar_tema.php') ?>',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ tema: novoTema })
+    });
+}
+localStorage.setItem('theme', '<?= $temaUsuario ?>');
 </script>
 </body>
 </html>

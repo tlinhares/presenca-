@@ -11,6 +11,8 @@ include_once(__DIR__ . '/../auth/verifica_permissao.php');
 // ║  Acesso: Grupo "Líder de Culto" ou Admin                      ║
 // ╚════════════════════════════════════════════════════════════════╝
 require_once __DIR__ . '/../core/services/MenuPermissaoService.php';
+require_once __DIR__ . '/../utils/tema.php';
+$temaUsuario = tema_usuario();
 MenuPermissaoService::exigirAcesso('culto_dashboard');
 
 $isAdmin = MenuPermissaoService::isAdmin();
@@ -81,7 +83,7 @@ function obterCorCard($index) {
 ?>
 
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" <?= tema_html_attrs() ?>>
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -309,30 +311,23 @@ Nenhum menu disponível para seu perfil de acesso.
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
-// Toggle de tema claro/escuro
+// Tema: renderizado no SERVIDOR (classe dark no <html>, ver utils/tema.php).
+// Toggle persiste em usuarios.tema e espelha no localStorage.
 function toggleTheme() {
     const html = document.documentElement;
     html.classList.toggle('dark');
-    
-    // Salvar preferência
-    const isDark = html.classList.contains('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-}
 
-// Carregar tema salvo
-document.addEventListener('DOMContentLoaded', function() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-    } else if (savedTheme === 'light') {
-        document.documentElement.classList.remove('dark');
-    } else {
-        // Preferência do sistema
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-    }
-});
+    const novoTema = html.classList.contains('dark') ? 'dark' : 'light';
+    html.setAttribute('data-theme', novoTema);
+    localStorage.setItem('theme', novoTema);
+    $.ajax({
+        url: '<?= MenuPermissaoService::ajustarUrl('/api/usuarios/salvar_tema.php') ?>',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ tema: novoTema })
+    });
+}
+localStorage.setItem('theme', '<?= $temaUsuario ?>');
 </script>
 </body>
 </html>
