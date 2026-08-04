@@ -94,6 +94,42 @@ try {
             $stmt->execute();
             $stmt->close();
 
+            // Fallback: WhatsApp esgotou as tentativas → enfileira E-MAIL do
+            // mesmo usuário no mesmo lote (se já não houver um item de e-mail
+            // pra ele — quando o admin marcou os dois canais, já existe).
+            if ($canal === 'whatsapp' && isset($novo_status) && $novo_status === 'falha' && empty($r['sucesso'])) {
+                $uid_f = (int) $item['id_usuario'];
+                $stmt = $conn->prepare(
+                    "SELECT u.email, f.id_lote, f.mensagem, f.criado_por,
+                            (SELECT COUNT(*) FROM divulgacao_fila WHERE id_lote = f.id_lote AND id_usuario = f.id_usuario AND canal = 'email') AS ja_tem_email
+                       FROM divulgacao_fila f
+                       JOIN usuarios u ON u.id = f.id_usuario
+                      WHERE f.id = ?"
+                );
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $fb = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+
+                if ($fb && (int) $fb['ja_tem_email'] === 0
+                    && !empty($fb['email']) && strpos($fb['email'], '@') !== false) {
+                    $assunto_fb = 'Aplicativo Intranet AOM disponível!';
+                    $cfg_a = $conn->query("SELECT assunto FROM divulgacao_config WHERE id = 1")->fetch_assoc();
+                    if ($cfg_a && trim($cfg_a['assunto']) !== '') $assunto_fb = $cfg_a['assunto'];
+
+                    $stmt = $conn->prepare(
+                        "INSERT INTO divulgacao_fila (id_lote, id_usuario, nome, canal, destino, mensagem, assunto, criado_por)
+                         VALUES (?, ?, ?, 'email', ?, ?, ?, ?)"
+                    );
+                    $stmt->bind_param('sissssi',
+                        $fb['id_lote'], $uid_f, $item['nome'], $fb['email'], $fb['mensagem'], $assunto_fb, $fb['criado_por']);
+                    if ($stmt->execute()) {
+                        logDivulgacao("FALLBACK: whatsapp esgotado p/ {$item['nome']} — e-mail enfileirado ({$fb['email']})");
+                    }
+                    $stmt->close();
+                }
+            }
+
             // Delay humanizado entre WhatsApps (não precisa após o último)
             if ($canal === 'whatsapp' && $i < count($itens) - 1) {
                 sleep(random_int(6, 12));

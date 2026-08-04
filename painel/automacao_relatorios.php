@@ -153,6 +153,12 @@ MenuPermissaoService::exigirAcesso('automacao_relatorios');
                                     <div class="form-text">Formato: 5565999793296 (com código do país)</div>
                                 </div>
                                 <div class="col-md-6 mb-3">
+                                    <label for="email_fallback" class="form-label">E-mail de fallback</label>
+                                    <input type="email" class="form-control" id="email_fallback" name="email_fallback"
+                                           placeholder="pessoa@exemplo.com">
+                                    <div class="form-text">Se o WhatsApp falhar, o relatório vai pra este e-mail. Vazio = usa o e-mail do usuário dono do telefone.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <label for="horario_envio" class="form-label">Horário de Envio *</label>
                                     <input type="time" class="form-control" id="horario_envio" name="horario_envio" required>
                                 </div>
@@ -358,6 +364,7 @@ MenuPermissaoService::exigirAcesso('automacao_relatorios');
                 $('#nome_automacao').val(automacao.nome);
                 $('#tipo_relatorio').val(automacao.tipo_relatorio);
                 $('#numero_whatsapp').val(automacao.numero_whatsapp);
+                $('#email_fallback').val(automacao.email_fallback || '');
                 $('#horario_envio').val(automacao.horario_envio);
                 $('#mensagem_personalizada').val(automacao.mensagem_personalizada);
                 

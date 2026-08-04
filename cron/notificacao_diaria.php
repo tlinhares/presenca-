@@ -403,18 +403,13 @@ try {
         logNotificacoes("AVISO: Não foi possível gerar o relatório PDF, continuando apenas com mensagem");
     }
     
-    // Buscar telefones de administradores para envio
-    // Filtrar telefones válidos (não nulos, não vazios, não '0', não 'null', e com pelo menos 10 dígitos após normalização)
+    // Buscar administradores para envio. Traz TODOS os admins (com e sem
+    // telefone): quem tem telefone válido recebe via WhatsApp com fallback
+    // de e-mail; quem não tem, recebe direto por e-mail.
     $sql_telefones = "
-        SELECT id, nome, telefone 
-        FROM usuarios 
-        WHERE categoria = 'admin' 
-        AND telefone IS NOT NULL 
-        AND telefone != '' 
-        AND telefone != 'null'
-        AND telefone != '0'
-        AND TRIM(telefone) != ''
-        AND LENGTH(TRIM(telefone)) >= 10
+        SELECT id, nome, telefone, email
+        FROM usuarios
+        WHERE categoria = 'admin'
     ";
     $stmt = $conn->prepare($sql_telefones);
     $stmt->execute();
@@ -444,12 +439,28 @@ try {
                 'arquivo' => $arquivo_relatorio,
                 'nome' => $row['nome'],
                 'id' => $row['id'],
-                'usuario_id' => $row['id']
+                'usuario_id' => $row['id'],
+                'email' => trim((string) ($row['email'] ?? ''))
             ];
             logNotificacoes("Telefone normalizado para usuário ID {$row['id']}: '$telefone' → '$telefone_normalizado'");
+        } elseif (!empty($row['email']) && strpos($row['email'], '@') !== false) {
+            // Admin sem telefone válido: relatório vai direto por e-mail
+            require_once __DIR__ . '/../core/services/MensageriaService.php';
+            $ok_email = MensageriaService::fallbackEmail(
+                $conn, $row['email'], $row['nome'],
+                'Relatório diário do refeitório — ' . date('d/m/Y'),
+                $mensagem, (int) $row['id'], 'relatorio_diario', $arquivo_relatorio
+            );
+            if ($ok_email) {
+                $telefones_enviados++;
+                logNotificacoes("✓ Sem telefone — relatório enviado por E-MAIL para {$row['nome']} ({$row['email']})");
+            } else {
+                $telefones_erro++;
+                logNotificacoes("✗ Sem telefone e e-mail falhou para {$row['nome']}");
+            }
         } else {
             $telefones_erro++;
-            logNotificacoes("AVISO: Telefone inválido ou vazio após normalização para usuário ID {$row['id']} ({$row['nome']}): '$telefone' - Pulando envio");
+            logNotificacoes("AVISO: usuário ID {$row['id']} ({$row['nome']}) sem telefone válido nem e-mail - Pulando envio");
         }
     }
     $stmt->close();
@@ -481,8 +492,22 @@ try {
                 $telefones_enviados++;
                 logNotificacoes("✓ Mensagem e arquivo enviados para {$destinatario['nome']} (" . ($index + 1) . "/" . count($destinatarios) . ")");
             } else {
-                $telefones_erro++;
-                logNotificacoes("✗ Falha ao enviar WhatsApp para {$destinatario['nome']}: " . ($resultado['mensagem'] ?? 'Erro desconhecido'));
+                logNotificacoes("✗ Falha ao enviar WhatsApp para {$destinatario['nome']}: " . ($resultado['mensagem'] ?? 'Erro desconhecido') . " — tentando e-mail");
+                // Fallback: WhatsApp instável (bloqueios) → mesma mensagem +
+                // relatório em anexo por e-mail.
+                require_once __DIR__ . '/../core/services/MensageriaService.php';
+                $ok_email = MensageriaService::fallbackEmail(
+                    $conn, $destinatario['email'] ?? '', $destinatario['nome'],
+                    'Relatório diário do refeitório — ' . date('d/m/Y'),
+                    $destinatario['mensagem'], (int) $destinatario['usuario_id'], 'relatorio_diario', $destinatario['arquivo']
+                );
+                if ($ok_email) {
+                    $telefones_enviados++;
+                    logNotificacoes("✓ FALLBACK: relatório enviado por E-MAIL para {$destinatario['nome']}");
+                } else {
+                    $telefones_erro++;
+                    logNotificacoes("✗ Fallback de e-mail também falhou (ou sem e-mail) para {$destinatario['nome']}");
+                }
             }
         }
     }

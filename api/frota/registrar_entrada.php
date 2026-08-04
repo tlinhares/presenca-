@@ -215,7 +215,7 @@ try {
         require_once __DIR__ . '/../../core/services/WhatsAppService.php';
         require_once __DIR__ . '/../../vendor/autoload.php';
         
-        $sql_user = "SELECT nome, telefone FROM usuarios WHERE id = ?";
+        $sql_user = "SELECT nome, telefone, email FROM usuarios WHERE id = ?";
         $stmt_user = $conn->prepare($sql_user);
         $stmt_user->bind_param("s", $usuario_id);
         $stmt_user->execute();
@@ -415,7 +415,21 @@ try {
             );
             
             $whatsapp_enviado = $resultado['sucesso'] ?? false;
-            
+
+            // Fallback: WhatsApp instável (bloqueios) → comprovante por e-mail
+            if (!$whatsapp_enviado && !empty($user_data['email']) && strpos($user_data['email'], '@') !== false) {
+                require_once __DIR__ . '/../../core/services/MensageriaService.php';
+                $whatsapp_enviado = MensageriaService::fallbackEmail(
+                    $conn, $user_data['email'], $user_data['nome'],
+                    'Comprovante de devolução de veículo',
+                    $mensagem, (int) $usuario_id, 'frota_devolucao',
+                    ($caminho_pdf && file_exists($caminho_pdf) ? $caminho_pdf : null)
+                );
+                if ($whatsapp_enviado) {
+                    error_log("[FROTA] WhatsApp falhou; comprovante enviado por e-mail para {$user_data['email']}");
+                }
+            }
+
             if ($caminho_pdf && file_exists($caminho_pdf)) {
                 @unlink($caminho_pdf);
             }

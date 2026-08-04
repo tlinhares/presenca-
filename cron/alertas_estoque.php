@@ -159,18 +159,21 @@ try {
     foreach ($pendentes_por_depto as $id_depto => $dados) {
         // Responsáveis ativos do departamento com telefone válido
         $stmtResp = $conn->prepare(
-            "SELECT u.id, u.nome, u.telefone
+            "SELECT u.id, u.nome, u.telefone, u.email
              FROM estoque_responsaveis r
              JOIN usuarios u ON u.id = r.id_usuario
              WHERE r.id_departamento = ? AND r.ativo = 1 AND u.ativo = 1
-               AND u.telefone IS NOT NULL AND u.telefone <> ''"
+               AND ((u.telefone IS NOT NULL AND u.telefone <> '') OR (u.email IS NOT NULL AND u.email LIKE '%@%'))"
         );
         $stmtResp->bind_param('i', $id_depto);
         $stmtResp->execute();
         $rResp = $stmtResp->get_result();
         $destinatarios = [];
         while ($u = $rResp->fetch_assoc()) {
-            if (!empty(WhatsAppService::normalizarTelefone($u['telefone']))) {
+            $tem_tel = !empty(WhatsAppService::normalizarTelefone((string) $u['telefone']));
+            $tem_mail = !empty($u['email']) && strpos($u['email'], '@') !== false;
+            if ($tem_tel || $tem_mail) {
+                $u['tem_tel'] = $tem_tel;
                 $destinatarios[] = $u;
             }
         }
@@ -180,7 +183,7 @@ try {
             // Sem responsável -> acumula para o fallback
             $fallback_blocos[] = $montarBloco($dados['nome'], $dados['itens']);
             $fallback_alerta_ids = array_merge($fallback_alerta_ids, $dados['alerta_ids']);
-            logAlertaEstoque("Depto '{$dados['nome']}' sem responsavel com telefone - enviado ao fallback");
+            logAlertaEstoque("Depto '{$dados['nome']}' sem responsavel com telefone/e-mail - enviado ao fallback");
             continue;
         }
 
@@ -192,19 +195,36 @@ try {
             }
             $primeiro_envio = false;
 
-            $r = WhatsAppService::enviarMensagem($dest['telefone'], $mensagem, [
-                'log_callback' => function ($m) { logAlertaEstoque("WhatsApp: $m"); },
-                'usuario_id' => $dest['id'],
-                'nome_destinatario' => $dest['nome'],
-                'tipo_mensagem' => 'alerta_estoque',
-            ]);
-            if (!empty($r['sucesso'])) {
+            $enviou = false;
+            if (!empty($dest['tem_tel'])) {
+                $r = WhatsAppService::enviarMensagem($dest['telefone'], $mensagem, [
+                    'log_callback' => function ($m) { logAlertaEstoque("WhatsApp: $m"); },
+                    'usuario_id' => $dest['id'],
+                    'nome_destinatario' => $dest['nome'],
+                    'tipo_mensagem' => 'alerta_estoque',
+                ]);
+                if (!empty($r['sucesso'])) {
+                    $enviou = true;
+                    logAlertaEstoque("OK -> {$dest['nome']} ({$dest['telefone']}) depto '{$dados['nome']}'");
+                } else {
+                    logAlertaEstoque("FALHA WhatsApp -> {$dest['nome']}: " . ($r['mensagem'] ?? 'erro') . ' - tentando e-mail');
+                }
+            }
+            // Fallback (ou canal único de quem não tem telefone): e-mail
+            if (!$enviou && !empty($dest['email']) && strpos($dest['email'], '@') !== false) {
+                require_once __DIR__ . '/../core/services/MensageriaService.php';
+                $enviou = MensageriaService::fallbackEmail(
+                    $conn, $dest['email'], $dest['nome'],
+                    "Alerta de estoque - depto {$dados['nome']}",
+                    $mensagem, (int) $dest['id'], 'alerta_estoque'
+                );
+                logAlertaEstoque(($enviou ? 'OK (e-mail)' : 'FALHA e-mail') . " -> {$dest['nome']} ({$dest['email']})");
+            }
+            if ($enviou) {
                 $algum_sucesso = true;
                 $total_enviados++;
-                logAlertaEstoque("OK -> {$dest['nome']} ({$dest['telefone']}) depto '{$dados['nome']}'");
             } else {
                 $total_falhas++;
-                logAlertaEstoque("FALHA -> {$dest['nome']} ({$dest['telefone']}): " . ($r['mensagem'] ?? 'erro'));
             }
         }
         if ($algum_sucesso) {

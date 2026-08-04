@@ -283,6 +283,35 @@ function executarAutomacao($automacao) {
             ]
         );
         
+        // Fallback: WhatsApp instável (bloqueios de conta) → mesma mensagem +
+        // relatório em anexo por e-mail (email_fallback da automação ou, na
+        // falta, e-mail do usuário dono do telefone). ANTES do unlink.
+        if (empty($resultado['sucesso'])) {
+            global $conn;
+            require_once __DIR__ . '/core/services/MensageriaService.php';
+            $email_dest = trim((string) ($automacao['email_fallback'] ?? ''));
+            if ($email_dest === '' || strpos($email_dest, '@') === false) {
+                $email_dest = (string) MensageriaService::emailPorTelefone($conn, $automacao['numero_whatsapp']);
+            }
+            if ($email_dest !== '') {
+                logMessage("    → WhatsApp falhou — tentando fallback de e-mail para $email_dest<br>");
+                $ok_email = MensageriaService::fallbackEmail(
+                    $conn, $email_dest, $automacao['nome'],
+                    'Relatório automático — ' . $automacao['nome'] . ' — ' . date('d/m/Y'),
+                    $mensagem, null, 'automacao_relatorio',
+                    (file_exists($arquivo_relatorio) ? $arquivo_relatorio : null)
+                );
+                if ($ok_email) {
+                    logMessage("    → ✓ FALLBACK: relatório enviado por E-MAIL<br>");
+                    $resultado = ['sucesso' => true, 'mensagem' => 'WhatsApp falhou; enviado por e-mail (' . $email_dest . ')'];
+                } else {
+                    logMessage("    → ✗ Fallback de e-mail também falhou<br>");
+                }
+            } else {
+                logMessage("    → Sem e-mail de fallback configurado/descoberto para esta automação<br>");
+            }
+        }
+
         // Limpar arquivo temporário APENAS após tentar enviar
         if (file_exists($arquivo_relatorio)) {
             @unlink($arquivo_relatorio);

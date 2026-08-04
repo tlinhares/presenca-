@@ -308,10 +308,44 @@ if ($tem_telefone) {
             'metodo' => 'whatsapp'
         ]);
     } else {
-        // Se falhar WhatsApp, retornar erro (NÃO tentar email como fallback)
+        // WhatsApp falhou (canal instável por bloqueios) → FALLBACK de e-mail
+        // com o mesmo conteúdo/link de acesso do fluxo de e-mail normal.
+        if (!empty($usuario['email']) && strpos($usuario['email'], '@') !== false) {
+            error_log("Notificação: WhatsApp falhou — fallback de email para: " . $usuario['email']);
+            $resultado_email = enviarEmail($usuario['email'], $usuario['nome'], $usuario_id, $conn, $token);
+
+            try {
+                NotificacaoService::gravarEmail(
+                    $usuario['email'],
+                    'Acesso ao Sistema de Refeições AOM',
+                    strip_tags($mensagens['html']),
+                    $resultado_email['sucesso'],
+                    $resultado_email['sucesso'] ? null : ($resultado_email['mensagem'] ?? 'erro'),
+                    $usuario_id,
+                    $usuario['nome'],
+                    'cadastro_usuario_fallback'
+                );
+            } catch (Exception $e) {
+                error_log("Erro ao gravar notificação de email (fallback): " . $e->getMessage());
+            }
+
+            if ($resultado_email['sucesso']) {
+                $stmt = $conn->prepare("UPDATE usuarios SET notificado_em = NOW() WHERE id = ?");
+                $stmt->bind_param("i", $usuario_id);
+                $stmt->execute();
+                $stmt->close();
+
+                echo json_encode([
+                    'status' => 'ok',
+                    'mensagem' => 'WhatsApp falhou — notificação enviada via Email (fallback)',
+                    'metodo' => 'email'
+                ]);
+                exit;
+            }
+        }
         echo json_encode([
             'status' => 'erro',
-            'mensagem' => 'Falha ao enviar WhatsApp: ' . $resultado['mensagem'],
+            'mensagem' => 'Falha ao enviar WhatsApp: ' . $resultado['mensagem'] . (empty($usuario['email']) ? ' (usuário sem e-mail pra fallback)' : ' (fallback de e-mail também falhou)'),
             'metodo' => 'whatsapp'
         ]);
     }

@@ -93,18 +93,38 @@ function executarAutomacao($automacao) {
             ]
         );
         
-        if ($resultado_whatsapp['sucesso']) {
-            // Atualizar último envio
+        $canal = 'WhatsApp';
+        if (empty($resultado_whatsapp['sucesso'])) {
+            // Fallback: e-mail (email_fallback da automação ou e-mail do dono do telefone)
             global $conn;
-            $stmt = $conn->prepare("UPDATE automacoes_relatorios SET ultimo_envio = NOW() WHERE id = ?");
-            $stmt->bind_param("i", $automacao['id']);
-            $stmt->execute();
-            $stmt->close();
-            
-            return ['sucesso' => true, 'mensagem' => 'Relatório enviado com sucesso via WhatsApp'];
-        } else {
-            return ['sucesso' => false, 'mensagem' => 'Erro ao enviar WhatsApp: ' . $resultado_whatsapp['mensagem']];
+            require_once __DIR__ . '/core/services/MensageriaService.php';
+            $email_dest = trim((string) ($automacao['email_fallback'] ?? ''));
+            if ($email_dest === '' || strpos($email_dest, '@') === false) {
+                $email_dest = (string) MensageriaService::emailPorTelefone($conn, $automacao['numero_whatsapp']);
+            }
+            $ok_email = false;
+            if ($email_dest !== '') {
+                $ok_email = MensageriaService::fallbackEmail(
+                    $conn, $email_dest, $automacao['nome'],
+                    'Relatório automático — ' . $automacao['nome'] . ' — ' . date('d/m/Y'),
+                    $mensagem, null, 'automacao_relatorio',
+                    (isset($arquivo_relatorio) && file_exists($arquivo_relatorio) ? $arquivo_relatorio : null)
+                );
+            }
+            if (!$ok_email) {
+                return ['sucesso' => false, 'mensagem' => 'Erro ao enviar WhatsApp: ' . $resultado_whatsapp['mensagem'] . ($email_dest !== '' ? ' (fallback de e-mail também falhou)' : ' (sem e-mail de fallback)')];
+            }
+            $canal = 'e-mail (fallback, ' . $email_dest . ')';
         }
+
+        // Atualizar último envio
+        global $conn;
+        $stmt = $conn->prepare("UPDATE automacoes_relatorios SET ultimo_envio = NOW() WHERE id = ?");
+        $stmt->bind_param("i", $automacao['id']);
+        $stmt->execute();
+        $stmt->close();
+
+        return ['sucesso' => true, 'mensagem' => 'Relatório enviado com sucesso via ' . $canal];
         
     } catch (Exception $e) {
         return ['sucesso' => false, 'mensagem' => $e->getMessage()];

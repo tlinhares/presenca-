@@ -34,6 +34,12 @@ try {
     $nome = trim($_POST['nome_automacao'] ?? '');
     $tipo_relatorio = $_POST['tipo_relatorio'] ?? '';
     $numero_whatsapp = trim($_POST['numero_whatsapp'] ?? '');
+    $email_fallback = trim($_POST['email_fallback'] ?? '');
+    if ($email_fallback !== '' && !filter_var($email_fallback, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(['status' => 'erro', 'mensagem' => 'E-mail de fallback inválido']);
+        exit;
+    }
+    $email_fallback = $email_fallback !== '' ? $email_fallback : null;
     $horario_envio = $_POST['horario_envio'] ?? '';
     $dias_semana = $_POST['dias_semana'] ?? [];
     $mensagem_personalizada = trim($_POST['mensagem_personalizada'] ?? '');
@@ -65,12 +71,12 @@ try {
         // Atualizar automação existente
         $stmt = $conn->prepare("
             UPDATE automacoes_relatorios 
-            SET nome = ?, tipo_relatorio = ?, numero_whatsapp = ?, horario_envio = ?, 
+            SET nome = ?, tipo_relatorio = ?, numero_whatsapp = ?, email_fallback = ?, horario_envio = ?, 
                 dias_semana = ?, mensagem_personalizada = ?
             WHERE id = ?
         ");
         
-        $stmt->bind_param("ssssssi", $nome, $tipo_relatorio, $numero_whatsapp, $horario_envio, $dias_json, $mensagem_personalizada, $id);
+        $stmt->bind_param("sssssssi", $nome, $tipo_relatorio, $numero_whatsapp, $email_fallback, $horario_envio, $dias_json, $mensagem_personalizada, $id);
         
         if ($stmt->execute()) {
             echo json_encode([
@@ -84,11 +90,11 @@ try {
         // Inserir nova automação
         $stmt = $conn->prepare("
             INSERT INTO automacoes_relatorios 
-            (nome, tipo_relatorio, numero_whatsapp, horario_envio, dias_semana, mensagem_personalizada) 
+            (nome, tipo_relatorio, numero_whatsapp, email_fallback, horario_envio, dias_semana, mensagem_personalizada) 
             VALUES (?, ?, ?, ?, ?, ?)
         ");
         
-        $stmt->bind_param("ssssss", $nome, $tipo_relatorio, $numero_whatsapp, $horario_envio, $dias_json, $mensagem_personalizada);
+        $stmt->bind_param("sssssss", $nome, $tipo_relatorio, $numero_whatsapp, $email_fallback, $horario_envio, $dias_json, $mensagem_personalizada);
         
         if ($stmt->execute()) {
             echo json_encode([
