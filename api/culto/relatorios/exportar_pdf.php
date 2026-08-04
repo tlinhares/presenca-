@@ -23,6 +23,12 @@ if (!in_array($tipo, $tipos_validos)) {
     die('Tipo de relatório inválido. Tipos válidos: ' . implode(', ', $tipos_validos));
 }
 
+// Períodos grandes geram HTML enorme; o parser do mPDF esbarra no limite de
+// backtracking do PCRE ("larger than pcre.backtrack_limit"). Além de subir o
+// limite, o WriteHTML é feito em PEDAÇOS (ver marcador <!--CHUNK--> abaixo).
+ini_set('pcre.backtrack_limit', '10000000');
+set_time_limit(300);
+
 try {
     // Inicializar mPDF
     $mpdf = new \Mpdf\Mpdf([
@@ -48,7 +54,16 @@ try {
 
     $mpdf->SetTitle('Relatório de Culto - ' . ucfirst($tipo));
     $mpdf->SetAuthor('Sistema de Presença');
-    $mpdf->WriteHTML($html);
+
+    // Escreve em pedaços: cada seção de usuário do relatório de presenças
+    // vira um chunk (marcador inserido antes de cada .usuario-section);
+    // os demais relatórios ganham marcadores a cada N linhas de tabela.
+    $html = str_replace('<div class="usuario-section"', '<!--CHUNK--><div class="usuario-section"', $html);
+    foreach (explode('<!--CHUNK-->', $html) as $parte) {
+        if (trim($parte) !== '') {
+            $mpdf->WriteHTML($parte);
+        }
+    }
     $mpdf->Output('relatorio_culto_' . $tipo . '_' . date('Y-m-d') . '.pdf', 'I');
     
 } catch (Exception $e) {
@@ -868,8 +883,94 @@ function buscarDadosRelatorio($tipo, $data_inicio, $data_fim, $usuario_id, $conn
                 $dados[] = $row;
             }
             break;
+
+        case 'estatisticas':
+        case 'frequencia':
+            // Consolidado por usuário no período. Percentual segue a MESMA
+            // fórmula do app (api/culto/frequencia.php):
+            // (presentes + atrasados + justificadas) / total * 100
+            $sql = "SELECT u.id, u.nome,
+                           COALESCE(SUM(p.status = 'presente'), 0)              AS presentes,
+                           COALESCE(SUM(p.status = 'atrasado'), 0)              AS atrasados,
+                           COALESCE(SUM(p.status IN ('falta','ausente')), 0)    AS faltas,
+                           COALESCE(SUM(p.status = 'justificado'), 0)           AS justificadas,
+                           COUNT(p.id)                                          AS total
+                      FROM usuarios u
+                 LEFT JOIN presencas_culto p
+                        ON p.id_usuario = u.id AND p.data BETWEEN ? AND ?
+                     WHERE u.culto = 1 AND u.ativo = 1" . ($usuario_id ? " AND u.id = ?" : "") . "
+                  GROUP BY u.id, u.nome
+                  ORDER BY u.nome";
+            $stmt = $conn->prepare($sql);
+            if ($usuario_id) $stmt->bind_param("ssi", $data_inicio, $data_fim, $usuario_id);
+            else             $stmt->bind_param("ss", $data_inicio, $data_fim);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $row['percentual'] = $row['total'] > 0
+                    ? round((($row['presentes'] + $row['atrasados'] + $row['justificadas']) / $row['total']) * 100, 1)
+                    : 0;
+                $dados[] = $row;
+            }
+            break;
+
+        case 'atrasos':
+            $sql = "SELECT p.data, p.horario_confirmacao, u.nome AS nome_usuario, p.observacoes
+                      FROM presencas_culto p
+                INNER JOIN usuarios u ON u.id = p.id_usuario
+                     WHERE p.status = 'atrasado' AND p.data BETWEEN ? AND ?" . ($usuario_id ? " AND p.id_usuario = ?" : "") . "
+                  ORDER BY p.data, u.nome";
+            $stmt = $conn->prepare($sql);
+            if ($usuario_id) $stmt->bind_param("ssi", $data_inicio, $data_fim, $usuario_id);
+            else             $stmt->bind_param("ss", $data_inicio, $data_fim);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) $dados[] = $row;
+            break;
+
+        case 'usuario':
+            // Extrato completo de um usuário (todas as marcações do período)
+            $sql = "SELECT p.data, p.status, p.tipo_confirmacao, p.horario_confirmacao,
+                           u.nome AS nome_usuario, p.observacoes
+                      FROM presencas_culto p
+                INNER JOIN usuarios u ON u.id = p.id_usuario
+                     WHERE p.data BETWEEN ? AND ?" . ($usuario_id ? " AND p.id_usuario = ?" : "") . "
+                  ORDER BY u.nome, p.data";
+            $stmt = $conn->prepare($sql);
+            if ($usuario_id) $stmt->bind_param("ssi", $data_inicio, $data_fim, $usuario_id);
+            else             $stmt->bind_param("ss", $data_inicio, $data_fim);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) $dados[] = $row;
+            break;
+
+        case 'comparativo':
+            // Consolidado mês a mês do período
+            $sql = "SELECT DATE_FORMAT(p.data, '%Y-%m') AS mes,
+                           COUNT(DISTINCT p.data)                               AS cultos,
+                           COALESCE(SUM(p.status = 'presente'), 0)              AS presentes,
+                           COALESCE(SUM(p.status = 'atrasado'), 0)              AS atrasados,
+                           COALESCE(SUM(p.status IN ('falta','ausente')), 0)    AS faltas,
+                           COALESCE(SUM(p.status = 'justificado'), 0)           AS justificadas,
+                           COUNT(p.id)                                          AS total
+                      FROM presencas_culto p
+                     WHERE p.data BETWEEN ? AND ?" . ($usuario_id ? " AND p.id_usuario = ?" : "") . "
+                  GROUP BY DATE_FORMAT(p.data, '%Y-%m')
+                  ORDER BY mes";
+            $stmt = $conn->prepare($sql);
+            if ($usuario_id) $stmt->bind_param("ssi", $data_inicio, $data_fim, $usuario_id);
+            else             $stmt->bind_param("ss", $data_inicio, $data_fim);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $row['percentual'] = $row['total'] > 0
+                    ? round((($row['presentes'] + $row['atrasados'] + $row['justificadas']) / $row['total']) * 100, 1)
+                    : 0;
+                $dados[] = $row;
+            }
+            break;
     }
-    
+
     return $dados;
 }
 
@@ -877,9 +978,14 @@ function gerarHTMLRelatorio($tipo, $dados, $data_inicio, $data_fim) {
     $titulos = [
         'presencas' => 'Relatório de Presenças',
         'faltas' => 'Relatório de Faltas',
-        'justificativas' => 'Relatório de Justificativas'
+        'justificativas' => 'Relatório de Justificativas',
+        'estatisticas' => 'Relatório de Estatísticas por Usuário',
+        'frequencia' => 'Relatório de Frequência',
+        'atrasos' => 'Relatório de Atrasos',
+        'usuario' => 'Extrato de Presenças por Usuário',
+        'comparativo' => 'Comparativo Mensal',
     ];
-    
+
     $titulo = $titulos[$tipo] ?? 'Relatório de Culto';
     
     $html = '
@@ -905,21 +1011,38 @@ function gerarHTMLRelatorio($tipo, $dados, $data_inicio, $data_fim) {
             <thead>
                 <tr>';
     
-    switch($tipo) {
-        case 'faltas':
-            $html .= '<th>Data</th><th>Usuário</th><th>Justificada</th><th>Motivo</th>';
-            break;
-        case 'justificativas':
-            $html .= '<th>Data Falta</th><th>Usuário</th><th>Motivo</th><th>Status</th>';
-            break;
-    }
-    
+    $cabecalhos = [
+        'faltas'         => '<th>Data</th><th>Usuário</th><th>Justificada</th><th>Motivo</th>',
+        'justificativas' => '<th>Data Falta</th><th>Usuário</th><th>Motivo</th><th>Status</th>',
+        'estatisticas'   => '<th>Usuário</th><th>Presenças</th><th>Atrasos</th><th>Faltas</th><th>Justificadas</th><th>Total Cultos</th><th>% Presença</th>',
+        'frequencia'     => '<th>Usuário</th><th>Cultos no Período</th><th>Comparecimentos</th><th>Faltas</th><th>% Frequência</th>',
+        'atrasos'        => '<th>Data</th><th>Usuário</th><th>Horário</th><th>Observações</th>',
+        'usuario'        => '<th>Data</th><th>Usuário</th><th>Status</th><th>Confirmação</th><th>Horário</th><th>Observações</th>',
+        'comparativo'    => '<th>Mês</th><th>Cultos</th><th>Presenças</th><th>Atrasos</th><th>Faltas</th><th>Justificadas</th><th>% Presença</th>',
+    ];
+    $html .= $cabecalhos[$tipo] ?? '<th>Dados</th>';
+
+    $cabecalho_tabela = '<table><thead><tr>' . ($cabecalhos[$tipo] ?? '<th>Dados</th>') . '</tr></thead><tbody>';
+
     $html .= '
                 </tr>
             </thead>
             <tbody>';
-    
+
+    if (empty($dados)) {
+        $colspan = substr_count($cabecalhos[$tipo] ?? '', '<th>') ?: 1;
+        $html .= '<tr><td colspan="' . $colspan . '" style="text-align:center; color:#777;">Nenhum registro encontrado no período</td></tr>';
+    }
+
+    $linha = 0;
     foreach ($dados as $row) {
+        // Fecha e reabre a tabela a cada 250 linhas com um marcador de chunk:
+        // o WriteHTML em pedaços evita o estouro do pcre.backtrack_limit.
+        if ($linha > 0 && $linha % 250 === 0) {
+            $html .= '</tbody></table><!--CHUNK-->' . $cabecalho_tabela;
+        }
+        $linha++;
+
         $html .= '<tr>';
         switch($tipo) {
             case 'faltas':
@@ -934,16 +1057,56 @@ function gerarHTMLRelatorio($tipo, $dados, $data_inicio, $data_fim) {
                 $html .= '<td>' . htmlspecialchars($row['motivo']) . '</td>';
                 $html .= '<td>' . htmlspecialchars($row['status']) . '</td>';
                 break;
+            case 'estatisticas':
+                $html .= '<td>' . htmlspecialchars($row['nome']) . '</td>';
+                $html .= '<td>' . (int) $row['presentes'] . '</td>';
+                $html .= '<td>' . (int) $row['atrasados'] . '</td>';
+                $html .= '<td>' . (int) $row['faltas'] . '</td>';
+                $html .= '<td>' . (int) $row['justificadas'] . '</td>';
+                $html .= '<td>' . (int) $row['total'] . '</td>';
+                $html .= '<td>' . number_format((float) $row['percentual'], 1, ',', '') . '%</td>';
+                break;
+            case 'frequencia':
+                $comparecimentos = (int) $row['presentes'] + (int) $row['atrasados'];
+                $html .= '<td>' . htmlspecialchars($row['nome']) . '</td>';
+                $html .= '<td>' . (int) $row['total'] . '</td>';
+                $html .= '<td>' . $comparecimentos . '</td>';
+                $html .= '<td>' . (int) $row['faltas'] . '</td>';
+                $html .= '<td>' . number_format((float) $row['percentual'], 1, ',', '') . '%</td>';
+                break;
+            case 'atrasos':
+                $html .= '<td>' . date('d/m/Y', strtotime($row['data'])) . '</td>';
+                $html .= '<td>' . htmlspecialchars($row['nome_usuario']) . '</td>';
+                $html .= '<td>' . substr((string) $row['horario_confirmacao'], 0, 5) . '</td>';
+                $html .= '<td>' . htmlspecialchars($row['observacoes'] ?? '-') . '</td>';
+                break;
+            case 'usuario':
+                $html .= '<td>' . date('d/m/Y', strtotime($row['data'])) . '</td>';
+                $html .= '<td>' . htmlspecialchars($row['nome_usuario']) . '</td>';
+                $html .= '<td>' . htmlspecialchars(ucfirst($row['status'])) . '</td>';
+                $html .= '<td>' . htmlspecialchars(ucfirst($row['tipo_confirmacao'])) . '</td>';
+                $html .= '<td>' . substr((string) $row['horario_confirmacao'], 0, 5) . '</td>';
+                $html .= '<td>' . htmlspecialchars($row['observacoes'] ?? '-') . '</td>';
+                break;
+            case 'comparativo':
+                $html .= '<td>' . htmlspecialchars(date('m/Y', strtotime($row['mes'] . '-01'))) . '</td>';
+                $html .= '<td>' . (int) $row['cultos'] . '</td>';
+                $html .= '<td>' . (int) $row['presentes'] . '</td>';
+                $html .= '<td>' . (int) $row['atrasados'] . '</td>';
+                $html .= '<td>' . (int) $row['faltas'] . '</td>';
+                $html .= '<td>' . (int) $row['justificadas'] . '</td>';
+                $html .= '<td>' . number_format((float) $row['percentual'], 1, ',', '') . '%</td>';
+                break;
         }
         $html .= '</tr>';
     }
-    
+
     $html .= '
             </tbody>
         </table>
     </body>
     </html>';
-    
+
     return $html;
 }
 ?>
