@@ -1,19 +1,9 @@
 /**
  * AOM UI — utilidades compartilhadas do design system.
  *
- * voltarAom(fallback): volta pra tela de onde o usuário veio (referrer da
- * mesma origem). Sem histórico útil (link direto, favorito), vai pro
- * fallback informado pelo botão.
+ * REGRA DO BOTÃO VOLTAR (definida pelo admin em 2026-08-05): a navegação de
+ * volta é uma CADEIA FIXA, não histórico do navegador —
+ *   telas de módulo → dashboard do módulo → /painel/dashboard.php → /resumo.php
+ * Portanto os botões Voltar usam href fixo pro "pai" na hierarquia.
+ * (Não usar history.back(): o admin quer previsibilidade, não origem real.)
  */
-function voltarAom(fallback) {
-    try {
-        if (document.referrer) {
-            var ref = new URL(document.referrer);
-            if (ref.origin === window.location.origin && document.referrer !== window.location.href) {
-                window.history.back();
-                return;
-            }
-        }
-    } catch (e) { /* URL inválida — segue pro fallback */ }
-    window.location.href = fallback;
-}

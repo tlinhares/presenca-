@@ -89,7 +89,7 @@ MenuPermissaoService::exigirAcesso('automacao_relatorios');
                 Automação de Relatórios
             </a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="javascript:void(0)" onclick="voltarAom('dashboard.php')">
+                <a class="nav-link" href="dashboard.php">
                     <i class="bi bi-arrow-left me-1"></i>
                     Voltar ao Painel
                 </a>

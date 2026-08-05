@@ -153,7 +153,7 @@ MenuPermissaoService::exigirAcesso('configuracoes');
                     <small>Parâmetros e preferências gerais</small>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="javascript:void(0)" onclick="voltarAom('dashboard.php')" class="btn btn-dark btn-sm">
+                    <a href="dashboard.php" class="btn btn-dark btn-sm">
                         <i class="fas fa-arrow-left me-1"></i>Voltar
                     </a>
                     <a href="../logout.php" class="btn btn-outline-dark btn-sm">

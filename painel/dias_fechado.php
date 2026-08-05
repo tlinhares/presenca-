@@ -57,7 +57,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                     <small class="opacity-75">Gerencie as datas em que o refeitório não funcionará</small>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="javascript:void(0)" onclick="voltarAom('dashboard.php')" class="btn btn-outline-light btn-sm">
+                    <a href="dashboard.php" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-arrow-left me-1"></i>Voltar
                     </a>
                 </div>

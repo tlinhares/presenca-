@@ -78,7 +78,7 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
         <div class="container-fluid px-3">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-3">
-                    <a href="javascript:void(0)" onclick="voltarAom('../resumo.php')" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left"></i></a>
+                    <a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a>
                     <div>
                         <h5 class="mb-0"><i class="bi bi-send-fill me-2"></i>Enviar Notificação Push</h5>
                         <small class="opacity-75">Manual — Intranet AOM (iOS + Android)</small>
