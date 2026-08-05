@@ -162,3 +162,18 @@ nav.navbar.navbar-dark {
     border-color: var(--aom-brand-escuro) !important;
 }
 .section-title { color: var(--aom-texto) !important; }
+
+/* ── Headers com nomes próprios espalhados pelas telas legadas ─────────────
+   (.header-dashboard verde, .header-refeicoes verde, .header-estoque etc.)
+   Todos passam a usar o mesmo azul institucional do .header-page. */
+.header-dashboard,
+.header-refeicoes,
+.header-estoque,
+.header-painel,
+.header-retirar,
+.header-devolver,
+.header-detalhes {
+    background: var(--aom-brand) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 10px rgba(29, 78, 143, .25) !important;
+}
