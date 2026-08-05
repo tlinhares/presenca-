@@ -81,17 +81,14 @@ while ($row = $result->fetch_assoc()) {
     <div class="header-page">
         <div class="container-fluid px-4">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="bi bi-whatsapp me-2"></i>Gerenciar Mensagens WhatsApp</h3>
                     <small class="opacity-75">Configure as mensagens variadas enviadas via WhatsApp</small>
-                </div>
+                </div></div>
                 <div>
                     <button class="btn btn-light btn-sm" onclick="abrirModalCriar()">
                         <i class="bi bi-plus-circle me-1"></i>Nova Mensagem
                     </button>
-                    <a href="dashboard.php" class="btn btn-outline-light btn-sm ms-2">
-                        <i class="bi bi-arrow-left me-1"></i>Voltar
-                    </a>
                 </div>
             </div>
         </div>

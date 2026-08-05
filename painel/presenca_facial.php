@@ -119,10 +119,10 @@ $titulo = "Painel de Sincronização de Presença com Reconhecimento Facial";
     <div class="header-page">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="fas fa-user-check me-2"></i>Reconhecimento Facial</h3>
                     <small class="opacity-75">Sincronização de Presença com Reconhecimento Facial</small>
-                </div>
+                </div></div>
                 <div class="d-flex flex-wrap gap-2">
                     <form method="get" class="d-flex gap-2">
                         <input type="date" class="form-control form-control-sm" id="dataFiltro" name="data" value="<?php echo $data_filtro; ?>">
@@ -130,9 +130,6 @@ $titulo = "Painel de Sincronização de Presença com Reconhecimento Facial";
                             <i class="fas fa-filter me-1"></i>Filtrar
                         </button>
                     </form>
-                    <a href="dashboard.php" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-arrow-left me-1"></i>Voltar
-                    </a>
                 </div>
             </div>
         </div>

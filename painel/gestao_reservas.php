@@ -67,14 +67,11 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
     <div class="header-page">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="bi bi-calendar-check me-2"></i>Gestão de Reservas</h3>
                     <small class="opacity-75">Gerencie todas as reservas de almoço do sistema</small>
-                </div>
+                </div></div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="dashboard.php" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-arrow-left me-1"></i>Voltar
-                    </a>
                 </div>
             </div>
         </div>

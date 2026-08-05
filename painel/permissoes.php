@@ -86,14 +86,11 @@ require_once __DIR__ . '/../core/services/PermissaoService.php';
     <div class="header-page">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="bi bi-shield-lock me-2"></i>Gerenciamento de Permissões</h3>
                     <small class="opacity-75">Configure o acesso dos usuários aos módulos do sistema</small>
-                </div>
+                </div></div>
                 <div>
-                    <a href="dashboard.php" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-arrow-left me-1"></i>Voltar
-                    </a>
                 </div>
             </div>
         </div>

@@ -52,14 +52,11 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
     <div class="header-page">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="bi bi-calendar-x me-2"></i>Dias Fechado do Refeitório</h3>
                     <small class="opacity-75">Gerencie as datas em que o refeitório não funcionará</small>
-                </div>
+                </div></div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="dashboard.php" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-arrow-left me-1"></i>Voltar
-                    </a>
                 </div>
             </div>
         </div>

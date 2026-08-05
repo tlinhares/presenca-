@@ -148,14 +148,11 @@ MenuPermissaoService::exigirAcesso('configuracoes');
     <div class="header-page">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="fas fa-cog me-2"></i>Configurações do Sistema</h3>
                     <small>Parâmetros e preferências gerais</small>
-                </div>
+                </div></div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="dashboard.php" class="btn btn-dark btn-sm">
-                        <i class="fas fa-arrow-left me-1"></i>Voltar
-                    </a>
                     <a href="../logout.php" class="btn btn-outline-dark btn-sm">
                         <i class="fas fa-sign-out-alt me-1"></i>Sair
                     </a>

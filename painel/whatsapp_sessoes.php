@@ -79,16 +79,13 @@ while ($row = $result->fetch_assoc()) {
     <div class="header-page">
         <div class="container-fluid px-4">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="bi bi-whatsapp me-2"></i>Sessões WhatsApp</h3>
                     <small class="opacity-75">Status, reconexão e QR code</small>
-                </div>
+                </div></div>
                 <div class="d-flex gap-2">
                     <a href="whatsapp_apis.php" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-gear me-1"></i>Gerenciar APIs
-                    </a>
-                    <a href="dashboard.php" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-arrow-left me-1"></i>Voltar
                     </a>
                 </div>
             </div>

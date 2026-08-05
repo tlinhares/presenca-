@@ -35,7 +35,7 @@ $senha_dispositivo = obter_config('senha_dispositivo_facial', '');
 <body class="bg-light">
 <div class="container py-4">
   <div class="mb-4">
-    <a href="index.php" class="btn btn-outline-secondary">← Voltar para o Painel</a>
+    <a href="dashboard.php" class="btn btn-outline-secondary">← Voltar para o Painel</a>
   </div>
 
   <h3 class="mb-4">Configuração do Dispositivo Facial</h3>

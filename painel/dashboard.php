@@ -102,13 +102,10 @@ $iconeMapping = [
 // card de uma cor diferente, visual caótico nos dois temas). Agora todos os
 // cards de uma seção compartilham o acento da seção; o resto do card é neutro.
 // Classes literais de propósito: o Tailwind CDN só gera o que enxerga no DOM.
+// Padrão visual aprovado (referência: enviar_push.php): UMA cor institucional
+// — azul AOM #1d4e8f — pra todos os tiles/hovers, sem arco-íris por seção.
 $acentosSecao = [
-    'indigo'  => ['tile' => 'from-indigo-500 to-indigo-600',   'hover' => 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400'],
-    'orange'  => ['tile' => 'from-orange-500 to-orange-600',   'hover' => 'group-hover:text-orange-600 dark:group-hover:text-orange-400'],
-    'cyan'    => ['tile' => 'from-cyan-500 to-cyan-600',       'hover' => 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400'],
-    'teal'    => ['tile' => 'from-teal-500 to-teal-600',       'hover' => 'group-hover:text-teal-600 dark:group-hover:text-teal-400'],
-    'emerald' => ['tile' => 'from-emerald-500 to-emerald-600', 'hover' => 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400'],
-    'slate'   => ['tile' => 'from-slate-500 to-slate-600',     'hover' => 'group-hover:text-slate-600 dark:group-hover:text-slate-300'],
+    'aom' => ['tile' => 'from-[#1d4e8f] to-[#163d72]', 'hover' => 'group-hover:text-[#1d4e8f] dark:group-hover:text-[#7da7d9]'],
 ];
 
 function converterIcone($iconeBootstrap) {
@@ -120,7 +117,7 @@ function converterIcone($iconeBootstrap) {
 
 function obterAcentoSecao($corIcone) {
     global $acentosSecao;
-    return $acentosSecao[$corIcone] ?? $acentosSecao['indigo'];
+    return $acentosSecao['aom'];
 }
 
 function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone, $excluir = []) {
@@ -130,16 +127,7 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
         return '';
     }
     
-    $corClasses = [
-        'indigo' => 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-        'orange' => 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
-        'cyan' => 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400',
-        'teal' => 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
-        'emerald' => 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-        'slate' => 'bg-slate-100 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400',
-    ];
-    
-    $corClasse = $corClasses[$corIcone] ?? $corClasses['indigo'];
+    $corClasse = 'bg-[#eaf1fa] dark:bg-[#1d4e8f]/25 text-[#1d4e8f] dark:text-[#7da7d9]';
     
     $html = '<section>';
     $html .= '<div class="flex items-center justify-between mb-6">';
@@ -295,37 +283,37 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#0b1120] font-sans text-gray-800 dark:text-gray-200 transition-colors duration-300 flex flex-col">
-<header class="h-20 z-40 glass-panel sticky top-0 border-b border-gray-200/50 dark:border-slate-800/60 shadow-sm">
+<header class="h-20 z-40 sticky top-0 bg-[#1d4e8f] shadow-md">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
 <div class="flex items-center gap-10">
 <div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-white premium-icon-box">
+<div class="w-10 h-10 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center text-white">
 <span class="material-symbols-outlined text-2xl">admin_panel_settings</span>
 </div>
 <div>
-<h1 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Admin<span class="text-indigo-600 dark:text-indigo-400">Pro</span></h1>
+<h1 class="text-lg font-bold text-white leading-tight">Painel <span class="opacity-75">Administrativo</span></h1>
 </div>
 </div>
-<nav class="hidden md:flex items-center gap-1 p-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-xl border border-gray-200/50 dark:border-slate-700/50">
-<a class="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all" href="<?= MenuPermissaoService::ajustarUrl('/resumo.php') ?>">
+<nav class="hidden md:flex items-center gap-1 p-1 bg-white/10 rounded-xl border border-white/20">
+<a class="px-4 py-1.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all" href="<?= MenuPermissaoService::ajustarUrl('/resumo.php') ?>">
                         Dashboards
                     </a>
-<a class="px-4 py-1.5 rounded-lg text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-700 shadow-sm shadow-gray-200/50 dark:shadow-none" href="#">
+<a class="px-4 py-1.5 rounded-lg text-sm font-medium text-[#1d4e8f] bg-white shadow-sm" href="#">
                         Módulos
                     </a>
 </nav>
 </div>
 <div class="flex items-center gap-4">
-<button class="flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-indigo-600 transition-all duration-200" onclick="toggleTheme()" title="Alternar tema claro/escuro">
+<button class="flex items-center justify-center w-10 h-10 rounded-xl text-white/80 hover:bg-white/15 hover:text-white transition-all duration-200" onclick="toggleTheme()" title="Alternar tema claro/escuro">
 <span class="material-symbols-outlined dark:hidden">dark_mode</span>
 <span class="material-symbols-outlined hidden dark:block">light_mode</span>
 </button>
-<div class="h-8 w-px bg-gray-200 dark:bg-slate-700 hidden md:block"></div>
-<a href="<?= MenuPermissaoService::ajustarUrl('/resumo.php') ?>" class="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl text-sm font-medium transition-colors">
+<div class="h-8 w-px bg-white/25 hidden md:block"></div>
+<a href="<?= MenuPermissaoService::ajustarUrl('/resumo.php') ?>" class="flex items-center gap-2 px-4 py-2 text-white/85 hover:bg-white/15 hover:text-white rounded-xl text-sm font-medium transition-colors">
 <span class="material-symbols-outlined text-lg">arrow_back</span>
 <span class="hidden sm:inline">Voltar</span>
 </a>
-<a href="<?= MenuPermissaoService::ajustarUrl('/logout.php') ?>" class="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-rose-500/30 rounded-xl text-sm font-medium hover:from-red-600 hover:to-rose-700 transition-all transform hover:scale-[1.02]">
+<a href="<?= MenuPermissaoService::ajustarUrl('/logout.php') ?>" class="flex items-center gap-2 px-5 py-2 bg-[#dc3545] text-white rounded-xl text-sm font-medium hover:bg-[#bb2d3b] transition-colors">
 <span class="material-symbols-outlined text-lg">logout</span>
 <span>Sair</span>
 </a>
@@ -333,7 +321,7 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
 </div>
 </header>
 <main class="flex-1 relative scroll-smooth w-full">
-<div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-50/50 to-transparent dark:from-indigo-950/20 dark:to-transparent pointer-events-none z-0"></div>
+
 <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-20 space-y-12">
 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
 <div>
@@ -343,7 +331,7 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
 <div class="relative w-full md:w-80">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xl pointer-events-none">search</span>
 <input type="text" id="busca-modulo" placeholder="Buscar módulo… (ex.: push, backup, usuário)" autocomplete="off"
-class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 shadow-sm">
+class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#1d4e8f]/40 focus:border-[#1d4e8f] shadow-sm">
 </div>
 </div>
 <div id="busca-vazia" class="hidden bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700/50 rounded-2xl p-8 text-center text-gray-500 dark:text-gray-400">

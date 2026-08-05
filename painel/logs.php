@@ -126,14 +126,11 @@ MenuPermissaoService::exigirAcesso('logs_sistema');
             <div class="col-md-10 p-4">
                 <div class="content-card mb-4">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div>
+                        <div class="d-flex align-items-center gap-3"><a href="dashboard.php" class="btn btn-outline-secondary btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                             <h4 class="mb-1"><i class="bi bi-file-text me-2 text-secondary"></i>Logs do Sistema</h4>
                             <small class="text-muted">Monitoramento de eventos e erros</small>
-                        </div>
+                        </div></div>
                         <div class="d-flex gap-2">
-                            <a href="dashboard.php" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-left me-1"></i>Voltar
-                            </a>
                             <button class="btn btn-primary btn-sm" onclick="atualizarLogs()">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
                             </button>

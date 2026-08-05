@@ -39,10 +39,7 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
 
 <div class="header-page">
     <div class="container d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-megaphone-fill me-2"></i>Comunicados Internos</h5>
-        <a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="btn btn-light btn-sm">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
+        <div class="d-flex align-items-center gap-3"><a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><h5 class="mb-0"><i class="bi bi-megaphone-fill me-2"></i>Comunicados Internos</h5></div>
     </div>
 </div>
 

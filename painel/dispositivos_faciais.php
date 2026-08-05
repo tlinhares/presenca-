@@ -275,17 +275,14 @@ if ($result && $result->num_rows > 0) {
     <div class="header-painel">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+                <div class="d-flex align-items-center gap-3"><a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="btn btn-outline-light btn-sm" title="Voltar ao Painel"><i class="bi bi-arrow-left"></i></a><div>
                     <h3 class="mb-1"><i class="bi bi-phone me-2"></i>Dispositivos Faciais</h3>
                     <small class="opacity-75">Gerenciamento de terminais de reconhecimento</small>
-                </div>
+                </div></div>
                 <div class="d-flex flex-wrap gap-2">
                     <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdicionarDispositivo">
                         <i class="bi bi-plus-lg me-1"></i>Adicionar
                     </button>
-                    <a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-arrow-left me-1"></i>Voltar
-                    </a>
                 </div>
             </div>
         </div>
