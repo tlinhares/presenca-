@@ -93,6 +93,7 @@ $temVisaoCompleta = eh_almoxarife($conn, $usuarioId, $isAdmin);
         
         @media (max-width: 768px) { .hide-mobile { display: none !important; } }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

@@ -125,6 +125,7 @@ while ($row = $result->fetch_assoc()) {
         .mensagem-cell { max-width: 300px; word-break: break-word; }
         .filtros-card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

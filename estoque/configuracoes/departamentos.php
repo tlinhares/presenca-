@@ -143,6 +143,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
             .table td, .table th { font-size: 0.85rem; padding: 0.5rem; }
         }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

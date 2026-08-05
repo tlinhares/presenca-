@@ -9,6 +9,7 @@ include_once(__DIR__ . '/../auth/verifica_sessao.php');
   <meta charset="UTF-8">
   <title>Painel de Refeições</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
 <div class="container mt-5">

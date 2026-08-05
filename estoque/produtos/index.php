@@ -106,6 +106,7 @@ $departamentoFiltro = isset($_GET['departamento']) ? intval($_GET['departamento'
             .produto-card { padding: 0.75rem; }
         }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

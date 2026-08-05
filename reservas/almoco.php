@@ -126,6 +126,7 @@ $mensagem_inicio = get_config('mensagem_inicio', '');
       max-width: none !important;
     }
   </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
 

@@ -268,6 +268,7 @@ if ($result && $result->num_rows > 0) {
             background: linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%);
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

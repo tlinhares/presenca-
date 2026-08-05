@@ -49,6 +49,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
             color: #198754;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

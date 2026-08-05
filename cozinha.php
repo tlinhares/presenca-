@@ -290,6 +290,7 @@ $totais = calcularTotais($reservas);
             height: 3rem;
         }
     </style>
+    <link href="css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

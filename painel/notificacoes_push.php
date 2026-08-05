@@ -35,6 +35,7 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
         .badge-nok { background: #fed7d7; color: #822727; }
         textarea.sa-json { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

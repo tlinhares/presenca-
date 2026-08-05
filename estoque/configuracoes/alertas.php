@@ -30,6 +30,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         .help { font-size: .82rem; color: #718096; }
         .form-switch .form-check-input { width: 3rem; height: 1.5rem; cursor: pointer; }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

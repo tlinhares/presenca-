@@ -112,6 +112,7 @@ $veiculoId = isset($_GET['id']) ? intval($_GET['id']) : 0;
         .checklist-item:last-child { border-bottom: none; }
         .checklist-buttons .btn { min-width: 60px; }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

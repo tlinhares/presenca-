@@ -105,6 +105,7 @@ while ($row = $result_veiculos->fetch_assoc()) {
         .col-12 { grid-column: span 12; }
         @media (max-width: 768px) { .col-md-3, .col-md-4, .col-md-6 { grid-column: span 12; } }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body class="bg-background text-on-surface min-h-screen">
 

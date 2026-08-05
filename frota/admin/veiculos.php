@@ -123,6 +123,7 @@ $isAdmin = MenuPermissaoService::isAdmin();
             .col-md-3, .col-md-4 { grid-column: span 12; }
         }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body class="bg-background text-on-surface min-h-screen">
 

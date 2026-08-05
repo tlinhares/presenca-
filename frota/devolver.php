@@ -99,6 +99,7 @@ $utilizacaoId = isset($_GET['id']) ? intval($_GET['id']) : 0;
         }
         .checklist-item:last-child { border-bottom: none; }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

@@ -27,6 +27,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         .report-card h6 { font-weight: 600; margin-bottom: 0.5rem; }
         .report-card p { color: #718096; font-size: 0.875rem; margin: 0; }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

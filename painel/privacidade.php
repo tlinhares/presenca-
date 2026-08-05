@@ -30,6 +30,7 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
         .preview-area a { color: #4c51bf; }
         .meta-row { font-size: .8rem; color: #718096; }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

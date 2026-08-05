@@ -32,6 +32,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         .status-badge.cancelado { background: #fed7d7; color: #742a2a; }
         @media (max-width: 768px) { .hide-mobile { display: none !important; } }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

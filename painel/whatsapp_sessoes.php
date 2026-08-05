@@ -73,6 +73,7 @@ while ($row = $result->fetch_assoc()) {
         .meta { color: #718096; font-size: 0.85rem; }
         .api-name { font-weight: 700; font-size: 1.1rem; }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

@@ -95,6 +95,7 @@ MenuPermissaoService::exigirAcesso('logs_sistema');
             margin-bottom: 5px;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="container-fluid">

@@ -58,6 +58,7 @@ MenuPermissaoService::exigirAcesso('usuarios');
     .form-control, .form-select { border-radius: 8px; }
     .btn { border-radius: 8px; }
   </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
   <!-- Header -->

@@ -29,6 +29,7 @@ MenuPermissaoService::exigirAcesso('teste_notificacao');
             z-index: 1055;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="container-fluid">

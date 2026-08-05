@@ -124,6 +124,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
             opacity: 0.9;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

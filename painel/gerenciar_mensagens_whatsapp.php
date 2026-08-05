@@ -74,6 +74,7 @@ while ($row = $result->fetch_assoc()) {
             color: white;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

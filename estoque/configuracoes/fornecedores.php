@@ -30,6 +30,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         .empty-state i { font-size: 4rem; opacity: 0.3; margin-bottom: 1rem; }
         @media (max-width: 768px) { .hide-mobile { display: none !important; } .table td, .table th { font-size: 0.85rem; padding: 0.5rem; } }
     </style>
+    <link href="../../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="header-page">

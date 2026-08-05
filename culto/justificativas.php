@@ -103,6 +103,7 @@ $nome_usuario = $_SESSION['usuario_nome'] ?? 'Administrador';
             height: 1.2em;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">

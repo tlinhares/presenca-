@@ -79,6 +79,7 @@ require_once __DIR__ . '/../core/services/PermissaoService.php';
         .btn { border-radius: 8px; }
         .card { border-radius: 12px; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

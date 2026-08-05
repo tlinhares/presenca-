@@ -55,6 +55,7 @@ MenuPermissaoService::exigirAcesso('monitor_culto');
             opacity: 0.9;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <div class="container-fluid py-4">

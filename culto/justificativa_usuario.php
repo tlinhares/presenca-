@@ -93,6 +93,7 @@ $usuario_id = $_SESSION['usuario_id'] ?? 0;
             font-size: 0.9em;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">

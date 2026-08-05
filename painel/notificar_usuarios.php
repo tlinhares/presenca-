@@ -26,6 +26,7 @@ error_reporting(E_ALL);
     body { padding: 20px; }
     .table th, .table td { vertical-align: middle; }
   </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
   <div class="container">

@@ -137,6 +137,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
             }
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <?php include __DIR__ . '/header.php'; ?>

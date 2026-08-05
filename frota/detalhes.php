@@ -210,6 +210,7 @@ $valor_locacao = $utilizacao['km_percorrido'] ? intval($utilizacao['km_percorrid
             font-weight: 600;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <!-- Header -->

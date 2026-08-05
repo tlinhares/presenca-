@@ -90,6 +90,7 @@ $ultimas_acoes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             background-color: #fffdf8;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
