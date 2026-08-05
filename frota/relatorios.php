@@ -47,7 +47,7 @@ $anoAtual = date('Y');
                     colors: {
                         "primary-container": "#198374",
                         "on-secondary": "#ffffff",
-                        "primary": "#00685c",
+                        "primary": "#1d4e8f",
                         "secondary": "#795900",
                         "on-error-container": "#93000a",
                         "on-surface-variant": "#3d4946",
@@ -127,7 +127,7 @@ $anoAtual = date('Y');
             </div>
             <nav class="flex items-center gap-1">
                 <a href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors">Dashboard</a>
-                <a href="#" class="px-4 py-2 text-sm font-semibold text-violet-600 border-b-2 border-violet-600 rounded-t-lg">Relatórios</a>
+                <a href="#" class="px-4 py-2 text-sm font-semibold text-[#1d4e8f] border-b-2 border-[#1d4e8f] rounded-t-lg">Relatórios</a>
             </nav>
         </div>
     </header>
@@ -137,8 +137,8 @@ $anoAtual = date('Y');
         <!-- Module Header -->
         <div class="mb-8">
             <div class="flex items-center gap-2 mb-2">
-                <span class="material-symbols-outlined text-violet-600 text-lg">analytics</span>
-                <span class="text-xs font-bold uppercase tracking-widest text-violet-600 font-label">Módulo de Frota</span>
+                <span class="material-symbols-outlined text-[#1d4e8f] text-lg">analytics</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-[#1d4e8f] font-label">Módulo de Frota</span>
             </div>
             <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
@@ -157,7 +157,7 @@ $anoAtual = date('Y');
             <h5 class="text-sm font-semibold text-slate-700 mb-3 font-headline">Selecione o Tipo de Relatório</h5>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 <div class="card-relatorio selected bg-white rounded-xl border-2 border-transparent p-5 text-center cursor-pointer transition-all hover:shadow-md hover:border-slate-200" data-tipo="geral" onclick="selecionarTipo('geral', this)">
-                    <span class="material-symbols-outlined text-4xl text-violet-600 mb-2">bar_chart</span>
+                    <span class="material-symbols-outlined text-4xl text-[#1d4e8f] mb-2">bar_chart</span>
                     <h6 class="font-bold text-slate-900 text-sm">Geral</h6>
                     <p class="text-slate-500 text-xs mt-1">Todas as utilizações</p>
                 </div>
@@ -182,7 +182,7 @@ $anoAtual = date('Y');
                     <p class="text-slate-500 text-xs mt-1">KM por veículo</p>
                 </div>
                 <div class="card-relatorio bg-white rounded-xl border-2 border-transparent p-5 text-center cursor-pointer transition-all hover:shadow-md hover:border-slate-200" data-tipo="estatisticas" onclick="selecionarTipo('estatisticas', this)">
-                    <span class="material-symbols-outlined text-4xl text-violet-600 mb-2">pie_chart</span>
+                    <span class="material-symbols-outlined text-4xl text-[#1d4e8f] mb-2">pie_chart</span>
                     <h6 class="font-bold text-slate-900 text-sm">Estatísticas</h6>
                     <p class="text-slate-500 text-xs mt-1">Resumo geral</p>
                 </div>
@@ -194,7 +194,7 @@ $anoAtual = date('Y');
             <div class="lg:col-span-4">
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <h5 class="text-base font-bold text-slate-900 mb-4 font-headline flex items-center gap-2">
-                        <span class="material-symbols-outlined text-violet-600 text-xl">filter_alt</span>
+                        <span class="material-symbols-outlined text-[#1d4e8f] text-xl">filter_alt</span>
                         Filtros
                     </h5>
 
@@ -236,7 +236,7 @@ $anoAtual = date('Y');
                     </div>
 
                     <div class="border-t border-slate-200 pt-5 flex flex-col gap-2.5">
-                        <button type="button" onclick="carregarPreview()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
+                        <button type="button" onclick="carregarPreview()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1d4e8f] hover:bg-[#163d72] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-lg">visibility</span>
                             Visualizar Prévia
                         </button>
@@ -257,7 +257,7 @@ $anoAtual = date('Y');
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                         <h5 class="text-base font-bold text-slate-900 font-headline flex items-center gap-2">
-                            <span class="material-symbols-outlined text-violet-600 text-xl">description</span>
+                            <span class="material-symbols-outlined text-[#1d4e8f] text-xl">description</span>
                             Prévia do Relatório
                         </h5>
                         <span id="totalRegistros" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-600">0 registros</span>
@@ -273,7 +273,7 @@ $anoAtual = date('Y');
                 <!-- Estatísticas Rápidas -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4" id="estatisticasRapidas" style="display: none;">
                     <div class="bg-white rounded-xl border border-slate-200 p-4 text-center shadow-sm">
-                        <div class="text-2xl font-extrabold text-violet-600 font-headline" id="statViagens">0</div>
+                        <div class="text-2xl font-extrabold text-[#1d4e8f] font-headline" id="statViagens">0</div>
                         <div class="text-xs text-slate-500 font-semibold mt-1">Viagens</div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 p-4 text-center shadow-sm">
@@ -453,7 +453,7 @@ $anoAtual = date('Y');
                             <td class="px-4 py-3 border-b border-slate-100 text-slate-600">${d.tempo_formatado || '-'}</td>
                             <td class="px-4 py-3 border-b border-slate-100">${statusBadge}</td>
                             <td class="px-4 py-3 border-b border-slate-100 text-center">
-                                <a href="${baseUrl}/frota/detalhes.php?id=${d.id}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-violet-600 hover:bg-violet-50 transition-colors" title="Ver Detalhes">
+                                <a href="${baseUrl}/frota/detalhes.php?id=${d.id}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#1d4e8f] hover:bg-violet-50 transition-colors" title="Ver Detalhes">
                                     <span class="material-symbols-outlined text-lg">visibility</span>
                                 </a>
                             </td>
@@ -481,7 +481,7 @@ $anoAtual = date('Y');
             return `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                        <div class="bg-violet-600 text-white px-4 py-3 flex items-center gap-2">
+                        <div class="bg-[#1d4e8f] text-white px-4 py-3 flex items-center gap-2">
                             <span class="material-symbols-outlined text-lg">bar_chart</span>
                             <span class="font-bold text-sm">Resumo Geral</span>
                         </div>

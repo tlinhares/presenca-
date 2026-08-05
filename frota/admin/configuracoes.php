@@ -30,7 +30,7 @@ if ($result && $row = $result->fetch_assoc()) {
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#00685c",
+                        "primary": "#1d4e8f",
                         "primary-container": "#198374",
                         "on-primary": "#ffffff",
                         "background": "#f1f5f9",
@@ -73,7 +73,7 @@ if ($result && $row = $result->fetch_assoc()) {
             <a href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>" class="text-xl font-bold tracking-tight text-primary font-headline">Frota AOM</a>
             <nav class="hidden md:flex items-center gap-6">
                 <a class="text-slate-600 font-medium hover:text-primary transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>">Dashboard</a>
-                <a class="text-amber-600 font-bold border-b-2 border-amber-600 pb-1 font-label text-sm" href="#">Configurações</a>
+                <a class="text-[#1d4e8f] font-bold border-b-2 border-[#1d4e8f] pb-1 font-label text-sm" href="#">Configurações</a>
             </nav>
         </div>
         <div class="flex items-center gap-3">
@@ -125,7 +125,7 @@ if ($result && $row = $result->fetch_assoc()) {
                         </div>
                     </div>
 
-                    <button onclick="salvarValorKm()" id="btnSalvar" class="flex items-center gap-2 px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl shadow-lg shadow-amber-600/20 hover:bg-amber-700 transition-all">
+                    <button onclick="salvarValorKm()" id="btnSalvar" class="flex items-center gap-2 px-6 py-3 bg-[#1d4e8f] text-white font-semibold rounded-xl shadow-lg shadow-amber-600/20 hover:bg-[#163d72] transition-all">
                         <span class="material-symbols-outlined text-[20px]">save</span>
                         <span>Salvar Configuração</span>
                     </button>

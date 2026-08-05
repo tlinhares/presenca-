@@ -21,7 +21,7 @@ MenuPermissaoService::exigirAcesso('frota_departamentos');
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#00685c",
+                        "primary": "#1d4e8f",
                         "primary-container": "#198374",
                         "on-primary": "#ffffff",
                         "background": "#f1f5f9",
@@ -66,7 +66,7 @@ MenuPermissaoService::exigirAcesso('frota_departamentos');
             <a href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>" class="text-xl font-bold tracking-tight text-primary font-headline">Frota AOM</a>
             <nav class="hidden md:flex items-center gap-6">
                 <a class="text-slate-600 font-medium hover:text-primary transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>">Dashboard</a>
-                <a class="text-teal-600 font-bold border-b-2 border-teal-600 pb-1 font-label text-sm" href="#">Departamentos</a>
+                <a class="text-[#1d4e8f] font-bold border-b-2 border-[#1d4e8f] pb-1 font-label text-sm" href="#">Departamentos</a>
             </nav>
         </div>
         <div class="flex items-center gap-3">

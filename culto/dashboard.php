@@ -99,7 +99,7 @@ function obterCorCard($index) {
             theme: {
                 extend: {
                     colors: {
-                        primary: "#8B5CF6", // Violet 500 equivalent
+                        primary: "#1d4e8f", // Violet 500 equivalent
                         secondary: "#7C3AED", // Violet 600
                         "background-light": "#F3F4F6", // Gray 100
                         "background-dark": "#111827", // Gray 900
@@ -170,7 +170,7 @@ function obterCorCard($index) {
 </div>
 <div>
 <h1 class="text-2xl font-bold tracking-tight">Módulo de Culto</h1>
-<p class="text-purple-100 text-sm font-medium opacity-90">Controle de Presenças e Justificativas</p>
+<p class="text-white/80 text-sm font-medium opacity-90">Controle de Presenças e Justificativas</p>
 </div>
 </div>
 <div class="flex items-center gap-3">
@@ -260,7 +260,7 @@ Nenhum menu disponível para seu perfil de acesso.
 </div>
 </div>
 <div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+<div class="w-8 h-8 rounded-full bg-[#eaf1fa] dark:bg-[#1d4e8f]/25 flex items-center justify-center text-[#1d4e8f] dark:text-[#7da7d9]">
 <span class="material-icons-round text-sm">code</span>
 </div>
 <div>

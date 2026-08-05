@@ -26,7 +26,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                     colors: {
                         "primary-container": "#198374",
                         "on-secondary": "#ffffff",
-                        "primary": "#00685c",
+                        "primary": "#1d4e8f",
                         "secondary": "#795900",
                         "on-error-container": "#93000a",
                         "on-surface-variant": "#3d4946",
@@ -104,13 +104,13 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         <div class="flex items-center gap-8">
             <span class="text-xl font-bold tracking-tight text-[#00685c]">Frota AOM</span>
             <nav class="hidden md:flex items-center gap-6">
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>">Dashboard</a>
-                <a class="text-blue-600 font-bold border-b-2 border-blue-600 pb-1 font-label text-sm" href="#">Histórico</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/dashboard.php') ?>">Dashboard</a>
+                <a class="text-[#1d4e8f] font-bold border-b-2 border-[#1d4e8f] pb-1 font-label text-sm" href="#">Histórico</a>
                 <?php if (MenuPermissaoService::podeAcessar('frota_admin_manutencoes')): ?>
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/manutencoes.php') ?>">Manutenções</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/manutencoes.php') ?>">Manutenções</a>
                 <?php endif; ?>
                 <?php if (MenuPermissaoService::podeAcessar('frota_relatorios')): ?>
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/relatorios.php') ?>">Relatórios</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/relatorios.php') ?>">Relatórios</a>
                 <?php endif; ?>
             </nav>
         </div>

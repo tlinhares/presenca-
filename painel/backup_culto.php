@@ -229,6 +229,7 @@ if (is_dir($backup_dir)) {
             display: none;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM -->
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">

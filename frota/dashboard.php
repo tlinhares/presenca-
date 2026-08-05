@@ -31,7 +31,7 @@ $usuarioId = $_SESSION['usuario_id'] ?? 0;
                     colors: {
                         "primary-container": "#198374",
                         "on-secondary": "#ffffff",
-                        "primary": "#00685c",
+                        "primary": "#1d4e8f",
                         "secondary": "#795900",
                         "on-error-container": "#93000a",
                         "on-surface-variant": "#3d4946",
@@ -113,7 +113,7 @@ $usuarioId = $_SESSION['usuario_id'] ?? 0;
             </div>
         </div>
         <nav class="flex flex-col gap-2 flex-grow">
-            <a class="flex items-center gap-4 p-3 bg-[#00897B] text-white rounded-xl shadow-lg shadow-[#00897B]/20 transition-all brightness-110" href="#">
+            <a class="flex items-center gap-4 p-3 bg-[#1d4e8f] text-white rounded-xl shadow-lg shadow-[#1d4e8f]/20 transition-all brightness-110" href="#">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span class="opacity-0 group-hover/sidebar:opacity-100 transition-opacity whitespace-nowrap font-label font-medium">Dashboard</span>
             </a>
@@ -173,19 +173,19 @@ $usuarioId = $_SESSION['usuario_id'] ?? 0;
             <nav class="hidden md:flex items-center gap-6">
                 <a class="text-[#00685c] font-bold border-b-2 border-[#00685c] pb-1 font-label text-sm" href="#">Dashboard</a>
                 <?php if (MenuPermissaoService::podeAcessar('frota_historico')): ?>
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/historico.php') ?>">Histórico</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/historico.php') ?>">Histórico</a>
                 <?php endif; ?>
                 <?php if (MenuPermissaoService::podeAcessar('frota_admin_manutencoes')): ?>
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/manutencoes.php') ?>">Manutenções</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/manutencoes.php') ?>">Manutenções</a>
                 <?php endif; ?>
                 <?php if (MenuPermissaoService::podeAcessar('frota_relatorios')): ?>
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/relatorios.php') ?>">Relatórios</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/relatorios.php') ?>">Relatórios</a>
                 <?php endif; ?>
                 <?php if (MenuPermissaoService::podeAcessar('frota_departamentos')): ?>
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/departamentos.php') ?>">Departamentos</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/departamentos.php') ?>">Departamentos</a>
                 <?php endif; ?>
                 <?php if (MenuPermissaoService::podeAcessar('frota_configuracoes')): ?>
-                <a class="text-slate-600 font-medium hover:text-[#00897B] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/configuracoes.php') ?>">Configurações</a>
+                <a class="text-slate-600 font-medium hover:text-[#1d4e8f] transition-colors duration-200 font-label text-sm" href="<?= MenuPermissaoService::ajustarUrl('/frota/admin/configuracoes.php') ?>">Configurações</a>
                 <?php endif; ?>
             </nav>
         </div>

@@ -33,7 +33,7 @@ while ($row = $result_veiculos->fetch_assoc()) {
                     colors: {
                         "primary-container": "#198374",
                         "on-secondary": "#ffffff",
-                        "primary": "#00685c",
+                        "primary": "#1d4e8f",
                         "secondary": "#795900",
                         "on-error-container": "#93000a",
                         "on-surface-variant": "#3d4946",
