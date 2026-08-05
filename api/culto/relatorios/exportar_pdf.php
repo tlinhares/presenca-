@@ -886,15 +886,21 @@ function buscarDadosRelatorio($tipo, $data_inicio, $data_fim, $usuario_id, $conn
 
         case 'estatisticas':
         case 'frequencia':
-            // Consolidado por usuário no período. Percentual segue a MESMA
-            // fórmula do app (api/culto/frequencia.php):
-            // (presentes + atrasados + justificadas) / total * 100
+            // Base REAL: total de datas de culto que aconteceram no período
+            // (não a quantidade de registros do usuário — quem nunca foi
+            // marcado inflava o percentual). Dia de culto sem registro do
+            // usuário conta como FALTA.
+            // % = (presentes + atrasados + justificadas) / cultos_reais * 100
+            $stmt = $conn->prepare("SELECT COUNT(DISTINCT data) FROM presencas_culto WHERE data BETWEEN ? AND ?");
+            $stmt->bind_param("ss", $data_inicio, $data_fim);
+            $stmt->execute();
+            $total_cultos_reais = (int) $stmt->get_result()->fetch_row()[0];
+            $stmt->close();
+
             $sql = "SELECT u.id, u.nome,
                            COALESCE(SUM(p.status = 'presente'), 0)              AS presentes,
                            COALESCE(SUM(p.status = 'atrasado'), 0)              AS atrasados,
-                           COALESCE(SUM(p.status IN ('falta','ausente')), 0)    AS faltas,
-                           COALESCE(SUM(p.status = 'justificado'), 0)           AS justificadas,
-                           COUNT(p.id)                                          AS total
+                           COALESCE(SUM(p.status = 'justificado'), 0)           AS justificadas
                       FROM usuarios u
                  LEFT JOIN presencas_culto p
                         ON p.id_usuario = u.id AND p.data BETWEEN ? AND ?
@@ -907,8 +913,11 @@ function buscarDadosRelatorio($tipo, $data_inicio, $data_fim, $usuario_id, $conn
             $stmt->execute();
             $result = $stmt->get_result();
             while ($row = $result->fetch_assoc()) {
-                $row['percentual'] = $row['total'] > 0
-                    ? round((($row['presentes'] + $row['atrasados'] + $row['justificadas']) / $row['total']) * 100, 1)
+                $comparecimentos = (int) $row['presentes'] + (int) $row['atrasados'] + (int) $row['justificadas'];
+                $row['total']  = $total_cultos_reais;
+                $row['faltas'] = max(0, $total_cultos_reais - $comparecimentos);
+                $row['percentual'] = $total_cultos_reais > 0
+                    ? round(($comparecimentos / $total_cultos_reais) * 100, 1)
                     : 0;
                 $dados[] = $row;
             }
