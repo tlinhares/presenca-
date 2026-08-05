@@ -321,7 +321,7 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
 <span class="material-symbols-outlined hidden dark:block">light_mode</span>
 </button>
 <div class="h-8 w-px bg-gray-200 dark:bg-slate-700 hidden md:block"></div>
-<a href="<?= MenuPermissaoService::ajustarUrl('/resumo.php') ?>" class="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl text-sm font-medium transition-colors">
+<a href="javascript:void(0)" onclick="voltarAom('<?= MenuPermissaoService::ajustarUrl('/resumo.php') ?>')" class="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl text-sm font-medium transition-colors">
 <span class="material-symbols-outlined text-lg">arrow_back</span>
 <span class="hidden sm:inline">Voltar</span>
 </a>
@@ -340,6 +340,15 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
 <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Painel de Módulos</h2>
 <p class="mt-1 text-gray-500 dark:text-gray-400">Selecione uma categoria para gerenciar o sistema.</p>
 </div>
+<div class="relative w-full md:w-80">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xl pointer-events-none">search</span>
+<input type="text" id="busca-modulo" placeholder="Buscar módulo… (ex.: push, backup, usuário)" autocomplete="off"
+class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 shadow-sm">
+</div>
+</div>
+<div id="busca-vazia" class="hidden bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700/50 rounded-2xl p-8 text-center text-gray-500 dark:text-gray-400">
+<span class="material-symbols-outlined text-3xl mb-2 block">search_off</span>
+Nenhum módulo encontrado para a busca.
 </div>
 
 <?php
@@ -379,6 +388,7 @@ Nenhum menu disponível para seu perfil de acesso.
 </main>
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="../js/aom-ui.js?v=<?= time() ?>"></script>
 <script>
 // Tema: já vem renderizado do SERVIDOR (classe dark no <html>, ver
 // utils/tema.php) — sem loader pós-carregamento, sem flash.
@@ -399,6 +409,35 @@ function toggleTheme() {
     });
 }
 localStorage.setItem('theme', '<?= $temaUsuario ?>');
+
+// ── Busca de módulos: filtra os cards conforme digita ──
+(function() {
+    const campo = document.getElementById('busca-modulo');
+    if (!campo) return;
+    const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    campo.addEventListener('input', function() {
+        const q = norm(campo.value.trim());
+        let visiveis = 0;
+        document.querySelectorAll('main section').forEach(function(sec) {
+            let visiveisSecao = 0;
+            sec.querySelectorAll('a.dashboard-card').forEach(function(card) {
+                const mostra = q === '' || norm(card.textContent).includes(q);
+                card.style.display = mostra ? '' : 'none';
+                if (mostra) visiveisSecao++;
+            });
+            sec.style.display = visiveisSecao > 0 ? '' : 'none';
+            visiveis += visiveisSecao;
+        });
+        document.getElementById('busca-vazia').classList.toggle('hidden', visiveis > 0);
+    });
+    // Atalho: tecla "/" foca a busca
+    document.addEventListener('keydown', function(e) {
+        if (e.key === '/' && document.activeElement !== campo && !/input|textarea/i.test(document.activeElement.tagName)) {
+            e.preventDefault();
+            campo.focus();
+        }
+    });
+})();
 </script>
 </body>
 </html>

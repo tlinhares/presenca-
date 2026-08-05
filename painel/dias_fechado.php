@@ -44,6 +44,8 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
             padding: 1.5rem;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM (carregar por último) -->
+    <script src="../js/aom-ui.js?v=<?= time() ?>"></script>
 </head>
 <body>
     <!-- Header -->
@@ -55,7 +57,7 @@ $nomeUsuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                     <small class="opacity-75">Gerencie as datas em que o refeitório não funcionará</small>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="dashboard.php" class="btn btn-outline-light btn-sm">
+                    <a href="javascript:void(0)" onclick="voltarAom('dashboard.php')" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-arrow-left me-1"></i>Voltar
                     </a>
                 </div>

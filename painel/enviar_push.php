@@ -70,13 +70,15 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
         .agend-row.falha { border-left-color: #e53e3e; background: #fff5f5; }
         .agend-row.cancelado { border-left-color: #a0aec0; }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM (carregar por último) -->
+    <script src="../js/aom-ui.js?v=<?= time() ?>"></script>
 </head>
 <body>
     <div class="header-page">
         <div class="container-fluid px-3">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-3">
-                    <a href="../resumo.php" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left"></i></a>
+                    <a href="javascript:void(0)" onclick="voltarAom('../resumo.php')" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left"></i></a>
                     <div>
                         <h5 class="mb-0"><i class="bi bi-send-fill me-2"></i>Enviar Notificação Push</h5>
                         <small class="opacity-75">Manual — Intranet AOM (iOS + Android)</small>

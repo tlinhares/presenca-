@@ -32,13 +32,15 @@ if (empty($_SESSION['usuario_categoria']) || $_SESSION['usuario_categoria'] !== 
         .btn-icon { padding: .25rem .5rem; font-size: .85rem; }
         .preview-img { max-width: 100%; max-height: 160px; border-radius: 10px; }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM (carregar por último) -->
+    <script src="../js/aom-ui.js?v=<?= time() ?>"></script>
 </head>
 <body>
 
 <div class="header-page">
     <div class="container d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-megaphone-fill me-2"></i>Comunicados Internos</h5>
-        <a href="<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>" class="btn btn-light btn-sm">
+        <a href="javascript:void(0)" onclick="voltarAom('<?= MenuPermissaoService::ajustarUrl('/painel/dashboard.php') ?>')" class="btn btn-light btn-sm">
             <i class="bi bi-arrow-left"></i> Voltar
         </a>
     </div>

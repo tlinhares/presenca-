@@ -77,6 +77,8 @@ MenuPermissaoService::exigirAcesso('automacao_relatorios');
             color: #dc3545;
         }
     </style>
+    <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM (carregar por último) -->
+    <script src="../js/aom-ui.js?v=<?= time() ?>"></script>
 </head>
 <body>
     <!-- Navbar -->
@@ -87,7 +89,7 @@ MenuPermissaoService::exigirAcesso('automacao_relatorios');
                 Automação de Relatórios
             </a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="dashboard.php">
+                <a class="nav-link" href="javascript:void(0)" onclick="voltarAom('dashboard.php')">
                     <i class="bi bi-arrow-left me-1"></i>
                     Voltar ao Painel
                 </a>

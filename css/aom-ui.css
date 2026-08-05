@@ -1,0 +1,164 @@
+/**
+ * AOM UI — design system do sistema (aplicado POR CIMA do Bootstrap e dos
+ * estilos inline das telas, sem alterar estrutura/HTML).
+ *
+ * Objetivo: matar a colcha de retalhos (cada tela com um gradiente de cor
+ * diferente) e padronizar tudo na identidade institucional:
+ *   Azul AOM #1D4E8F · neutros slate · acentos semânticos discretos
+ *
+ * Regras:
+ *  - Carregar por ÚLTIMO no <head> (depois do bootstrap e do <style> da tela)
+ *  - !important onde precisa vencer estilo inline legado
+ *  - Nada aqui muda posição/tamanho de botões nem comportamento
+ */
+
+:root {
+    --aom-brand: #1d4e8f;
+    --aom-brand-escuro: #163d72;
+    --aom-brand-claro: #eaf1fa;
+    --aom-fundo: #f4f6f9;
+    --aom-texto: #1f2937;
+    --aom-texto-suave: #64748b;
+    --aom-borda: #e2e8f0;
+    --aom-ok: #15803d;
+    --aom-alerta: #b45309;
+    --aom-erro: #b91c1c;
+    --aom-radius: 14px;
+    --aom-sombra: 0 1px 4px rgba(15, 23, 42, .06);
+}
+
+/* ── Fundo e tipografia base ───────────────────────────────────────────── */
+body {
+    background: var(--aom-fundo) !important;
+    color: var(--aom-texto);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Cabeçalho de página: TODOS iguais (adeus gradientes coloridos) ────── */
+.header-page {
+    background: var(--aom-brand) !important;
+    box-shadow: 0 2px 10px rgba(29, 78, 143, .25) !important;
+    color: #fff !important;
+}
+.header-page .btn-light {
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .25);
+    color: #fff;
+}
+.header-page .btn-light:hover {
+    background: rgba(255, 255, 255, .26);
+    color: #fff;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.card,
+.card-main,
+.filter-card {
+    background: #fff !important;
+    border: 1px solid var(--aom-borda) !important;
+    border-radius: var(--aom-radius) !important;
+    box-shadow: var(--aom-sombra) !important;
+}
+.card-header {
+    background: #fff !important;
+    border-bottom: 1px solid var(--aom-borda) !important;
+    color: var(--aom-texto) !important;
+    font-weight: 600;
+}
+
+/* ── Botões: primário sempre no azul da marca ──────────────────────────── */
+.btn-primary {
+    background: var(--aom-brand) !important;
+    border-color: var(--aom-brand) !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background: var(--aom-brand-escuro) !important;
+    border-color: var(--aom-brand-escuro) !important;
+}
+.btn-outline-primary {
+    color: var(--aom-brand) !important;
+    border-color: var(--aom-brand) !important;
+    background: transparent !important;
+}
+.btn-outline-primary:hover {
+    background: var(--aom-brand-claro) !important;
+    color: var(--aom-brand-escuro) !important;
+}
+.btn { border-radius: 10px !important; }
+.btn:focus { box-shadow: 0 0 0 3px rgba(29, 78, 143, .2) !important; }
+
+/* Semânticos: mantém o significado, tira o berrante */
+.btn-danger  { background: #dc3545 !important; border-color: #dc3545 !important; }
+.btn-success { background: #198754 !important; border-color: #198754 !important; }
+.btn-warning { background: #f59e0b !important; border-color: #f59e0b !important; color: #1f2937 !important; }
+
+/* ── Formulários ───────────────────────────────────────────────────────── */
+.form-control, .form-select {
+    border-radius: 10px !important;
+    border-color: var(--aom-borda) !important;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--aom-brand) !important;
+    box-shadow: 0 0 0 3px rgba(29, 78, 143, .15) !important;
+}
+.form-check-input:checked {
+    background-color: var(--aom-brand) !important;
+    border-color: var(--aom-brand) !important;
+}
+.form-label { font-weight: 600; color: var(--aom-texto); }
+
+/* ── Tabelas ───────────────────────────────────────────────────────────── */
+.table thead th {
+    background: #f8fafc !important;
+    color: var(--aom-texto-suave) !important;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    border-bottom: 2px solid var(--aom-borda) !important;
+}
+.table-hover > tbody > tr:hover > * {
+    background-color: var(--aom-brand-claro) !important;
+}
+
+/* ── Navegação/abas/toggles de tela (ex.: .tipo-btn) ───────────────────── */
+.tipo-btn:hover { border-color: var(--aom-brand) !important; color: var(--aom-brand) !important; }
+.tipo-btn.active {
+    background: var(--aom-brand) !important;
+    border-color: var(--aom-brand) !important;
+    color: #fff !important;
+}
+.nav-pills .nav-link.active,
+.nav-tabs .nav-link.active {
+    color: var(--aom-brand) !important;
+    border-color: var(--aom-brand) !important;
+}
+.nav-pills .nav-link.active { background: var(--aom-brand) !important; color: #fff !important; }
+
+/* ── Badges mais suaves ────────────────────────────────────────────────── */
+.badge { border-radius: 8px !important; font-weight: 600 !important; }
+.badge.bg-primary { background: var(--aom-brand) !important; }
+
+/* ── Modais e alerts ───────────────────────────────────────────────────── */
+.modal-content { border-radius: var(--aom-radius) !important; border: none !important; }
+.modal-header { border-bottom: 1px solid var(--aom-borda) !important; }
+.alert { border-radius: 12px !important; }
+
+/* ── Links ─────────────────────────────────────────────────────────────── */
+a { color: var(--aom-brand); }
+a:hover { color: var(--aom-brand-escuro); }
+
+/* ── Navbars legadas de telas antigas (ex.: automação de relatórios) ───── */
+.navbar-custom,
+nav.navbar.navbar-dark {
+    background: var(--aom-brand) !important;
+    border-bottom: none !important;
+}
+.btn-dark {
+    background: var(--aom-brand) !important;
+    border-color: var(--aom-brand) !important;
+}
+.btn-dark:hover {
+    background: var(--aom-brand-escuro) !important;
+    border-color: var(--aom-brand-escuro) !important;
+}
+.section-title { color: var(--aom-texto) !important; }
