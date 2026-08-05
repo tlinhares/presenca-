@@ -1,10 +1,32 @@
 <?php
 header('Content-Type: application/json; charset=UTF-8');
-session_start();
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Suporte mobile (Bearer) — mesmo padrão do enviar_justificativa.php:
+// o app manda várias datas numa única justificativa, igual à web.
+require_once __DIR__ . '/../../core/middleware/mobile_auth.php';
 
 if (!isset($_SESSION['usuario_id'])) {
-    echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
-    exit;
+    if (!MobileAuthMiddleware::handle()) {
+        echo json_encode(['status' => 'erro', 'mensagem' => 'Sua sessão expirou. Faça logoff e login novamente para continuar.']);
+        exit;
+    }
+}
+
+// Aceita JSON (mobile) além de form-data (web)
+if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
+    $_POST = json_decode(file_get_contents('php://input'), true) ?: [];
 }
 
 try {
@@ -14,7 +36,7 @@ try {
         throw new Exception('Conexão com banco de dados não estabelecida');
     }
     
-    $conn->set_charset("utf8");
+    $conn->set_charset("utf8mb4");
     $usuario_id = $_SESSION['usuario_id'];
     
     $datas_falta = $_POST['datas_falta'] ?? [];
