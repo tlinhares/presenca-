@@ -126,9 +126,68 @@ function gerarRelatorio(formato) {
         url += `&usuario_id=${usuarioId}`;
     }
     
-    // Abrir relatório diretamente
-    window.open(url, '_blank');
-    exibirToast('Relatório sendo gerado...', 'info');
+    // PDF de período grande demora — abre a aba já com tela de carregamento
+    // e troca pro PDF quando ficar pronto (a aba não fica mais branca).
+    if (formato === 'pdf') {
+        abrirPdfComLoading(url);
+    } else {
+        window.open(url, '_blank');
+        exibirToast('Relatório sendo gerado...', 'info');
+    }
+}
+
+function abrirPdfComLoading(url) {
+    // window.open precisa acontecer DENTRO do clique (senão o bloqueador de
+    // pop-up mata a aba). Escrevemos o spinner nela e, quando o fetch do PDF
+    // terminar, apontamos a aba pro blob.
+    const win = window.open('', '_blank');
+    if (!win) {
+        // Pop-up bloqueado: cai pro comportamento antigo
+        window.open(url, '_blank');
+        return;
+    }
+    win.document.write(`
+        <!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
+        <title>Gerando relatório…</title>
+        <style>
+            body { margin:0; height:100vh; display:flex; flex-direction:column; align-items:center;
+                   justify-content:center; gap:18px; font-family:'Segoe UI',system-ui,sans-serif;
+                   background:#f4f6fa; color:#1d2b45; }
+            .spin { width:52px; height:52px; border:5px solid #dbe5f5; border-top-color:#1d4e8f;
+                    border-radius:50%; animation:g .9s linear infinite; }
+            @keyframes g { to { transform:rotate(360deg); } }
+            small { color:#68738a; }
+        </style></head><body>
+        <div class="spin"></div>
+        <div><strong>Gerando relatório…</strong></div>
+        <small>Períodos grandes podem levar até 1 minuto. Não feche esta aba.</small>
+        </body></html>`);
+    win.document.close();
+
+    exibirToast('Gerando PDF — a aba vai atualizar sozinha', 'info');
+
+    fetch(url, { credentials: 'same-origin' })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.blob();
+        })
+        .then(blob => {
+            if (blob.type && blob.type.indexOf('pdf') === -1) {
+                // Backend respondeu erro em texto/HTML
+                return blob.text().then(t => { throw new Error(t.substring(0, 300)); });
+            }
+            win.location = URL.createObjectURL(blob);
+        })
+        .catch(e => {
+            if (!win.closed) {
+                win.document.body.innerHTML =
+                    '<div style="font-family:sans-serif; text-align:center; padding:40px;">' +
+                    '<h3 style="color:#d64f5e;">Erro ao gerar o relatório</h3>' +
+                    '<p style="color:#68738a;">' + String(e.message || e).replace(/</g, '&lt;') + '</p>' +
+                    '<p><a href="javascript:window.close()">Fechar</a></p></div>';
+            }
+            exibirToast('Erro ao gerar PDF', 'danger');
+        });
 }
 
 function exibirRelatorio(dados) {
