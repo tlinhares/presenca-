@@ -32,6 +32,7 @@ try {
     require_once __DIR__ . '/../conexao.php';
     require_once __DIR__ . '/../../config/timezone.php';
 
+
 // Função para log
 function logLeituraFacial($mensagem) {
     $logFile = __DIR__ . '/../../logs/leitura_facial_culto_' . date('Y-m-d') . '.log';
@@ -83,6 +84,22 @@ try {
     logLeituraFacial("Método recebido: $method, Dados: " . json_encode($input));
 
     // Validar dados obrigatórios
+    // ── BLINDAGEM (2026-08-05): este endpoint era ABERTO — qualquer máquina
+    // da rede podia forjar presença com um curl (aconteceu: presença falsa
+    // criada com payload de teste). Agora o IP REAL do chamador (primeiro da
+    // cadeia X-Forwarded-For, que o proxy reverso preenche) precisa ser de um
+    // dispositivo facial cadastrado e ativo. Toda rejeição fica em log.
+    $ip_real = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'] ?? ($_SERVER['REMOTE_ADDR'] ?? ''))[0]);
+    $ips_permitidos = [];
+    $res_ips = $conn->query("SELECT ip FROM dispositivos_faciais WHERE ativo = 1");
+    if ($res_ips) {
+        while ($row_ip = $res_ips->fetch_assoc()) $ips_permitidos[] = trim($row_ip['ip']);
+    }
+    if (!in_array($ip_real, $ips_permitidos, true)) {
+        logLeituraFacial("REJEITADO: origem $ip_real não é dispositivo cadastrado (UA: " . ($_SERVER['HTTP_USER_AGENT'] ?? '-') . ")");
+        retornarErro('Origem não autorizada', 403);
+    }
+
     $required_fields = ['nome_usuario', 'ip_dispositivo', 'timestamp'];
     foreach ($required_fields as $field) {
         if (!isset($input[$field]) || empty($input[$field])) {

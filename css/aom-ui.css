@@ -177,3 +177,14 @@ nav.navbar.navbar-dark {
     color: #fff !important;
     box-shadow: 0 2px 10px rgba(29, 78, 143, .25) !important;
 }
+
+/* ── Cards de estatística (fundo colorido + texto branco nas telas legadas).
+   O reset de .card pra fundo branco deixava o texto branco invisível —
+   aqui eles voltam a ter fundo (azul AOM) combinando com o texto claro. */
+.card.stats-card,
+.stats-card {
+    background: var(--aom-brand) !important;
+    color: #fff !important;
+    border: none !important;
+}
+.stats-card .card-body { color: #fff !important; }
