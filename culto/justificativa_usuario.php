@@ -336,6 +336,8 @@ $usuario_id = $_SESSION['usuario_id'] ?? 0;
                             <label for="motivo_individual" class="form-label">Motivo da Falta *</label>
                             <select class="form-select" id="motivo_individual" name="motivo" required>
                                 <option value="">Selecione o motivo</option>
+                                <option value="ferias">Férias</option>
+                                <option value="folga">Folga</option>
                                 <option value="doenca">Doença</option>
                                 <option value="viagem">Viagem</option>
                                 <option value="atendimento_medico">Atendimento Médico</option>
@@ -385,6 +387,8 @@ $usuario_id = $_SESSION['usuario_id'] ?? 0;
                             <label for="motivo_lote" class="form-label">Motivo da Falta *</label>
                             <select class="form-select" id="motivo_lote" name="motivo" required>
                                 <option value="">Selecione o motivo</option>
+                                <option value="ferias">Férias</option>
+                                <option value="folga">Folga</option>
                                 <option value="doenca">Doença</option>
                                 <option value="viagem">Viagem</option>
                                 <option value="atendimento_medico">Atendimento Médico</option>

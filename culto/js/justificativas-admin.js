@@ -399,6 +399,8 @@ function getStatusBadgeClass(status) {
 
 function getMotivoText(motivo) {
     switch(motivo) {
+        case 'ferias': return 'Férias';
+        case 'folga': return 'Folga';
         case 'doenca': return 'Doença';
         case 'viagem': return 'Viagem';
         case 'atendimento_medico': return 'Atendimento Médico';
