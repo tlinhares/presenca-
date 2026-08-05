@@ -112,7 +112,7 @@ try {
     $timestamp = $input['timestamp'];
     $foto_base64 = $input['foto_base64'] ?? null;
 
-    logLeituraFacial("Recebida leitura facial: $nome_usuario do dispositivo $ip_dispositivo");
+    logLeituraFacial("Recebida leitura facial: $nome_usuario do dispositivo $ip_dispositivo (origem real: $ip_real, UA: " . ($_SERVER['HTTP_USER_AGENT'] ?? '-') . ")");
 
     // Validar e obter dados do dispositivo
     $stmt = $conn->prepare("
