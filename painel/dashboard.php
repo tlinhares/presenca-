@@ -69,55 +69,106 @@ $secoes = [
     ]
 ];
 
-// Mapeamento de ícones Bootstrap para Material Symbols
-$iconeMapping = [
-    'bi-sliders' => 'tune',
-    'bi-egg-fried' => 'restaurant',
-    'bi-people-fill' => 'group',
-    'bi-truck' => 'directions_car',
-    'bi-box-seam' => 'inventory_2',
-    'bi-gear' => 'settings',
-    'bi-calendar-month' => 'calendar_month',
-    'bi-bar-chart' => 'analytics',
-    'bi-person-circle' => 'group',
-    'bi-gear-wide-connected' => 'admin_panel_settings',
-    'bi-bell' => 'notifications_active',
-    'bi-chat' => 'chat',
-    'bi-camera' => 'face',
-    'bi-smart-display' => 'smart_display',
-    'bi-sync-alt' => 'sync',
-    'bi-file-text' => 'assignment_ind',
-    'bi-building' => 'phonelink_ring',
-    'bi-arrow-repeat' => 'sync_alt',
-    'bi-person-check' => 'assignment_ind',
-    'bi-archive' => 'inventory',
-    'bi-list-ul' => 'list',
-    'bi-gear-fill' => 'settings',
-    'bi-house-door' => 'home',
-    'bi-power' => 'logout',
-    'bi-arrow-left' => 'arrow_back',
+// ═══════════════════════════════════════════════════════════════════════════
+// ÍCONE + COR POR MENU (pedido do admin, 2026-08-07): o ícone precisa
+// representar a ação (dias fechado = calendário, whatsapp = chat...) e a cor
+// referencia a ação — sem deixar tudo azul, mas sem virar arco-íris aleatório:
+// cores são SEMÂNTICAS e reutilizadas por família de ação.
+// Classes Tailwind literais de propósito (o CDN só gera o que enxerga no DOM).
+// ═══════════════════════════════════════════════════════════════════════════
+$paletas = [
+    'rose'    => ['tile' => 'from-rose-500 to-rose-600',       'hover' => 'group-hover:text-rose-600 dark:group-hover:text-rose-400'],
+    'amber'   => ['tile' => 'from-amber-500 to-amber-600',     'hover' => 'group-hover:text-amber-600 dark:group-hover:text-amber-400'],
+    'emerald' => ['tile' => 'from-emerald-500 to-emerald-600', 'hover' => 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400'],
+    'sky'     => ['tile' => 'from-sky-500 to-sky-600',         'hover' => 'group-hover:text-sky-600 dark:group-hover:text-sky-400'],
+    'indigo'  => ['tile' => 'from-indigo-500 to-indigo-600',   'hover' => 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400'],
+    'violet'  => ['tile' => 'from-violet-500 to-violet-600',   'hover' => 'group-hover:text-violet-600 dark:group-hover:text-violet-400'],
+    'cyan'    => ['tile' => 'from-cyan-500 to-cyan-600',       'hover' => 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400'],
+    'teal'    => ['tile' => 'from-teal-500 to-teal-600',       'hover' => 'group-hover:text-teal-600 dark:group-hover:text-teal-400'],
+    'orange'  => ['tile' => 'from-orange-500 to-orange-600',   'hover' => 'group-hover:text-orange-600 dark:group-hover:text-orange-400'],
+    'slate'   => ['tile' => 'from-slate-500 to-slate-600',     'hover' => 'group-hover:text-slate-600 dark:group-hover:text-slate-300'],
+    'aom'     => ['tile' => 'from-[#1d4e8f] to-[#163d72]',     'hover' => 'group-hover:text-[#1d4e8f] dark:group-hover:text-[#7da7d9]'],
 ];
 
-// Acento visual POR SEÇÃO (antes: 17 gradientes aleatórios por índice — cada
-// card de uma cor diferente, visual caótico nos dois temas). Agora todos os
-// cards de uma seção compartilham o acento da seção; o resto do card é neutro.
-// Classes literais de propósito: o Tailwind CDN só gera o que enxerga no DOM.
-// Padrão visual aprovado (referência: enviar_push.php): UMA cor institucional
-// — azul AOM #1d4e8f — pra todos os tiles/hovers, sem arco-íris por seção.
-$acentosSecao = [
-    'aom' => ['tile' => 'from-[#1d4e8f] to-[#163d72]', 'hover' => 'group-hover:text-[#1d4e8f] dark:group-hover:text-[#7da7d9]'],
+// bi-* (banco) => [ícone Material fiel, paleta semântica]
+$iconeMenu = [
+    // Calendário/datas
+    'bi-calendar-x'          => ['event_busy', 'rose'],
+    'bi-calendar-check'      => ['event_available', 'emerald'],
+    'bi-calendar-month'      => ['calendar_month', 'sky'],
+    // Notificações/push/comunicação
+    'bi-bell'                => ['notifications', 'amber'],
+    'bi-bell-fill'           => ['notifications_active', 'amber'],
+    'bi-send-fill'           => ['send', 'sky'],
+    'bi-megaphone-fill'      => ['campaign', 'orange'],
+    'bi-phone-vibrate-fill'  => ['smartphone', 'teal'],
+    'bi-whatsapp'            => ['chat', 'emerald'],
+    'bi-chat'                => ['chat', 'emerald'],
+    // Pessoas/usuários
+    'bi-people'              => ['group', 'indigo'],
+    'bi-people-fill'         => ['group', 'indigo'],
+    'bi-person-check-fill'   => ['how_to_reg', 'emerald'],
+    'bi-person-circle'       => ['account_circle', 'indigo'],
+    // Facial/câmeras
+    'bi-person-bounding-box' => ['familiar_face_and_zone', 'cyan'],
+    'bi-camera'              => ['face', 'cyan'],
+    'bi-camera-video'        => ['videocam', 'cyan'],
+    'bi-hdd-stack-fill'      => ['dns', 'slate'],
+    // Relatórios/gráficos/documentos
+    'bi-graph-up'            => ['monitoring', 'violet'],
+    'bi-bar-chart'           => ['analytics', 'violet'],
+    'bi-file-earmark-bar-graph' => ['analytics', 'violet'],
+    'bi-file-text'           => ['description', 'slate'],
+    'bi-file-text-fill'      => ['description', 'violet'],
+    'bi-file-earmark-code'   => ['code', 'violet'],
+    // Segurança/config
+    'bi-shield-check'        => ['verified_user', 'emerald'],
+    'bi-shield-lock-fill'    => ['lock_person', 'rose'],
+    'bi-gear'                => ['settings', 'slate'],
+    'bi-gear-fill'           => ['settings', 'slate'],
+    'bi-gear-wide-connected' => ['admin_panel_settings', 'slate'],
+    'bi-menu-button-wide'    => ['list_alt', 'indigo'],
+    'bi-sliders'             => ['tune', 'slate'],
+    // Refeições/valores
+    'bi-egg-fried'           => ['restaurant', 'orange'],
+    'bi-cash-coin'           => ['payments', 'emerald'],
+    'bi-robot'               => ['smart_toy', 'violet'],
+    // Estoque
+    'bi-box-seam'            => ['inventory_2', 'amber'],
+    'bi-box-arrow-in-down'   => ['archive', 'emerald'],
+    'bi-clipboard-check'     => ['fact_check', 'sky'],
+    'bi-plus-circle'         => ['add_circle', 'emerald'],
+    'bi-ui-checks'           => ['checklist', 'teal'],
+    'bi-arrow-left-right'    => ['swap_horiz', 'sky'],
+    'bi-check-circle'        => ['task_alt', 'emerald'],
+    'bi-building'            => ['apartment', 'slate'],
+    'bi-tags'                => ['sell', 'amber'],
+    'bi-rulers'              => ['straighten', 'slate'],
+    'bi-geo-alt'             => ['location_on', 'rose'],
+    // Frota
+    'bi-truck'               => ['local_shipping', 'sky'],
+    'bi-car-front'           => ['directions_car', 'sky'],
+    'bi-tools'               => ['build', 'amber'],
+    'bi-box-arrow-right'     => ['logout', 'orange'],
+    'bi-box-arrow-in-left'   => ['input', 'emerald'],
+    'bi-clock-history'       => ['history', 'slate'],
+    // Diversos
+    'bi-speedometer2'        => ['speed', 'aom'],
+    'bi-house'               => ['home', 'aom'],
+    'bi-house-door'          => ['home', 'aom'],
+    'bi-download'            => ['download', 'slate'],
+    'bi-arrow-clockwise'     => ['sync', 'sky'],
+    'bi-arrow-repeat'        => ['sync_alt', 'sky'],
+    'bi-sync-alt'            => ['sync', 'sky'],
+    'bi-smart-display'       => ['smart_display', 'cyan'],
+    'bi-power'               => ['logout', 'rose'],
+    'bi-arrow-left'          => ['arrow_back', 'slate'],
 ];
 
-function converterIcone($iconeBootstrap) {
-    global $iconeMapping;
-    $icone = str_replace('bi-', '', $iconeBootstrap);
-    $chave = 'bi-' . $icone;
-    return $iconeMapping[$chave] ?? $iconeMapping['bi-gear'] ?? 'settings';
-}
-
-function obterAcentoSecao($corIcone) {
-    global $acentosSecao;
-    return $acentosSecao['aom'];
+function obterIconeMenu($iconeBootstrap) {
+    global $iconeMenu, $paletas;
+    $info = $iconeMenu[$iconeBootstrap] ?? ['settings', 'aom'];
+    return ['icone' => $info[0]] + $paletas[$info[1]];
 }
 
 function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone, $excluir = []) {
@@ -144,14 +195,12 @@ function renderizarSecaoTailwind($categoria, $titulo, $iconeMaterial, $corIcone,
     $html .= '</div>';
     $html .= '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">';
     
-    $acento = obterAcentoSecao($corIcone);
-
     foreach ($menus as $index => $menu) {
         $url = MenuPermissaoService::ajustarUrl($menu['url']);
         $nome = htmlspecialchars($menu['nome']);
         $descricao = htmlspecialchars($menu['descricao_card'] ?? $menu['descricao'] ?? 'Gestão de ' . strtolower($nome));
-        $iconeBootstrap = $menu['icone'] ?? 'bi-gear';
-        $iconeMaterial = converterIcone($iconeBootstrap);
+        $acento = obterIconeMenu($menu['icone'] ?? 'bi-gear');
+        $iconeMaterial = $acento['icone'];
 
         $html .= '<a class="dashboard-card group bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-card hover:shadow-card-hover border border-gray-100 dark:border-slate-700/50" href="' . htmlspecialchars($url) . '">';
         $html .= '<div class="flex items-start justify-between mb-4">';
