@@ -119,6 +119,10 @@ try {
         'data' => $data,
         'tipo' => $tipo,
         'fora_do_horario' => $fora_do_horario,
+        // Campos pro app NUNCA usar o relógio do celular (fusos diferentes
+        // geravam alerta indevido de valor fora-do-horário):
+        'fuso_servidor' => 'America/Cuiaba',
+        'epoch_servidor' => time(),
         'hora_atual' => $hora_atual,
         'horario_limite' => $horario_limite,
         'valor_normal' => $valor_normal,
