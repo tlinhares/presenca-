@@ -168,7 +168,10 @@ class WhatsappSessionService
     public static function clearSessionData(mysqli $conn, array $api): array
     {
         if (empty($api['base_url']) || empty($api['session_name']) || empty($api['secret_key'])) {
-            return ['ok' => false, 'error' => 'base_url, session_name ou secret_key ausentes.', 'http_code' => 0];
+            // 'skipped': configuração incompleta NÃO é o mesmo que wppconnect
+            // inalcançável — sem isso, sessão cadastrada sem secret_key ficava
+            // IMPOSSÍVEL de excluir (a chain abortava achando que era rede).
+            return ['ok' => false, 'skipped' => true, 'error' => 'base_url, session_name ou secret_key ausentes — passo pulado.', 'http_code' => 0];
         }
         $url = rtrim((string)$api['base_url'], '/')
              . '/api/' . $api['session_name'] . '/' . $api['secret_key'] . '/clear-session-data';

@@ -85,7 +85,8 @@ try {
             // Considera "respondido" qualquer http_code > 0, mesmo que 4xx/5xx.
             // wppconnect 404 = sessão já não existe lá → para nossos fins é OK seguir.
             $respondeu = $http > 0;
-            $passo_ok  = (bool)($res['ok'] ?? false) || $respondeu;
+            $pulado    = (bool)($res['skipped'] ?? false); // config incompleta — segue
+            $passo_ok  = (bool)($res['ok'] ?? false) || $respondeu || $pulado;
             $steps[]   = [
                 'key'       => $s['key'],
                 'label'     => $s['label'],
