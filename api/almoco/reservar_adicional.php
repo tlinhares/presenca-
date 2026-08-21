@@ -108,7 +108,7 @@ $stmt->close();
 // do que está no banco. Idade-limite vem da config 'idade_isencao_dependente'
 // (default 12) — regra centralizada em DependenteService.
 require_once __DIR__ . '/../../core/services/DependenteService.php';
-$recalc = DependenteService::calcularCobrar($conn, $nascimento_dep);
+$recalc = DependenteService::calcularCobrarNaData($conn, $nascimento_dep, $data);
 if ($recalc !== null) {
     $cobrar = $recalc;
 }

@@ -87,7 +87,7 @@ $stmt->close();
 
 // Regra centralizada em DependenteService — alinhado com a config dinâmica.
 require_once __DIR__ . '/../../core/services/DependenteService.php';
-$recalc = DependenteService::calcularCobrar($conn, $dependente['nascimento'] ?? null);
+$recalc = DependenteService::calcularCobrarNaData($conn, $dependente['nascimento'] ?? null, $data_reserva);
 if ($recalc !== null) {
     $dependente['cobrar'] = $recalc;
 }
@@ -168,11 +168,15 @@ if ($dependente['cobrar'] == 0) {
     }
     $stmt->close();
 } else {
-    // MENOR de 12 anos → Não cobra
+    // MENOR/IGUAL ao limite de isenção → NUNCA cobra, em nenhuma hipótese.
     $valor_refeicao = 0.00;
     $valor_marmitex = 0.00;
     $valor_normal_refeicao = 0.00;
     $valor_normal_marmitex = 0.00;
+    // O app exibe 'valor_fora_horario' no aviso de atraso — pra isento esse
+    // campo TAMBÉM precisa ser 0, senão a tela mostra R$ 40 pra criança
+    // (o valor gravado sempre foi 0; o susto era só de exibição).
+    $valor_fora_horario = 0.00;
 }
 
 echo json_encode([

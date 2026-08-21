@@ -41,43 +41,31 @@ function consultarFuncionarioAPI($cpf) {
     return null;
 }
 
-// Função para buscar quantidades de reservas adicionais por idade
-function buscarReservasAdicionaisPorIdade($usuario_id, $data_inicio, $data_fim, $conn) {
-    $sql = "SELECT 
-                ra.quantidade,
-                d.nascimento,
-                CASE 
-                    WHEN TIMESTAMPDIFF(YEAR, d.nascimento, CURDATE()) <= 12 THEN 'menor_12'
-                    ELSE 'maior_12'
-                END as faixa_idade
-            FROM reservas_adicionais ra
-            INNER JOIN dependentes d ON ra.id_dependente = d.id
-            WHERE ra.id_usuario = ?
-            AND ra.data BETWEEN ? AND ?
-            AND d.ativo = 1";
-    
+// Resumo das reservas adicionais POR DEPENDENTE (pedido do admin 21/08):
+// "10 reservas para Pedro (menor de 12 — não cobra), 4 para Maria (maior)".
+// Idade calculada NA DATA de cada reserva (não hoje) e SEM filtro de
+// dependente ativo — reserva histórica de dependente inativado continua
+// aparecendo (o valor dela já está no total).
+function buscarResumoDependentes($usuario_id, $data_inicio, $data_fim, $conn) {
+    $sql = "SELECT d.nome,
+                   SUM(ra.quantidade) qtd,
+                   SUM(CASE WHEN d.nascimento IS NOT NULL
+                             AND TIMESTAMPDIFF(YEAR, d.nascimento, ra.data) <= 12
+                        THEN ra.quantidade ELSE 0 END) qtd_isenta,
+                   SUM(ra.valor_refeicao + COALESCE(ra.valor_marmitex, 0)) valor
+              FROM reservas_adicionais ra
+        INNER JOIN dependentes d ON ra.id_dependente = d.id
+             WHERE ra.id_usuario = ? AND ra.data BETWEEN ? AND ?
+          GROUP BY d.id, d.nome
+          ORDER BY d.nome";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iss", $usuario_id, $data_inicio, $data_fim);
     $stmt->execute();
     $result = $stmt->get_result();
-    
-    $qtd_menor_12 = 0;
-    $qtd_maior_12 = 0;
-    
-    while ($row = $result->fetch_assoc()) {
-        if ($row['faixa_idade'] === 'menor_12') {
-            $qtd_menor_12 += $row['quantidade'];
-        } else {
-            $qtd_maior_12 += $row['quantidade'];
-        }
-    }
-    
+    $deps = [];
+    while ($row = $result->fetch_assoc()) $deps[] = $row;
     $stmt->close();
-    
-    return [
-        'menor_12' => $qtd_menor_12,
-        'maior_12' => $qtd_maior_12
-    ];
+    return $deps;
 }
 
 // Parâmetros
@@ -124,7 +112,7 @@ $sql = "SELECT
             SELECT 
                 id_usuario,
                 SUM(quantidade) as total_quantidade,
-                SUM(valor_refeicao) as total_valor
+                SUM(valor_refeicao + COALESCE(valor_marmitex, 0)) as total_valor
             FROM reservas_adicionais 
             WHERE data BETWEEN ? AND ?
             GROUP BY id_usuario
@@ -381,15 +369,22 @@ foreach ($dados_usuarios as $row) {
     
     // Buscar reservas adicionais por idade
     if ($row['qtd_adicionais'] > 0) {
-        $reservas_por_idade = buscarReservasAdicionaisPorIdade($row['usuario_id'], $data_inicio, $data_fim, $conn);
+        $resumo_deps = buscarResumoDependentes($row['usuario_id'], $data_inicio, $data_fim, $conn);
         
         // Linha de resumo das reservas adicionais por idade
         $resumo_parts = [];
-        if ($reservas_por_idade['menor_12'] > 0) {
-            $resumo_parts[] = '<span class="badge badge-adicional-menor">' . $reservas_por_idade['menor_12'] . 'x &lt; 12 anos (Não cobra)</span>';
-        }
-        if ($reservas_por_idade['maior_12'] > 0) {
-            $resumo_parts[] = '<span class="badge badge-adicional-maior">' . $reservas_por_idade['maior_12'] . 'x &gt; 12 anos (Cobra)</span>';
+        foreach ($resumo_deps as $dep) {
+            $qtd     = (int) $dep['qtd'];
+            $isenta  = (int) $dep['qtd_isenta'];
+            $nomeDep = htmlspecialchars($dep['nome']);
+            if ($isenta >= $qtd) {
+                $resumo_parts[] = '<span class="badge badge-adicional-menor">' . $qtd . 'x ' . $nomeDep . ' (menor de 12 — não cobra)</span>';
+            } elseif ($isenta === 0) {
+                $resumo_parts[] = '<span class="badge badge-adicional-maior">' . $qtd . 'x ' . $nomeDep . ' (maior de 12 — cobra R$ ' . number_format((float) $dep['valor'], 2, ',', '.') . ')</span>';
+            } else {
+                $cobradas = $qtd - $isenta;
+                $resumo_parts[] = '<span class="badge badge-adicional-maior">' . $nomeDep . ': ' . $cobradas . 'x cobrada(s) R$ ' . number_format((float) $dep['valor'], 2, ',', '.') . ' + ' . $isenta . 'x isenta(s)</span>';
+            }
         }
         
         if (!empty($resumo_parts)) {
