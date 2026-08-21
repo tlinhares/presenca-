@@ -132,139 +132,51 @@ $html = '
 <head>
     <meta charset="UTF-8">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            font-size: 12px; 
-            line-height: 1.4;
-            color: #333;
-            margin: 0;
-            padding: 20px;
+        body { font-family: Arial, sans-serif; color: #1f2937; font-size: 11px; }
+
+        /* Cabeçalho institucional */
+        .header { background: #1d4e8f; color: #fff; padding: 16px 20px; margin-bottom: 14px; }
+        .title { font-size: 20px; font-weight: bold; margin: 0; }
+        .subtitle { font-size: 11px; margin: 3px 0 0; color: #c8d8ee; }
+        .period { font-size: 11px; color: #eaf1fa; margin-top: 6px; }
+
+        /* Cartões de resumo */
+        .cards { width: 100%; border-collapse: separate; border-spacing: 6px 0; margin-bottom: 14px; }
+        .cards td { width: 25%; background: #f4f6f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; text-align: center; }
+        .cards .lab { font-size: 8.5px; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
+        .cards .val { font-size: 15px; font-weight: bold; color: #1d4e8f; margin-top: 2px; }
+
+        table.dados { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 10px; }
+        table.dados th {
+            background: #1d4e8f; color: #fff; padding: 8px 6px; font-size: 9.5px;
+            text-transform: uppercase; letter-spacing: .3px;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
+        table.dados th.esq, table.dados td.user-name { text-align: left; }
+        table.dados th.num, table.dados td.qtd { text-align: center; }
+        table.dados th.dinheiro, table.dados td.money { text-align: right; }
+        table.dados td { padding: 7px 6px; border-bottom: 1px solid #e2e8f0; }
+        table.dados tr.zebra td { background: #f8fafc; }
+
+        .user-name { font-weight: bold; color: #1f2937; }
+        .qtd { color: #334155; }
+        .money { color: #1f2937; }
+        .money.total { font-weight: bold; color: #1d4e8f; }
+
+        /* Sub-linha dos dependentes: texto discreto, sem "etiquetas" coloridas */
+        .resumo-reservas td {
+            background: #fbfcfe; color: #475569; font-size: 8.8px;
+            padding: 4px 6px 7px 24px; border-bottom: 1px solid #e2e8f0;
         }
-        
-        .title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        .subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
-        }
-        
-        .period {
-            font-size: 12px;
-            color: #888;
-            background: #f5f5f5;
-            padding: 8px 15px;
-            border-radius: 4px;
-            display: inline-block;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-            font-size: 11px;
-        }
-        
-        th {
-            background: #333;
-            color: white;
-            padding: 12px 8px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 11px;
-        }
-        
-        td {
-            padding: 10px 8px;
-            text-align: center;
-            border-bottom: 1px solid #dee2e6;
-            font-size: 10px;
-        }
-        
-        .user-name {
-            text-align: left;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .number {
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .currency {
-            font-weight: bold;
-            color: #28a745;
-        }
-        
-        .total-row {
-            background: #f8f9fa;
-            font-weight: bold;
-        }
-        
+        .dep-isento { color: #0f766e; }
+        .dep-cobra  { color: #92400e; font-weight: bold; }
+
         .total-row td {
-            border-top: 2px solid #333;
-            font-size: 12px;
+            background: #eaf1fa; border-top: 2px solid #1d4e8f; border-bottom: none;
+            font-weight: bold; font-size: 10.5px; padding: 9px 6px;
         }
-        
-        .footer {
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
-        }
-        
-        .resumo-reservas {
-            background: #f8f9fa;
-            font-size: 10px;
-            color: #666;
-            font-style: italic;
-            padding: 6px 8px;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .resumo-reservas .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-weight: bold;
-            font-size: 9px;
-            margin: 0 2px;
-        }
-        
-        .badge-propria {
-            background: #007bff;
-            color: white;
-        }
-        
-        .badge-adicional {
-            background: #28a745;
-            color: white;
-        }
-        
-        .badge-adicional-menor {
-            background: #17a2b8;
-            color: white;
-        }
-        
-        .badge-adicional-maior {
-            background: #ffc107;
-            color: #333;
-        }
+
+        .footer { text-align: center; font-size: 9px; color: #94a3b8; margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+        h3.secao { font-size: 13px; color: #1d4e8f; border-bottom: 2px solid #1d4e8f; padding-bottom: 6px; margin: 18px 0 8px; }
     </style>
 </head>
 <body>
@@ -331,18 +243,26 @@ $total_geral_qtd += $total_departamentos;
 $total_geral_valor += $valor_total_departamentos;
 
 $html .= '
-    <table>
+    <table class="cards">
+        <tr>
+            <td><div class="lab">Funcionários</div><div class="val">' . $usuarios_count . '</div></td>
+            <td><div class="lab">Refeições Próprias</div><div class="val">' . $total_proprias . ' &middot; R$ ' . number_format($valor_total_proprias, 2, ',', '.') . '</div></td>
+            <td><div class="lab">Adicionais (dependentes)</div><div class="val">' . $total_adicionais . ' &middot; R$ ' . number_format($valor_total_adicionais, 2, ',', '.') . '</div></td>
+            <td><div class="lab">Total Geral</div><div class="val">' . $total_geral_qtd . ' &middot; R$ ' . number_format($total_geral_valor, 2, ',', '.') . '</div></td>
+        </tr>
+    </table>
+    <table class="dados">
         <thead>
             <tr>
-                <th>Usuário</th>
-                <th>Nº Entidade</th>
-                <th>Nº Funcionário</th>
-                <th>Próprias</th>
-                <th>Valor Próprias</th>
-                <th>Adicionais</th>
-                <th>Valor Adicionais</th>
-                <th>Total Qtd</th>
-                <th>Total Valor</th>
+                <th class="esq">Usuário</th>
+                <th class="num">Nº Entidade</th>
+                <th class="num">Nº Func.</th>
+                <th class="num">Próprias</th>
+                <th class="dinheiro">Valor Próprias</th>
+                <th class="num">Adicionais</th>
+                <th class="dinheiro">Valor Adicionais</th>
+                <th class="num">Qtd</th>
+                <th class="dinheiro">Total</th>
             </tr>
         </thead>
         <tbody>';
@@ -354,17 +274,19 @@ foreach ($dados_usuarios as $row) {
     $numero_entidade = $dadosFuncionario['Numero_Entidade'] ?? 'N/A';
     $numero_funcionario = $dadosFuncionario['Numero_Funcionario_Entidade'] ?? 'N/A';
     
-    // Linha principal do usuário
-    $html .= '<tr>
+    // Linha principal do usuário (zebra alternada)
+    static $linha_par = false;
+    $linha_par = !$linha_par;
+    $html .= '<tr' . ($linha_par ? '' : ' class="zebra"') . '>
         <td class="user-name">' . htmlspecialchars($row['nome']) . '</td>
-        <td><span class="number">' . htmlspecialchars($numero_entidade) . '</span></td>
-        <td><span class="number">' . htmlspecialchars($numero_funcionario) . '</span></td>
-        <td><span class="number">' . $row['qtd_proprias'] . '</span></td>
-        <td><span class="currency">R$ ' . number_format($row['valor_proprias'], 2, ',', '.') . '</span></td>
-        <td><span class="number">' . $row['qtd_adicionais'] . '</span></td>
-        <td><span class="currency">R$ ' . number_format($row['valor_adicionais'], 2, ',', '.') . '</span></td>
-        <td><span class="number">' . $row['total_geral_usuario'] . '</span></td>
-        <td><span class="currency">R$ ' . number_format($row['valor_total_usuario'], 2, ',', '.') . '</span></td>
+        <td class="qtd">' . htmlspecialchars($numero_entidade) . '</td>
+        <td class="qtd">' . htmlspecialchars($numero_funcionario) . '</td>
+        <td class="qtd">' . $row['qtd_proprias'] . '</td>
+        <td class="money">R$ ' . number_format($row['valor_proprias'], 2, ',', '.') . '</td>
+        <td class="qtd">' . $row['qtd_adicionais'] . '</td>
+        <td class="money">R$ ' . number_format($row['valor_adicionais'], 2, ',', '.') . '</td>
+        <td class="qtd">' . $row['total_geral_usuario'] . '</td>
+        <td class="money total">R$ ' . number_format($row['valor_total_usuario'], 2, ',', '.') . '</td>
     </tr>';
     
     // Buscar reservas adicionais por idade
@@ -378,20 +300,18 @@ foreach ($dados_usuarios as $row) {
             $isenta  = (int) $dep['qtd_isenta'];
             $nomeDep = htmlspecialchars($dep['nome']);
             if ($isenta >= $qtd) {
-                $resumo_parts[] = '<span class="badge badge-adicional-menor">' . $qtd . 'x ' . $nomeDep . ' (menor de 12 — não cobra)</span>';
+                $resumo_parts[] = '<span class="dep-isento">' . $qtd . '&times; ' . $nomeDep . ' — isento (menor de 12)</span>';
             } elseif ($isenta === 0) {
-                $resumo_parts[] = '<span class="badge badge-adicional-maior">' . $qtd . 'x ' . $nomeDep . ' (maior de 12 — cobra R$ ' . number_format((float) $dep['valor'], 2, ',', '.') . ')</span>';
+                $resumo_parts[] = '<span class="dep-cobra">' . $qtd . '&times; ' . $nomeDep . ' — R$ ' . number_format((float) $dep['valor'], 2, ',', '.') . '</span>';
             } else {
                 $cobradas = $qtd - $isenta;
-                $resumo_parts[] = '<span class="badge badge-adicional-maior">' . $nomeDep . ': ' . $cobradas . 'x cobrada(s) R$ ' . number_format((float) $dep['valor'], 2, ',', '.') . ' + ' . $isenta . 'x isenta(s)</span>';
+                $resumo_parts[] = '<span class="dep-cobra">' . $nomeDep . ' — ' . $cobradas . '&times; R$ ' . number_format((float) $dep['valor'], 2, ',', '.') . '</span> <span class="dep-isento">+ ' . $isenta . '&times; isenta(s)</span>';
             }
         }
         
         if (!empty($resumo_parts)) {
             $html .= '<tr class="resumo-reservas">
-                <td colspan="9" style="padding-left: 20px;">
-                    ' . implode(' | ', $resumo_parts) . '
-                </td>
+                <td colspan="9">&#9492; Dependentes: ' . implode(' &nbsp;&middot;&nbsp; ', $resumo_parts) . '</td>
             </tr>';
         }
     }
@@ -417,8 +337,8 @@ $html .= '
 if (count($reservas_departamento) > 0) {
     $html .= '
     <div style="margin-top: 20px;">
-        <h3 style="font-size: 14px; color: #333; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 10px;">Reservas de Departamento</h3>
-        <table>
+        <h3 class="secao">Reservas de Departamento</h3>
+        <table class="dados">
             <thead>
                 <tr>
                     <th>Departamento</th>
