@@ -101,7 +101,7 @@ try {
         .header { 
             text-align: center; 
             padding: 15px; 
-            background: linear-gradient(135deg, #ffc107, #e0a800); 
+            background: #1d4e8f; 
             color: #212529; 
             border-radius: 8px;
             margin-bottom: 20px;
@@ -123,7 +123,7 @@ try {
         .resumo .label { font-size: 10px; color: #6c757d; text-transform: uppercase; }
         table.dados { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table.dados th {
-            background: #343a40;
+            background: #1d4e8f;
             color: white;
             padding: 10px 8px;
             text-align: left;
@@ -154,7 +154,7 @@ try {
         <table>
             <tr>
                 <td>
-                    <div class="numero" style="color: #ffc107;">' . count($reservas) . '</div>
+                    <div class="numero" style="color: #1d4e8f;">' . count($reservas) . '</div>
                     <div class="label">Total de Registros</div>
                 </td>
                 <td>

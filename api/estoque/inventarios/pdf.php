@@ -125,7 +125,7 @@ try {
             text-align: center; 
             margin-bottom: 20px; 
             padding: 15px;
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            background: #1d4e8f;
             color: white;
             border-radius: 8px;
         }
@@ -157,7 +157,7 @@ try {
             margin-top: 15px;
         }
         th {
-            background-color: #fa709a;
+            background-color: #1d4e8f;
             color: white;
             padding: 10px;
             text-align: left;

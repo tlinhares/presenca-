@@ -478,12 +478,12 @@ function gerarHTMLRelatorio($tipo, $dados, $data_inicio, $data_fim, $departament
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { font-family: Arial, sans-serif; padding: 15px; background: white; }
-        .header { background: #434343; color: white; padding: 15px; margin-bottom: 15px; }
+        .header { background: #1d4e8f; color: white; padding: 15px; margin-bottom: 15px; }
         .header h1 { margin: 0; font-size: 20px; font-weight: bold; }
         .header p { margin: 5px 0 0 0; font-size: 11px; }
         .card { background: white; padding: 15px; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
-        th { background: #434343; color: white; padding: 8px; text-align: left; font-weight: bold; font-size: 9pt; }
+        th { background: #1d4e8f; color: white; padding: 8px; text-align: left; font-weight: bold; font-size: 9pt; }
         td { padding: 6px; border-bottom: 1px solid #ddd; font-size: 9pt; }
         tfoot tr { background: #e9ecef; font-weight: bold; }
         .badge { padding: 3px 6px; border-radius: 3px; font-size: 9pt; display: inline-block; }

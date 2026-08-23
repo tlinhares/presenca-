@@ -591,7 +591,7 @@ function gerarHTMLPresencas($usuarios_dados, $data_inicio, $data_fim) {
                 margin-top: 15px;
             }
             .usuario-header {
-                background-color: #0066cc;
+                background-color: #1d4e8f;
                 color: white;
                 padding: 8px;
                 margin: -10px -10px 10px -10px;
@@ -1006,7 +1006,7 @@ function gerarHTMLRelatorio($tipo, $dados, $data_inicio, $data_fim) {
             body { font-family: Arial, sans-serif; font-size: 10px; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; font-weight: bold; }
+            th { background: #1d4e8f; color: #fff; font-weight: bold; }
             .header { text-align: center; margin-bottom: 20px; }
             .total { font-weight: bold; background-color: #f9f9f9; }
         </style>

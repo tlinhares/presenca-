@@ -98,7 +98,7 @@ try {
         .header { 
             text-align: center; 
             padding: 15px; 
-            background: linear-gradient(135deg, #17a2b8, #138496); 
+            background: #1d4e8f; 
             color: white; 
             border-radius: 8px; 
             margin-bottom: 15px;
@@ -118,7 +118,7 @@ try {
         .stats-box .value { font-weight: bold; text-align: right; }
         table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table.data th { 
-            background: #343a40; 
+            background: #1d4e8f; 
             color: white; 
             padding: 8px; 
             text-align: left; 

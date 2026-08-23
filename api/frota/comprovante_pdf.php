@@ -97,7 +97,7 @@ try {
         .header { 
             text-align: center; 
             padding: 20px; 
-            background: linear-gradient(135deg, #17a2b8, #138496); 
+            background: #1d4e8f; 
             color: white; 
             border-radius: 10px;
             margin-bottom: 20px;

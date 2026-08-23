@@ -181,7 +181,7 @@ try {
             text-align: center; 
             margin-bottom: 10px; 
             padding: 20px;
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            background: #1d4e8f;
             color: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -220,7 +220,7 @@ try {
             font-size: 11px; 
         }
         th { 
-            background: linear-gradient(135deg, #007bff, #0056b3); 
+            background: #1d4e8f; 
             color: white; 
             font-weight: bold;
             text-transform: uppercase;
@@ -240,7 +240,7 @@ try {
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .totais h3 {
-            color: #007bff;
+            color: #1d4e8f;
             text-align: center;
             margin-bottom: 15px;
             font-size: 18px;
@@ -252,7 +252,7 @@ try {
             margin: 0 auto; 
         }
         .totais th { 
-            background: linear-gradient(135deg, #28a745, #1e7e34); 
+            background: #1d4e8f; 
             color: white; 
             text-align: center;
             font-weight: bold;
@@ -262,7 +262,7 @@ try {
             font-weight: 500;
         }
         .total-geral {
-            background-color: #007bff !important;
+            background-color: #1d4e8f !important;
             color: white !important;
             font-weight: bold !important;
             font-size: 12px !important;
@@ -284,7 +284,7 @@ try {
     
     <div class="content">
         <!-- Reservas Próprias -->
-        <h3 style="color: #007bff; margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-left: 4px solid #007bff;">RESERVAS PRÓPRIAS</h3>
+        <h3 style="color: #1d4e8f; margin-bottom: 15px; padding: 10px; background: #eaf1fa; border-left: 4px solid #007bff;">RESERVAS PRÓPRIAS</h3>
         <table>
             <thead>
                 <tr>';
@@ -317,7 +317,7 @@ try {
         </table>
         
         <!-- Reservas Adicionais -->
-        <h3 style="color: #007bff; margin: 30px 0 15px 0; padding: 10px; background: #e3f2fd; border-left: 4px solid #007bff;">RESERVAS ADICIONAIS</h3>
+        <h3 style="color: #1d4e8f; margin: 30px 0 15px 0; padding: 10px; background: #eaf1fa; border-left: 4px solid #007bff;">RESERVAS ADICIONAIS</h3>
         <table>
             <thead>
                 <tr>';
@@ -354,7 +354,7 @@ try {
     
     if (count($reservas_departamento) > 0) {
         $html .= '
-        <h3 style="color: #007bff; margin: 30px 0 15px 0; padding: 10px; background: #e3f2fd; border-left: 4px solid #007bff;">RESERVAS DE DEPARTAMENTO</h3>
+        <h3 style="color: #1d4e8f; margin: 30px 0 15px 0; padding: 10px; background: #eaf1fa; border-left: 4px solid #007bff;">RESERVAS DE DEPARTAMENTO</h3>
         <table>
             <thead>
                 <tr>';
