@@ -102,8 +102,7 @@ try {
             text-align: center; 
             padding: 15px; 
             background: #1d4e8f; 
-            color: #212529; 
-            border-radius: 8px;
+            color: #212529;
             margin-bottom: 20px;
         }
         .header h1 { margin: 0 0 5px 0; font-size: 20px; font-weight: bold; }
@@ -117,7 +116,6 @@ try {
             text-align: center;
             padding: 12px;
             border: 2px solid #dee2e6;
-            border-radius: 8px;
         }
         .resumo .numero { font-size: 24px; font-weight: bold; }
         .resumo .label { font-size: 10px; color: #6c757d; text-transform: uppercase; }

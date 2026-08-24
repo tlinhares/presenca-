@@ -98,8 +98,7 @@ try {
             text-align: center; 
             padding: 20px; 
             background: #1d4e8f; 
-            color: white; 
-            border-radius: 10px;
+            color: white;
             margin-bottom: 20px;
         }
         .header h1 { margin: 0 0 5px 0; font-size: 22px; }
@@ -109,7 +108,6 @@ try {
             background: #ffc107;
             color: #212529;
             padding: 8px 20px;
-            border-radius: 5px;
             font-weight: bold;
             font-family: monospace;
             font-size: 20px;
@@ -118,7 +116,6 @@ try {
         .section {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
-            border-radius: 8px;
             margin-bottom: 15px;
             overflow: hidden;
         }
@@ -139,7 +136,6 @@ try {
         .status-badge {
             display: inline-block;
             padding: 5px 15px;
-            border-radius: 20px;
             color: white;
             font-weight: bold;
             background: ' . $statusColor . ';
@@ -147,7 +143,6 @@ try {
         .resumo-box {
             background: white;
             border: 2px solid #17a2b8;
-            border-radius: 8px;
             padding: 15px;
             text-align: center;
             margin: 10px 0;

@@ -127,14 +127,12 @@ try {
             padding: 15px;
             background: #1d4e8f;
             color: white;
-            border-radius: 8px;
         }
         .header h1 { margin: 0; font-size: 20pt; font-weight: bold; }
         .header p { margin: 5px 0 0 0; font-size: 11pt; }
         .info-box {
             background: #f8f9fa;
             padding: 15px;
-            border-radius: 5px;
             margin-bottom: 20px;
         }
         .info-row {
@@ -179,7 +177,6 @@ try {
             margin-top: 20px;
             padding: 15px;
             background: #e9ecef;
-            border-radius: 5px;
         }
         .resumo h3 {
             margin-top: 0;

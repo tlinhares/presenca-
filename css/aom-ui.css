@@ -188,3 +188,75 @@ nav.navbar.navbar-dark {
     border: none !important;
 }
 .stats-card .card-body { color: #fff !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MODO ESCURO — as regras acima usam !important e atropelavam o tema
+   escuro das telas que o têm (ex.: /dashboard.php ficava com cards
+   brancos e texto claro ilegível). Escopo: [data-theme="dark"] (padrão
+   das telas Bootstrap) e html.dark (padrão Tailwind).
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] body,
+html.dark body {
+    background: #101622 !important;
+    color: #e2e8f0;
+}
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-main,
+[data-theme="dark"] .filter-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .chart-card,
+html.dark .card,
+html.dark .card-main,
+html.dark .filter-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+[data-theme="dark"] .card-header,
+html.dark .card-header {
+    background: #1e293b !important;
+    border-bottom-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .help,
+html.dark .text-muted {
+    color: #94a3b8 !important;
+}
+[data-theme="dark"] .form-label,
+html.dark .form-label { color: #e2e8f0; }
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+html.dark .form-control,
+html.dark .form-select {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+[data-theme="dark"] .table thead th,
+html.dark .table thead th {
+    background: #16202e !important;
+    color: #94a3b8 !important;
+    border-bottom-color: #334155 !important;
+}
+[data-theme="dark"] .table td,
+html.dark .table td {
+    border-color: #334155 !important;
+    color: #e2e8f0;
+}
+[data-theme="dark"] .table-hover > tbody > tr:hover > *,
+html.dark .table-hover > tbody > tr:hover > * {
+    background-color: rgba(29, 78, 143, .25) !important;
+}
+[data-theme="dark"] .modal-content,
+html.dark .modal-content {
+    background: #1e293b !important;
+    color: #e2e8f0;
+}
+[data-theme="dark"] .tipo-btn,
+html.dark .tipo-btn {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+/* .stats-card (azul AOM) já funciona no escuro — sem override */

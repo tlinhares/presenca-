@@ -99,16 +99,14 @@ try {
             text-align: center; 
             padding: 15px; 
             background: #1d4e8f; 
-            color: white; 
-            border-radius: 8px; 
+            color: white;
             margin-bottom: 15px;
         }
         .header h1 { margin: 0 0 5px 0; font-size: 18px; }
         .header p { margin: 0; font-size: 11px; opacity: 0.9; }
         .stats-box { 
             background: #f8f9fa; 
-            border: 1px solid #dee2e6; 
-            border-radius: 6px; 
+            border: 1px solid #dee2e6;
             padding: 10px; 
             margin-bottom: 15px;
         }

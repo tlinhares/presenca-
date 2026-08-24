@@ -183,7 +183,6 @@ try {
             padding: 20px;
             background: #1d4e8f;
             color: white;
-            border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .header h1 { 
@@ -201,7 +200,6 @@ try {
         .content {
             background: white;
             padding: 20px;
-            border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         table { 
@@ -209,7 +207,6 @@ try {
             border-collapse: collapse; 
             margin-bottom: 25px; 
             background: white;
-            border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
@@ -236,7 +233,6 @@ try {
             margin-top: 30px; 
             background: white;
             padding: 20px;
-            border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .totais h3 {
