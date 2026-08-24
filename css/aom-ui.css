@@ -260,3 +260,23 @@ html.dark .tipo-btn {
     color: #cbd5e1 !important;
 }
 /* .stats-card (azul AOM) já funciona no escuro — sem override */
+
+/* Campos de data/hora no escuro: o Chrome renderiza o texto interno do
+   input[type=date] com esquema claro (fica invisível no fundo escuro).
+   color-scheme: dark faz o navegador desenhar texto e ícone do calendário
+   no esquema certo. */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="datetime-local"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="month"],
+html.dark input[type="date"],
+html.dark input[type="datetime-local"],
+html.dark input[type="time"],
+html.dark input[type="month"] {
+    color-scheme: dark;
+    color: #e2e8f0 !important;
+}
+[data-theme="dark"] input::-webkit-datetime-edit,
+html.dark input::-webkit-datetime-edit {
+    color: #e2e8f0 !important;
+}
