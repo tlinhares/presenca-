@@ -153,6 +153,7 @@ $iconeMenu = [
     'bi-box-arrow-in-left'   => ['input', 'emerald'],
     'bi-clock-history'       => ['history', 'slate'],
     // Diversos
+    'bi-arrow-up-circle'     => ['system_update', 'sky'],
     'bi-speedometer2'        => ['speed', 'aom'],
     'bi-house'               => ['home', 'aom'],
     'bi-house-door'          => ['home', 'aom'],

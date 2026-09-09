@@ -1804,6 +1804,8 @@ Verifica se uma data específica está marcada como "refeitório fechado". **Nã
 | Comunicados |
 | 9B.1 | `/api/mobile/comunicados/listar.php` | GET | Bearer | `{success, data:{nao_lidos, destaque, comunicados}}` |
 | 9B.2 | `/api/mobile/comunicados/marcar_lido.php` | POST | Bearer | `{success, data:{nao_lidos}}` |
+| App |
+| — | `/api/mobile/app/versao.php` | GET | — | `{success, data:{versao_minima, url_android, url_ios, mensagem}}` — versão mínima obrigatória; config em /painel/app_versao.php |
 | Almoço |
 | 3.1 | `/api/almoco/verificar_horario.php` | GET | Bearer | `{status:"sucesso", ...valores}` |
 | 3.2 | `/api/almoco/status_reserva.php` | GET | Bearer | `{reservou_hoje, hora_excedida, ...}` (sem `status`) |
