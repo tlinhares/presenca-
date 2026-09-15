@@ -230,6 +230,7 @@ if (!pode_acessar_especial()) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/feedback-system.js?v=<?php echo time(); ?>"></script>
     <script>
     // Processar mensagens do servidor e converter para toast
     document.addEventListener('DOMContentLoaded', function() {
@@ -428,7 +429,13 @@ if (!pode_acessar_especial()) {
         }
         
         const formData = new FormData(this);
-        
+
+        // Feedback imediato: botão trava e mostra spinner até a resposta
+        const btnSubmit = this.querySelector('button[type="submit"]');
+        const htmlOriginal = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Salvando...';
+
         fetch('../api/acesso_especial/criar_reserva.php', {
             method: 'POST',
             body: formData
@@ -446,6 +453,10 @@ if (!pode_acessar_especial()) {
         .catch(error => {
             console.error('Erro ao criar reserva:', error);
             exibirToast('Erro ao criar reserva especial', 'error');
+        })
+        .finally(() => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = htmlOriginal;
         });
     });
 
@@ -504,16 +515,7 @@ if (!pode_acessar_especial()) {
         }
     });
     
-    // Função para exibir toast
-    function exibirToast(mensagem, tipo = 'info') {
-        if (window.feedbackSystem && window.feedbackSystem.show) {
-            window.feedbackSystem.show(mensagem, tipo);
-        } else {
-            // Fallback para alert simples
-            alert(mensagem);
-        }
-    }
-    
+
     // Função para mostrar confirmação personalizada
     function mostrarConfirmacao(mensagem, callback) {
         const modal = new bootstrap.Modal(document.getElementById('modalConfirmacao'));
@@ -534,9 +536,6 @@ if (!pode_acessar_especial()) {
         modal.show();
     }
     </script>
-    
-    <!-- Sistema de Feedback -->
-    <script src="../js/feedback-system.js?v=<?php echo time(); ?>"></script>
     
     <!-- Modal de Confirmação Personalizado -->
     <div class="modal fade" id="modalConfirmacao" tabindex="-1" aria-labelledby="modalConfirmacaoLabel" aria-hidden="true">
