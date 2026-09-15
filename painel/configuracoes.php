@@ -140,6 +140,7 @@ MenuPermissaoService::exigirAcesso('configuracoes');
             font-weight: 500;
         }
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="../css/aom-ui.css?v=<?= time() ?>" rel="stylesheet"> <!-- design system AOM (carregar por último) -->
     <script src="../js/aom-ui.js?v=<?= time() ?>"></script>
 </head>
