@@ -391,7 +391,7 @@ if (!pode_acessar_especial()) {
                             <td>${reserva.observacao || '-'}</td>
                             <td>${reserva.criado_em}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-danger" onclick="excluirReservaEspecial(${reserva.id}, '${reserva.tipo}')">
+                                <button class="btn btn-sm btn-outline-danger" onclick="excluirReservaEspecial(${reserva.id}, '${reserva.tipo}', this)">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -461,17 +461,23 @@ if (!pode_acessar_especial()) {
     });
 
     // Função para excluir reserva especial
-    function excluirReservaEspecial(reservaId, tipo) {
+    function excluirReservaEspecial(reservaId, tipo, btn) {
         mostrarConfirmacao(
             'Tem certeza que deseja excluir esta reserva especial?',
             () => {
-                excluirReservaConfirmada(reservaId, tipo);
+                excluirReservaConfirmada(reservaId, tipo, btn);
             }
         );
     }
     
     // Função para confirmar exclusão
-    function excluirReservaConfirmada(reservaId, tipo) {
+    function excluirReservaConfirmada(reservaId, tipo, btn) {
+        // Feedback imediato: botão da linha trava com spinner até a resposta
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        }
+
         const formData = new FormData();
         formData.append('reserva_id', reservaId);
         formData.append('tipo', tipo);
@@ -487,11 +493,13 @@ if (!pode_acessar_especial()) {
                 carregarReservasEspeciais();
             } else {
                 exibirToast(data.mensagem, 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
             }
         })
         .catch(error => {
             console.error('Erro ao excluir reserva:', error);
             exibirToast('Erro ao excluir reserva especial', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
         });
     }
 
@@ -518,7 +526,7 @@ if (!pode_acessar_especial()) {
 
     // Função para mostrar confirmação personalizada
     function mostrarConfirmacao(mensagem, callback) {
-        const modal = new bootstrap.Modal(document.getElementById('modalConfirmacao'));
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmacao'));
         const texto = document.getElementById('modalConfirmacaoTexto');
         const btnConfirmar = document.getElementById('btnConfirmarAcao');
         
