@@ -280,3 +280,40 @@ html.dark input[type="month"] {
 html.dark input::-webkit-datetime-edit {
     color: #e2e8f0 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ENTRADA EM CASCATA (derivada da animação do login aprovada pelo admin):
+   cards se materializam de baixo pra cima em sequência ao abrir a tela.
+   Implementada como ANIMATION (não transition + classe via JS): roda uma
+   única vez e SEMPRE termina no estado natural — se qualquer coisa
+   falhar, a tela fica normal. Desligada em prefers-reduced-motion.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes aomEntrada {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes aomEntradaTopo {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .header-page,
+    .navbar-custom {
+        animation: aomEntradaTopo .35s ease both;
+    }
+    .card,
+    .card-main,
+    .filter-card {
+        animation: aomEntrada .45s ease both;
+    }
+    /* cascata: até o 8º card; do 9º em diante entram juntos (sem delay) */
+    .card:nth-of-type(2), .card-main:nth-of-type(2) { animation-delay: .07s; }
+    .card:nth-of-type(3), .card-main:nth-of-type(3) { animation-delay: .14s; }
+    .card:nth-of-type(4), .card-main:nth-of-type(4) { animation-delay: .21s; }
+    .card:nth-of-type(5), .card-main:nth-of-type(5) { animation-delay: .28s; }
+    .card:nth-of-type(6), .card-main:nth-of-type(6) { animation-delay: .35s; }
+    .card:nth-of-type(7), .card-main:nth-of-type(7) { animation-delay: .42s; }
+    .card:nth-of-type(8), .card-main:nth-of-type(8) { animation-delay: .49s; }
+    /* modais não participam da cascata (abrem depois, com animação própria) */
+    .modal .card, .modal .card-main { animation: none; }
+}
