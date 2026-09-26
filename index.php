@@ -24,9 +24,8 @@ if (isset($_SESSION['usuario_id'])) {
       theme: {
         extend: {
           colors: {
-            "primary": "#1a227f",
-            "background-light": "#f6f6f8",
-            "background-dark": "#121320",
+            "primary": "#1d4e8f",
+            "primary-claro": "#4f8ad4",
           },
           fontFamily: {
             "display": ["Inter", "sans-serif"]
@@ -60,36 +59,136 @@ if (isset($_SESSION['usuario_id'])) {
     .fly-left  { animation: flyOutLeft  .5s cubic-bezier(.6,-.28,.74,.05) forwards; }
     .fly-right { animation: flyOutRight .5s cubic-bezier(.6,-.28,.74,.05) forwards; }
     .card-collapse { animation: cardCollapse .45s ease-in forwards; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FUNDO "AURORA" — curvas luminosas em azul AOM (referência: vídeo
+       aprovado pelo admin; original era dourado). CSS puro, sem vídeo:
+       fitas com gradiente + blur + deriva lenta. Respeita
+       prefers-reduced-motion.
+       ═══════════════════════════════════════════════════════════════ */
+    body { background: #070b14; overflow-x: hidden; }
+    .aurora {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .aurora::after {
+      /* vinheta pra escurecer as bordas como no vídeo */
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 90% 70% at 50% 45%, transparent 45%, rgba(3, 6, 12, .88) 100%);
+    }
+    .fita {
+      position: absolute;
+      width: 160vmax;
+      height: 160vmax;
+      left: 50%;
+      top: 50%;
+      border-radius: 42% 58% 55% 45% / 48% 42% 58% 52%;
+      filter: blur(14px);
+      opacity: .55;
+      will-change: transform;
+    }
+    .fita-1 {
+      border: 3px solid transparent;
+      background:
+        conic-gradient(from 180deg, transparent 0 40%, #1d4e8f 47%, #7db4f5 50%, #1d4e8f 53%, transparent 60% 100%) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      transform: translate(-50%, -50%) rotate(0deg);
+      animation: girar 46s linear infinite;
+    }
+    .fita-2 {
+      border: 2px solid transparent;
+      background:
+        conic-gradient(from 20deg, transparent 0 30%, #163d72 40%, #4f8ad4 46%, #a8ccf5 48%, #4f8ad4 50%, transparent 62% 100%) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      width: 130vmax; height: 130vmax;
+      border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%;
+      transform: translate(-50%, -50%) rotate(120deg);
+      animation: girar 64s linear infinite reverse;
+      opacity: .4;
+    }
+    .fita-3 {
+      width: 100vmax; height: 100vmax;
+      background: radial-gradient(ellipse at center, rgba(29, 78, 143, .16) 0%, transparent 60%);
+      transform: translate(-50%, -50%);
+      filter: blur(30px);
+      animation: pulsar 9s ease-in-out infinite;
+    }
+    @keyframes girar {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    @keyframes pulsar {
+      0%, 100% { opacity: .35; }
+      50% { opacity: .6; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .fita { animation: none !important; }
+    }
+
+    /* Cartão de vidro */
+    .glass-card {
+      background: rgba(13, 20, 34, .72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(125, 180, 245, .14);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+    }
+    .glass-input {
+      background: rgba(7, 11, 20, .6) !important;
+      border: 1px solid rgba(125, 180, 245, .18) !important;
+      color: #e8eef7 !important;
+    }
+    .glass-input::placeholder { color: #5b6b83; }
+    .glass-input:focus {
+      border-color: #4f8ad4 !important;
+      box-shadow: 0 0 0 3px rgba(79, 138, 212, .22) !important;
+    }
   </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-md">
-    <div class="bg-white dark:bg-slate-900 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+<body class="font-display min-h-screen flex items-center justify-center p-4">
 
-      <div class="relative h-48 bg-primary/10 flex items-center justify-center overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"></div>
+  <!-- Fundo animado (curvas luminosas azul AOM) -->
+  <div class="aurora" aria-hidden="true">
+    <div class="fita fita-3"></div>
+    <div class="fita fita-1"></div>
+    <div class="fita fita-2"></div>
+  </div>
+
+  <div class="w-full max-w-md relative z-10">
+    <div class="glass-card rounded-2xl overflow-hidden">
+
+      <div class="relative pt-10 pb-6 flex items-center justify-center">
         <div class="relative z-10 flex flex-col items-center gap-3">
-          <img src="img/logo-intranet-aom.png" alt="Intranet AOM" class="h-16 w-auto object-contain drop-shadow-lg">
+          <div class="bg-white/95 rounded-2xl px-5 py-3 shadow-lg shadow-black/30">
+            <img src="img/logo-intranet-aom.png" alt="Intranet AOM" class="h-12 w-auto object-contain">
+          </div>
           <div class="text-center">
-            <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Presença AOM</h1>
-            <p class="text-xs font-medium text-primary uppercase tracking-widest">Sistema de Gestão</p>
+            <h1 class="text-xl font-bold text-white tracking-tight">Presença AOM</h1>
+            <p class="text-[11px] font-medium text-primary-claro uppercase tracking-widest">Sistema de Gestão</p>
           </div>
         </div>
-        <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/5 rounded-full"></div>
       </div>
 
-      <div class="p-8">
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Bem-vindo</h2>
-          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Acesse o portal de gestão de presença</p>
+      <div class="px-8 pb-8">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-white">Bem-vindo</h2>
+          <p class="text-slate-400 text-sm mt-1">Acesse o portal de gestão de presença</p>
         </div>
 
         <div id="mensagemLogin" class="hidden mb-4 px-4 py-3 rounded-lg text-sm font-medium"></div>
 
         <form id="formLogin" class="space-y-5">
           <div class="space-y-2">
-            <label for="email" class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <span class="material-symbols-outlined text-lg">mail</span>
+            <label for="email" class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+              <span class="material-symbols-outlined text-lg text-primary-claro">mail</span>
               Endereço de E-mail
             </label>
             <input
@@ -99,17 +198,17 @@ if (isset($_SESSION['usuario_id'])) {
               required
               autofocus
               placeholder="seu.nome@empresa.com.br"
-              class="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-none"
+              class="glass-input w-full px-4 py-3 rounded-lg transition-colors outline-none"
             >
           </div>
 
           <div class="space-y-2">
             <div class="flex justify-between items-center">
-              <label for="senha" class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <span class="material-symbols-outlined text-lg">lock</span>
+              <label for="senha" class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg text-primary-claro">lock</span>
                 Senha
               </label>
-              <a href="recuperar_senha.php" class="text-xs font-medium text-primary hover:underline">Esqueceu a senha?</a>
+              <a href="recuperar_senha.php" class="text-xs font-medium text-primary-claro hover:underline">Esqueceu a senha?</a>
             </div>
             <div class="relative group">
               <input
@@ -118,20 +217,20 @@ if (isset($_SESSION['usuario_id'])) {
                 name="senha"
                 required
                 placeholder="••••••••"
-                class="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-none pr-12"
+                class="glass-input w-full px-4 py-3 rounded-lg transition-colors outline-none pr-12"
               >
-              <button type="button" id="toggleSenha" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+              <button type="button" id="toggleSenha" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                 <span class="material-symbols-outlined text-xl">visibility</span>
               </button>
             </div>
           </div>
 
           <div class="flex items-center">
-            <input type="checkbox" id="remember" class="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary">
-            <label for="remember" class="ml-2 text-sm text-slate-600 dark:text-slate-400">Lembrar neste dispositivo</label>
+            <input type="checkbox" id="remember" class="w-4 h-4 text-primary bg-transparent border-slate-600 rounded focus:ring-primary">
+            <label for="remember" class="ml-2 text-sm text-slate-400">Lembrar neste dispositivo</label>
           </div>
 
-          <button type="submit" id="btnLogin" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
+          <button type="submit" id="btnLogin" class="w-full bg-primary hover:bg-[#163d72] text-white font-semibold py-3.5 rounded-lg shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-all flex items-center justify-center gap-2 group">
             <span id="btnLoginText">Acessar Sistema</span>
             <span id="btnLoginIcon" class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
             <svg id="btnLoginSpinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -141,16 +240,16 @@ if (isset($_SESSION['usuario_id'])) {
           </button>
         </form>
 
-        <div class="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-          <p class="text-xs text-slate-400 dark:text-slate-500">
+        <div class="mt-8 pt-6 border-t border-white/10 text-center">
+          <p class="text-xs text-slate-500">
             Ambiente Seguro e Monitorado. Em caso de dúvidas, contate o suporte de TI.
           </p>
           <div class="mt-4 flex justify-center gap-4">
-            <span class="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+            <span class="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 uppercase tracking-widest">
               <span class="material-symbols-outlined text-xs">verified_user</span>
               SSL Encrypted
             </span>
-            <span class="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+            <span class="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 uppercase tracking-widest">
               <span class="material-symbols-outlined text-xs">shield</span>
               Acesso Protegido
             </span>
@@ -160,11 +259,11 @@ if (isset($_SESSION['usuario_id'])) {
     </div>
 
     <div class="mt-8 flex justify-center items-center gap-4">
-      <div class="flex items-center gap-2 opacity-50 grayscale hover:grayscale-0 transition-all cursor-default">
-        <div class="w-6 h-6 bg-slate-400 rounded-sm flex items-center justify-center">
+      <div class="flex items-center gap-2 opacity-40 hover:opacity-70 transition-all cursor-default">
+        <div class="w-6 h-6 bg-slate-500 rounded-sm flex items-center justify-center">
           <span class="material-symbols-outlined text-white text-xs">apartment</span>
         </div>
-        <span class="text-sm font-semibold text-slate-500">AOM - Gestão de Presença</span>
+        <span class="text-sm font-semibold text-slate-400">AOM - Gestão de Presença</span>
       </div>
     </div>
   </div>
@@ -205,7 +304,7 @@ $('#formLogin').submit(function(e) {
       } else {
         $('#mensagemLogin')
           .removeClass('hidden bg-green-100 text-green-800')
-          .addClass('bg-red-50 text-red-700 border border-red-200')
+          .addClass('bg-red-500/15 text-red-300 border border-red-500/30')
           .text(res.mensagem);
         $('#formLogin').addClass('shake');
         setTimeout(function() { $('#formLogin').removeClass('shake'); }, 400);
@@ -215,7 +314,7 @@ $('#formLogin').submit(function(e) {
     error: function() {
       $('#mensagemLogin')
         .removeClass('hidden bg-green-100 text-green-800')
-        .addClass('bg-red-50 text-red-700 border border-red-200')
+        .addClass('bg-red-500/15 text-red-300 border border-red-500/30')
         .text('Erro ao tentar logar. Tente novamente.');
       $('#formLogin').addClass('shake');
       setTimeout(function() { $('#formLogin').removeClass('shake'); }, 400);
