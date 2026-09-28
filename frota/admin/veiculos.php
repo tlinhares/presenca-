@@ -11,12 +11,20 @@ $isAdmin = MenuPermissaoService::isAdmin();
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+<script>
+/* Movimento: o "reduzir movimento" do sistema NÃO apaga mais as animações —
+   só suaviza (html.mov-suave). Desligar tudo é escolha explícita:
+   localStorage.app_mov = "reduzida" (html.mov-min). "completa" ignora o sistema. */
+(function(){var m=null;try{m=localStorage.getItem('app_mov')}catch(e){}var h=document.documentElement;
+  if(m==='reduzida')h.classList.add('mov-min');
+  else if(m!=='completa'&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('mov-suave');})();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciar Veículos - Frota</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: "class",

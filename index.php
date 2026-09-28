@@ -12,12 +12,20 @@ if (isset($_SESSION['usuario_id'])) {
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+/* Movimento: o "reduzir movimento" do sistema NÃO apaga mais as animações —
+   só suaviza (html.mov-suave). Desligar tudo é escolha explícita:
+   localStorage.app_mov = "reduzida" (html.mov-min). "completa" ignora o sistema. */
+(function(){var m=null;try{m=localStorage.getItem('app_mov')}catch(e){}var h=document.documentElement;
+  if(m==='reduzida')h.classList.add('mov-min');
+  else if(m!=='completa'&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('mov-suave');})();
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Presença AOM</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: "class",
@@ -129,9 +137,9 @@ if (isset($_SESSION['usuario_id'])) {
       0%, 100% { opacity: .35; }
       50% { opacity: .6; }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .fita { animation: none !important; }
-    }
+    /* Loops contínuos saem no modo suave (sistema) e no mínimo (escolha) */
+    html.mov-suave .fita,
+    html.mov-min .fita { animation: none !important; }
 
     /* ═══════════════════════════════════════════════════════════════
        INTRO/OUTRO como no vídeo: o card nasce "vazio" com a logo ao
@@ -201,9 +209,15 @@ if (isset($_SESSION['usuario_id'])) {
       45%  { transform: scale(1.06); opacity: 1; }
       100% { transform: scale(1); }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .intro-item { opacity: 1 !important; transform: none !important; transition: none !important; }
-      #logoIntro { display: none !important; }
+    /* Entrada curta continua no mov-suave; só a escolha explícita desliga */
+    html.mov-min .intro-item { opacity: 1 !important; transform: none !important; transition: none !important; }
+    html.mov-min #logoIntro { display: none !important; }
+    /* Escolha explícita: nada se move (kill geral) */
+    html.mov-min *, html.mov-min *::before, html.mov-min *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      animation-delay: 0s !important;
+      transition-duration: .01ms !important;
     }
 
     /* Cartão de vidro */
@@ -239,13 +253,13 @@ if (isset($_SESSION['usuario_id'])) {
     <div class="glass-card rounded-2xl overflow-hidden relative">
       <!-- Logo central da intro/outro (flare) -->
       <div id="logoIntro" aria-hidden="true">
-        <div class="marca"><img src="img/logo-intranet-aom.png" alt=""></div>
+        <div class="marca"><img src="img/logo-intranet-aom.png" alt="" width="115" height="46"></div>
       </div>
 
       <div class="relative pt-10 pb-6 flex items-center justify-center intro-item">
         <div class="relative z-10 flex flex-col items-center gap-3">
           <div class="bg-white/95 rounded-2xl px-5 py-3 shadow-lg shadow-black/30">
-            <img src="img/logo-intranet-aom.png" alt="Intranet AOM" class="h-12 w-auto object-contain">
+            <img src="img/logo-intranet-aom.png" alt="Intranet AOM" width="120" height="48" class="h-12 w-auto object-contain">
           </div>
           <div class="text-center">
             <h1 class="text-xl font-bold text-white tracking-tight">Presença AOM</h1>
@@ -353,7 +367,7 @@ if (isset($_SESSION['usuario_id'])) {
   itens.forEach(function (el, i) {
     el.style.transitionDelay = (i * 80) + 'ms';
   });
-  var atraso = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 950;
+  var atraso = document.documentElement.classList.contains('mov-min') ? 0 : 950;
   setTimeout(function () {
     document.body.classList.add('intro-pronta');
     // limpa delays pra não atrasar interações futuras (hover/outro)

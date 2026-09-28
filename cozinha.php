@@ -127,6 +127,14 @@ $totais = calcularTotais($reservas);
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+/* Movimento: o "reduzir movimento" do sistema NÃO apaga mais as animações —
+   só suaviza (html.mov-suave). Desligar tudo é escolha explícita:
+   localStorage.app_mov = "reduzida" (html.mov-min). "completa" ignora o sistema. */
+(function(){var m=null;try{m=localStorage.getItem('app_mov')}catch(e){}var h=document.documentElement;
+  if(m==='reduzida')h.classList.add('mov-min');
+  else if(m!=='completa'&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('mov-suave');})();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle da Cozinha - <?php echo date('d/m/Y'); ?></title>

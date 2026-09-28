@@ -39,10 +39,18 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
 <!DOCTYPE html>
 <html lang="pt-br" id="htmlTheme" <?= tema_html_attrs() ?>>
 <head>
+<script>
+/* Movimento: o "reduzir movimento" do sistema NÃO apaga mais as animações —
+   só suaviza (html.mov-suave). Desligar tudo é escolha explícita:
+   localStorage.app_mov = "reduzida" (html.mov-min). "completa" ignora o sistema. */
+(function(){var m=null;try{m=localStorage.getItem('app_mov')}catch(e){}var h=document.documentElement;
+  if(m==='reduzida')h.classList.add('mov-min');
+  else if(m!=='completa'&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('mov-suave');})();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Sistema de Presença</title>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -77,9 +85,7 @@ $temEstoque = MenuPermissaoService::podeAcessar('estoque_dashboard');
            NÃO animar os cards aqui para não conflitar/escondê-los. */
         @keyframes dashFadeIn { from { opacity: 0; } to { opacity: 1; } }
         body { animation: dashFadeIn .4s ease-out; }
-        @media (prefers-reduced-motion: reduce) {
-            body { animation: none !important; }
-        }
+        html.mov-min body { animation: none !important; }
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;

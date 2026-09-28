@@ -288,7 +288,7 @@ html.dark input::-webkit-datetime-edit {
    única vez e SEMPRE termina no estado natural — se qualquer coisa
    falhar, a tela fica normal. Desligada em prefers-reduced-motion.
    ═══════════════════════════════════════════════════════════════════════ */
-@media (prefers-reduced-motion: no-preference) {
+/* (sem gate de prefers-reduced-motion: ver bloco mov-min/mov-suave abaixo) */
     @keyframes aomEntrada {
         from { opacity: 0; transform: translateY(12px); }
         to   { opacity: 1; transform: translateY(0); }
@@ -316,4 +316,23 @@ html.dark input::-webkit-datetime-edit {
     .card:nth-of-type(8), .card-main:nth-of-type(8) { animation-delay: .49s; }
     /* modais não participam da cascata (abrem depois, com animação própria) */
     .modal .card, .modal .card-main { animation: none; }
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   POLÍTICA DE MOVIMENTO (2026-09-28):
+   - html.mov-min  → escolha EXPLÍCITA do usuário (localStorage.app_mov =
+     "reduzida"): nada se move.
+   - html.mov-suave → sistema pedindo menos movimento (prefers-reduced-motion):
+     entradas curtas CONTINUAM; só loops/movimento contínuo saem.
+   O snippet no <head> de cada página decide a classe antes do CSS aplicar.
+   NUNCA voltar a usar @media (prefers-reduced-motion) direto: no Windows
+   ele liga sozinho (efeitos visuais off, RDP, política corporativa) e
+   apagava todas as animações no desktop.
+   ═══════════════════════════════════════════════════════════════════════ */
+html.mov-min *, html.mov-min *::before, html.mov-min *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: .01ms !important;
 }
